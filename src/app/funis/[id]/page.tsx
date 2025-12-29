@@ -227,18 +227,40 @@ export default function FunilDetailPage() {
         funnel?.name || ""
     );
 
+    // Build KPIs object with actual values for AI context
+    const funnelKpis = funnel
+        ? (() => {
+            const kpis: Record<string, number | string> = {};
+            funnel.stages.forEach((stage, index) => {
+                const value = getStageValue(stage.name);
+                const key = stage.name.toLowerCase().replace(/ /g, "_");
+                kpis[key] = value ?? 0;
+
+                // Add conversion rate to next stage
+                if (index > 0) {
+                    const prevValue = getStageValue(funnel.stages[index - 1]?.name);
+                    if (prevValue && value !== null) {
+                        kpis[`conversao_${key}`] = `${((value / prevValue) * 100).toFixed(2)}%`;
+                    }
+                }
+            });
+
+            // Calculate overall funnel conversion
+            const firstValue = getStageValue(funnel.stages[0]?.name);
+            const lastValue = getStageValue(funnel.stages[funnel.stages.length - 1]?.name);
+            if (firstValue && lastValue) {
+                kpis["conversao_total"] = `${((lastValue / firstValue) * 100).toFixed(3)}%`;
+            }
+
+            return kpis;
+        })()
+        : {};
+
     usePageMetrics({
         pagina: funnel?.name || "Funil",
-        descricao: "Visualização detalhada do funil",
+        descricao: `Funil com ${funnel?.stages.length || 0} etapas: ${funnel?.stages.map(s => s.name).join(" → ") || ""}`,
         periodo: selectedPeriod,
-        kpis: funnel
-            ? Object.fromEntries(
-                funnel.stages.map((s) => [
-                    s.name.toLowerCase().replace(/ /g, "_"),
-                    getStageValue(s.name) ?? 0
-                ])
-            )
-            : {},
+        kpis: funnelKpis,
     });
 
     if (isLoading) {
