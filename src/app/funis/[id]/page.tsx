@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useFunnels, useFunnelData } from "@/hooks/useFunnels";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { getPerformanceStatus, PERFORMANCE_CONFIG, SHEETS_FORMAT_HELP, FunnelStageThresholds } from "@/types/funnel";
@@ -228,37 +228,46 @@ export default function FunilDetailPage() {
     );
 
     // Build KPIs object with actual values for AI context
-    const funnelKpis = funnel
-        ? (() => {
-            const kpis: Record<string, number | string> = {};
-            funnel.stages.forEach((stage, index) => {
-                const value = getStageValue(stage.name);
-                const key = stage.name.toLowerCase().replace(/ /g, "_");
-                kpis[key] = value ?? 0;
+    const funnelKpis = useMemo(() => {
+        if (!funnel || isLoading) return {};
 
-                // Add conversion rate to next stage
-                if (index > 0) {
-                    const prevValue = getStageValue(funnel.stages[index - 1]?.name);
-                    if (prevValue && value !== null) {
-                        kpis[`conversao_${key}`] = `${((value / prevValue) * 100).toFixed(2)}%`;
-                    }
+        const kpis: Record<string, number | string> = {
+            nome_funil: funnel.name,
+            total_etapas: funnel.stages.length,
+            etapas: funnel.stages.map(s => s.name).join(", "),
+        };
+
+        funnel.stages.forEach((stage, index) => {
+            const value = getStageValue(stage.name);
+            const key = stage.name.toLowerCase().replace(/ /g, "_");
+            kpis[key] = value ?? 0;
+
+            // Add conversion rate to next stage
+            if (index > 0) {
+                const prevValue = getStageValue(funnel.stages[index - 1]?.name);
+                if (prevValue && value !== null) {
+                    kpis[`conversao_${key}`] = `${((value / prevValue) * 100).toFixed(2)}%`;
                 }
-            });
-
-            // Calculate overall funnel conversion
-            const firstValue = getStageValue(funnel.stages[0]?.name);
-            const lastValue = getStageValue(funnel.stages[funnel.stages.length - 1]?.name);
-            if (firstValue && lastValue) {
-                kpis["conversao_total"] = `${((lastValue / firstValue) * 100).toFixed(3)}%`;
             }
+        });
 
-            return kpis;
-        })()
-        : {};
+        // Calculate overall funnel conversion
+        const firstValue = getStageValue(funnel.stages[0]?.name);
+        const lastValue = getStageValue(funnel.stages[funnel.stages.length - 1]?.name);
+        if (firstValue && lastValue) {
+            kpis["conversao_total"] = `${((lastValue / firstValue) * 100).toFixed(3)}%`;
+        }
+
+        kpis["planilha_conectada"] = funnel.sheetsUrl ? "Sim" : "Não";
+
+        return kpis;
+    }, [funnel, isLoading, getStageValue]);
 
     usePageMetrics({
         pagina: funnel?.name || "Funil",
-        descricao: `Funil com ${funnel?.stages.length || 0} etapas: ${funnel?.stages.map(s => s.name).join(" → ") || ""}`,
+        descricao: !funnel
+            ? "Carregando funil..."
+            : `Funil com ${funnel.stages.length} etapas: ${funnel.stages.map(s => s.name).join(" → ")}`,
         periodo: selectedPeriod,
         kpis: funnelKpis,
     });
