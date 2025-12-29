@@ -547,17 +547,7 @@ export default function FunilDetailPage() {
                                                 ? `${(value / 1000000).toFixed(1)}M`
                                                 : value >= 1000
                                                     ? `${(value / 1000).toFixed(1)}K`
-                                                    : value.toLocaleString("pt-BR")
                                         ) : "—"}
-                                    </p>
-
-                                    {/* Percentage of total */}
-                                    <p className={`${subTextColor} text-xs mt-1`}>
-                                        {percentOfTotal !== null
-                                            ? index === 0
-                                                ? "100%"
-                                                : `${percentOfTotal.toFixed(2)}% ${funnel.stages[0]?.name ? `dos ${funnel.stages[0].name.toLowerCase()}` : ""}`
-                                            : "—"}
                                     </p>
                                 </div>
                             </div>

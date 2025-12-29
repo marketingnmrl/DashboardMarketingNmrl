@@ -124,17 +124,6 @@ export default function NovoFunilPage() {
                         <p className="text-xs font-medium text-gray-500 mb-3">ADICIONAR ETAPA</p>
                         <div className="flex flex-col gap-3">
                             <div className="flex gap-2">
-                                {/* Emoji Picker */}
-                                <select
-                                    value={newStageEmoji}
-                                    onChange={(e) => setNewStageEmoji(e.target.value)}
-                                    className="w-16 px-2 py-2 rounded-lg border border-gray-200 text-xl text-center cursor-pointer"
-                                >
-                                    {STAGE_EMOJIS.map((emoji) => (
-                                        <option key={emoji} value={emoji}>{emoji}</option>
-                                    ))}
-                                </select>
-
                                 {/* Stage Name */}
                                 <input
                                     type="text"
@@ -152,8 +141,8 @@ export default function NovoFunilPage() {
                                         type="button"
                                         onClick={() => setNewStageUnit("absolute")}
                                         className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${newStageUnit === "absolute"
-                                                ? "bg-[#19069E] text-white"
-                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                            ? "bg-[#19069E] text-white"
+                                            : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                                             }`}
                                     >
                                         Valor/dia
@@ -162,8 +151,8 @@ export default function NovoFunilPage() {
                                         type="button"
                                         onClick={() => setNewStageUnit("percentage")}
                                         className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${newStageUnit === "percentage"
-                                                ? "bg-[#19069E] text-white"
-                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                            ? "bg-[#19069E] text-white"
+                                            : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                                             }`}
                                     >
                                         Percentual %
