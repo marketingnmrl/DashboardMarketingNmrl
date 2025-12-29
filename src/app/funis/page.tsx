@@ -9,10 +9,13 @@ export default function FunisPage() {
 
     usePageMetrics({
         pagina: "Meus Funis",
-        descricao: "Lista de funis de vendas personalizados",
+        descricao: `Lista de ${funnels.length} funis de vendas personalizados`,
         periodo: "Todos",
         kpis: {
             total_funis: funnels.length,
+            funis_com_planilha: funnels.filter(f => f.sheetsUrl).length,
+            funis_sem_planilha: funnels.filter(f => !f.sheetsUrl).length,
+            nomes_funis: funnels.map(f => f.name).join(", ") || "Nenhum",
         },
     });
 
