@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useEvents } from "@/hooks/useEvents";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
-import { needsAttention, formatEventDate } from "@/types/event";
+import { needsAttention } from "@/types/event";
 
 export default function EventosMensalPage() {
     const { events, isLoading } = useEvents();
@@ -27,13 +27,6 @@ export default function EventosMensalPage() {
         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
     ];
 
-    // Filter events for selected month
-    const monthEvents = events.filter((event) => {
-        const eventDate = new Date(event.startDate);
-        return eventDate.getFullYear() === selectedDate.year &&
-            eventDate.getMonth() === selectedDate.month;
-    });
-
     // Get days in month and first day of week
     const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
     const getFirstDayOfWeek = (year: number, month: number) => new Date(year, month, 1).getDay();
@@ -41,10 +34,12 @@ export default function EventosMensalPage() {
     const daysInMonth = getDaysInMonth(selectedDate.year, selectedDate.month);
     const firstDayOfWeek = getFirstDayOfWeek(selectedDate.year, selectedDate.month);
 
-    // Create calendar grid
+    // Create calendar grid - enough rows for all days
     const calendarDays: (number | null)[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) calendarDays.push(null);
     for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
+    // Pad to complete the last week
+    while (calendarDays.length % 7 !== 0) calendarDays.push(null);
 
     // Get events for a specific day
     const getEventsForDay = (day: number) => {
@@ -68,7 +63,7 @@ export default function EventosMensalPage() {
 
     if (isLoading) {
         return (
-            <div className="max-w-7xl mx-auto flex items-center justify-center h-64">
+            <div className="h-full flex items-center justify-center">
                 <div className="flex items-center gap-3 text-[#19069E]">
                     <span className="material-symbols-outlined animate-spin">progress_activity</span>
                     <span className="font-medium">Carregando eventos...</span>
@@ -77,13 +72,17 @@ export default function EventosMensalPage() {
         );
     }
 
+    const numRows = Math.ceil(calendarDays.length / 7);
+
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-extrabold text-[#19069E]">Eventos - Mensal</h1>
-                    <p className="text-sm text-gray-500">Calendário de eventos do mês</p>
+        <div className="h-full flex flex-col">
+            {/* Header - Fixed height */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-extrabold text-[#19069E]">Eventos - Mensal</h1>
+                        <p className="text-sm text-gray-500">Calendário de eventos do mês</p>
+                    </div>
                 </div>
                 <Link
                     href="/eventos/novo"
@@ -94,10 +93,10 @@ export default function EventosMensalPage() {
                 </Link>
             </div>
 
-            {/* View Switcher */}
-            <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
+            {/* View Switcher - Fixed height */}
+            <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit mb-4">
                 <Link href="/eventos" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
-                    Dashboard
+                    Visão Geral
                 </Link>
                 <Link href="/eventos/trimestral" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
                     Trimestral
@@ -110,10 +109,10 @@ export default function EventosMensalPage() {
                 </Link>
             </div>
 
-            {/* Calendar */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Calendar - Takes remaining height */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Month Navigator */}
-                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
                     <button
                         onClick={goToPrevMonth}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -131,10 +130,10 @@ export default function EventosMensalPage() {
                     </button>
                 </div>
 
-                {/* Calendar Grid */}
-                <div className="p-4">
+                {/* Calendar Grid - Fills remaining space */}
+                <div className="flex-1 flex flex-col min-h-0 p-2">
                     {/* Week Headers */}
-                    <div className="grid grid-cols-7 mb-2">
+                    <div className="grid grid-cols-7 flex-shrink-0">
                         {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
                             <div key={day} className="text-center text-xs font-medium text-gray-400 py-2">
                                 {day}
@@ -142,11 +141,14 @@ export default function EventosMensalPage() {
                         ))}
                     </div>
 
-                    {/* Days Grid */}
-                    <div className="grid grid-cols-7 gap-1">
+                    {/* Days Grid - Uses CSS Grid with equal rows */}
+                    <div
+                        className="flex-1 grid grid-cols-7 gap-1"
+                        style={{ gridTemplateRows: `repeat(${numRows}, 1fr)` }}
+                    >
                         {calendarDays.map((day, index) => {
                             if (day === null) {
-                                return <div key={index} className="aspect-square" />;
+                                return <div key={index} className="bg-gray-50/50 rounded-lg" />;
                             }
 
                             const dayEvents = getEventsForDay(day);
@@ -158,29 +160,30 @@ export default function EventosMensalPage() {
                             return (
                                 <div
                                     key={index}
-                                    className={`aspect-square rounded-lg p-1 text-sm ${isToday ? 'bg-[#19069E]/10 ring-2 ring-[#19069E]' : 'hover:bg-gray-50'
+                                    className={`rounded-lg p-1.5 flex flex-col overflow-hidden ${isToday ? 'bg-[#19069E]/10 ring-2 ring-[#19069E]' : 'hover:bg-gray-50 border border-gray-100'
                                         }`}
                                 >
-                                    <div className={`font-medium text-center ${isToday ? 'text-[#19069E]' : 'text-gray-700'}`}>
+                                    <div className={`text-sm font-semibold ${isToday ? 'text-[#19069E]' : 'text-gray-700'}`}>
                                         {day}
                                     </div>
                                     {dayEvents.length > 0 && (
-                                        <div className="mt-1 space-y-0.5">
-                                            {dayEvents.slice(0, 2).map((event) => (
+                                        <div className="flex-1 mt-1 space-y-0.5 overflow-hidden">
+                                            {dayEvents.slice(0, 3).map((event) => (
                                                 <Link
                                                     key={event.id}
                                                     href={`/eventos/${event.id}`}
-                                                    className={`block text-[10px] rounded px-1 py-0.5 truncate ${needsAttention(event)
-                                                            ? 'bg-amber-100 text-amber-700'
-                                                            : 'bg-[#C2DF0C]/50 text-[#19069E]'
+                                                    className={`block text-[10px] rounded px-1.5 py-0.5 truncate font-medium ${needsAttention(event)
+                                                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                            : 'bg-[#C2DF0C]/60 text-[#19069E] hover:bg-[#C2DF0C]'
                                                         }`}
+                                                    title={event.name}
                                                 >
                                                     {event.name}
                                                 </Link>
                                             ))}
-                                            {dayEvents.length > 2 && (
-                                                <span className="text-[10px] text-gray-400">
-                                                    +{dayEvents.length - 2} mais
+                                            {dayEvents.length > 3 && (
+                                                <span className="text-[10px] text-gray-400 pl-1">
+                                                    +{dayEvents.length - 3}
                                                 </span>
                                             )}
                                         </div>
@@ -190,49 +193,6 @@ export default function EventosMensalPage() {
                         })}
                     </div>
                 </div>
-            </div>
-
-            {/* Events List for Selected Month */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-100">
-                    <h3 className="font-bold text-[#19069E]">
-                        Eventos em {monthNames[selectedDate.month]} ({monthEvents.length})
-                    </h3>
-                </div>
-                {monthEvents.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400">
-                        Nenhum evento neste mês
-                    </div>
-                ) : (
-                    <div className="divide-y divide-gray-100">
-                        {monthEvents.map((event) => {
-                            const attention = needsAttention(event);
-                            return (
-                                <Link
-                                    key={event.id}
-                                    href={`/eventos/${event.id}`}
-                                    className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center ${attention ? 'bg-amber-100' : 'bg-[#19069E]/10'}`}>
-                                        <span className={`text-lg font-bold ${attention ? 'text-amber-700' : 'text-[#19069E]'}`}>
-                                            {new Date(event.startDate + 'T00:00:00').getDate()}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-gray-900">{event.name}</p>
-                                        <p className="text-sm text-gray-500">{event.location}</p>
-                                    </div>
-                                    {attention && (
-                                        <span className="px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium">
-                                            Atenção
-                                        </span>
-                                    )}
-                                    <span className="material-symbols-outlined text-gray-300">chevron_right</span>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
             </div>
         </div>
     );

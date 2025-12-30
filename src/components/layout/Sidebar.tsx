@@ -35,7 +35,7 @@ const navigation = [
   {
     section: "Eventos",
     items: [
-      { name: "Dashboard", href: "/eventos", icon: "event" },
+      { name: "Visão Geral", href: "/eventos", icon: "event" },
       { name: "Trimestral", href: "/eventos/trimestral", icon: "calendar_view_month" },
       { name: "Mensal", href: "/eventos/mensal", icon: "calendar_month" },
       { name: "Anual", href: "/eventos/anual", icon: "calendar_today" },

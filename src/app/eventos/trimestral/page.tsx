@@ -73,7 +73,7 @@ export default function EventosTrimestralPage() {
             {/* View Switcher */}
             <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
                 <Link href="/eventos" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
-                    Dashboard
+                    Visão Geral
                 </Link>
                 <Link href="/eventos/trimestral" className="px-4 py-2 rounded-lg bg-[#19069E] text-white font-medium text-sm">
                     Trimestral

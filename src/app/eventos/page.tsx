@@ -41,7 +41,7 @@ export default function EventosPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#19069E]">Eventos</h1>
+                    <h1 className="text-2xl font-extrabold text-[#19069E]">Visão Geral de Eventos</h1>
                     <p className="text-sm text-gray-500">Gerencie os eventos presenciais da equipe</p>
                 </div>
                 <Link
@@ -102,7 +102,7 @@ export default function EventosPage() {
             {/* View Switcher */}
             <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
                 <Link href="/eventos" className="px-4 py-2 rounded-lg bg-[#19069E] text-white font-medium text-sm">
-                    Dashboard
+                    Visão Geral
                 </Link>
                 <Link href="/eventos/trimestral" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
                     Trimestral

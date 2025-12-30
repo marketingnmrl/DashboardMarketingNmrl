@@ -75,7 +75,7 @@ export default function EventosAnualPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
                     <Link href="/eventos" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
-                        Dashboard
+                        Visão Geral
                     </Link>
                     <Link href="/eventos/trimestral" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
                         Trimestral
@@ -160,12 +160,12 @@ export default function EventosAnualPage() {
                                             <div
                                                 key={i}
                                                 className={`w-6 h-6 flex items-center justify-center text-[11px] rounded ${isToday
-                                                        ? 'bg-[#19069E] text-white font-bold'
-                                                        : hasAttention
-                                                            ? 'bg-amber-100 text-amber-700 font-medium cursor-pointer hover:bg-amber-200'
-                                                            : hasEvents
-                                                                ? 'bg-[#C2DF0C]/50 text-[#19069E] font-medium cursor-pointer hover:bg-[#C2DF0C]/70'
-                                                                : 'text-gray-600'
+                                                    ? 'bg-[#19069E] text-white font-bold'
+                                                    : hasAttention
+                                                        ? 'bg-amber-100 text-amber-700 font-medium cursor-pointer hover:bg-amber-200'
+                                                        : hasEvents
+                                                            ? 'bg-[#C2DF0C]/50 text-[#19069E] font-medium cursor-pointer hover:bg-[#C2DF0C]/70'
+                                                            : 'text-gray-600'
                                                     }`}
                                                 title={hasEvents ? dayEvents.map(e => e.name).join(', ') : undefined}
                                             >
@@ -184,8 +184,8 @@ export default function EventosAnualPage() {
                                             key={event.id}
                                             href={`/eventos/${event.id}`}
                                             className={`block text-[11px] rounded px-2 py-1 truncate ${needsAttention(event)
-                                                    ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                                ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {new Date(event.startDate + 'T00:00:00').getDate()} - {event.name}
