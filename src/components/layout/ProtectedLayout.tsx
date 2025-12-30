@@ -3,12 +3,13 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { Sidebar, Header } from "@/components/layout";
 import AIAssistant from "@/components/AIAssistant";
 
 const PUBLIC_ROUTES = ["/login"];
 
-export default function ProtectedLayout({
+function ProtectedLayoutInner({
     children,
 }: {
     children: React.ReactNode;
@@ -60,11 +61,23 @@ export default function ProtectedLayout({
             <Sidebar />
             <main className="flex-1 flex flex-col h-full overflow-hidden">
                 <Header />
-                <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#F4F4F4]">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#F4F4F4]">
                     {children}
                 </div>
             </main>
             <AIAssistant />
         </div>
+    );
+}
+
+export default function ProtectedLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <SidebarProvider>
+            <ProtectedLayoutInner>{children}</ProtectedLayoutInner>
+        </SidebarProvider>
     );
 }
