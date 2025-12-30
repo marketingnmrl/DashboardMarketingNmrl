@@ -89,7 +89,7 @@ export default function TrafegoPage() {
     usePageMetrics({
         pagina: "Análise de Tráfego",
         descricao: "Métricas de cliques e fontes de tráfego",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             cliques_totais: 85340,
             cliques_unicos: 72150,
@@ -202,7 +202,7 @@ export default function TrafegoPage() {
                 {/* Horizontal Bar Chart Placeholder */}
                 <div className="space-y-4">
                     {[
-                        { name: "Black Friday 2024", clicks: 18500, percentage: 85 },
+                        { name: "Black Friday 2025", clicks: 18500, percentage: 85 },
                         { name: "Remarketing Verão", clicks: 14200, percentage: 65 },
                         { name: "Lançamento Produto X", clicks: 12800, percentage: 59 },
                         { name: "Promoção Natal", clicks: 9400, percentage: 43 },
@@ -246,7 +246,7 @@ export default function TrafegoPage() {
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 font-medium text-gray-900">Banner Promo 50%</td>
-                                <td className="px-6 py-4">Black Friday 2024</td>
+                                <td className="px-6 py-4">Black Friday 2025</td>
                                 <td className="px-6 py-4 text-right font-bold">8.450</td>
                                 <td className="px-6 py-4 text-right">
                                     <span className="text-green-600 font-bold">4.2%</span>

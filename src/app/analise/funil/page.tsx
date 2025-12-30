@@ -124,7 +124,7 @@ export default function FunilPage() {
     usePageMetrics({
         pagina: "Métricas de Funil",
         descricao: "Visualização do funil de conversão",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             impressoes: 2400000,
             cliques: 85300,
@@ -293,7 +293,7 @@ export default function FunilPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2024</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2025</td>
                                 <td className="px-6 py-4 text-right">580K</td>
                                 <td className="px-6 py-4 text-right font-bold text-green-600">4.2%</td>
                                 <td className="px-6 py-4 text-right">1.250</td>

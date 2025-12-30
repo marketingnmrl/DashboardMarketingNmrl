@@ -65,7 +65,7 @@ export default function DashboardPage() {
   usePageMetrics({
     pagina: "Visão Geral do Desempenho",
     descricao: "Dashboard principal com métricas consolidadas de todas as campanhas",
-    periodo: "Dezembro 2024",
+    periodo: "Dezembro 2025",
     filtros: {
       campanha: "Todas",
       plataforma: "Todas",
@@ -83,7 +83,7 @@ export default function DashboardPage() {
     },
     dados_adicionais: {
       campanhas_ativas: 4,
-      melhor_campanha: "Black Friday 2024",
+      melhor_campanha: "Black Friday 2025",
       origem_trafego: {
         google_search: 45,
         redes_sociais: 25,
@@ -287,7 +287,7 @@ export default function DashboardPage() {
                   </div>
                   João da Silva
                 </td>
-                <td className="px-6 py-4">Verão 2024 Promo</td>
+                <td className="px-6 py-4">Verão 2025 Promo</td>
                 <td className="px-6 py-4">Hoje, 14:30</td>
                 <td className="px-6 py-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#C2DF0C] text-[#19069E]">

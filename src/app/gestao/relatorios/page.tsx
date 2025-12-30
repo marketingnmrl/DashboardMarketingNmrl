@@ -7,7 +7,7 @@ export default function RelatoriosPage() {
     usePageMetrics({
         pagina: "Relatórios e Exportação",
         descricao: "Configuração e agendamento de relatórios",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {}
     });
 
@@ -48,7 +48,7 @@ export default function RelatoriosPage() {
                                     <input
                                         type="date"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#19069E] focus:border-transparent text-sm"
-                                        defaultValue="2024-12-01"
+                                        defaultValue="2025-12-01"
                                     />
                                 </div>
                                 <div>
@@ -56,7 +56,7 @@ export default function RelatoriosPage() {
                                     <input
                                         type="date"
                                         className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#19069E] focus:border-transparent text-sm"
-                                        defaultValue="2024-12-31"
+                                        defaultValue="2025-12-31"
                                     />
                                 </div>
                             </div>
@@ -252,8 +252,8 @@ export default function RelatoriosPage() {
                                         <span className="font-medium text-gray-900">Relatório Mensal - Dezembro</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">01/12 - 31/12/2024</td>
-                                <td className="px-6 py-4">28 Dez 2024, 09:00</td>
+                                <td className="px-6 py-4">01/12 - 31/12/2025</td>
+                                <td className="px-6 py-4">28 Dez 2025, 09:00</td>
                                 <td className="px-6 py-4">PDF</td>
                                 <td className="px-6 py-4">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#C2DF0C] text-[#19069E]">
@@ -281,8 +281,8 @@ export default function RelatoriosPage() {
                                         <span className="font-medium text-gray-900">Dados de Campanhas - Novembro</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">01/11 - 30/11/2024</td>
-                                <td className="px-6 py-4">01 Dez 2024, 10:30</td>
+                                <td className="px-6 py-4">01/11 - 30/11/2025</td>
+                                <td className="px-6 py-4">01 Dez 2025, 10:30</td>
                                 <td className="px-6 py-4">CSV</td>
                                 <td className="px-6 py-4">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#C2DF0C] text-[#19069E]">
@@ -310,8 +310,8 @@ export default function RelatoriosPage() {
                                         <span className="font-medium text-gray-900">Black Friday Analysis</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">20/11 - 30/11/2024</td>
-                                <td className="px-6 py-4">01 Dez 2024, 08:00</td>
+                                <td className="px-6 py-4">20/11 - 30/11/2025</td>
+                                <td className="px-6 py-4">01 Dez 2025, 08:00</td>
                                 <td className="px-6 py-4">PDF</td>
                                 <td className="px-6 py-4">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#C2DF0C] text-[#19069E]">

@@ -100,7 +100,7 @@ export default function ConteudoPage() {
     usePageMetrics({
         pagina: "Desempenho de Conteúdo",
         descricao: "Métricas de blog e engajamento",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             visualizacoes_blog: 145200,
             compartilhamentos: 8450,
@@ -157,7 +157,7 @@ export default function ConteudoPage() {
 
                     <div className="space-y-4">
                         <PostCard
-                            title="10 Estratégias para Aumentar suas Vendas Online em 2024"
+                            title="10 Estratégias para Aumentar suas Vendas Online em 2025"
                             category="Marketing Digital"
                             views="12.4K"
                             shares="890"
@@ -178,7 +178,7 @@ export default function ConteudoPage() {
                             engagement="4.9%"
                         />
                         <PostCard
-                            title="Email Marketing: Melhores Práticas para 2024"
+                            title="Email Marketing: Melhores Práticas para 2025"
                             category="Email Marketing"
                             views="7.1K"
                             shares="423"

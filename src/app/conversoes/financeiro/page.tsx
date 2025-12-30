@@ -363,7 +363,7 @@ export default function FinanceiroPage() {
     usePageMetrics({
         pagina: "Gestão Financeira",
         descricao: "Visão gerencial da empresa",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             dinheiro_caixa: financialData.caixa,
             vendas_mes: vendas,
@@ -515,7 +515,7 @@ export default function FinanceiroPage() {
                             <tr className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 font-medium text-gray-900">Marketing Pro</td>
                                 <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 7.500</td>
-                                <td className="px-6 py-4 text-right">28/12/2024</td>
+                                <td className="px-6 py-4 text-right">28/12/2025</td>
                                 <td className="px-6 py-4 text-center">
                                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Atrasado</span>
                                 </td>

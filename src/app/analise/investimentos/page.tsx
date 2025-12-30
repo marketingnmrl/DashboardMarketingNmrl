@@ -85,7 +85,7 @@ export default function InvestimentosPage() {
     usePageMetrics({
         pagina: "Investimentos em Marketing",
         descricao: "Custos e ROI das campanhas",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             investimento_total: 42500,
             investimento_meta: 18500,
@@ -277,7 +277,7 @@ export default function InvestimentosPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2024</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2025</td>
                                 <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 12.500</td>
                                 <td className="px-6 py-4 text-right">R$ 0,51</td>
                                 <td className="px-6 py-4 text-right">1.250</td>

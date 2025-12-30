@@ -94,11 +94,11 @@ A planilha deve ter as seguintes colunas:
 • Funil: Nome exato do funil (ex: "Sessão Estratégica")
 • Etapa: Nome exato da etapa (ex: "Visitantes na Página")
 • Valor: Número (ex: 95 ou 32.5)
-• Data: Data no formato AAAA-MM-DD (ex: 2024-12-29)
+• Data: Data no formato AAAA-MM-DD (ex: 2025-12-29)
 
 Exemplo:
 | Funil               | Etapa              | Valor | Data       |
 |---------------------|--------------------|-------|------------|
-| Sessão Estratégica  | Visitantes         | 95    | 2024-12-29 |
-| Sessão Estratégica  | Leads Formulário   | 32    | 2024-12-29 |
+| Sessão Estratégica  | Visitantes         | 95    | 2025-12-29 |
+| Sessão Estratégica  | Leads Formulário   | 32    | 2025-12-29 |
 `;

@@ -93,7 +93,7 @@ export default function AlcanceExposicaoPage() {
     usePageMetrics({
         pagina: "Alcance & Exposição",
         descricao: "Métricas de impressões e alcance das campanhas",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             impressoes_totais: 2400000,
             alcance_total: 890000,
@@ -103,7 +103,7 @@ export default function AlcanceExposicaoPage() {
         },
         dados_adicionais: {
             campanhas: [
-                { nome: "Black Friday 2024", plataforma: "Google", impressoes: 580000, ctr: 3.8 },
+                { nome: "Black Friday 2025", plataforma: "Google", impressoes: 580000, ctr: 3.8 },
                 { nome: "Remarketing Verão", plataforma: "Meta", impressoes: 420000, ctr: 2.9 },
                 { nome: "Lançamento Produto X", plataforma: "Google", impressoes: 350000, ctr: 4.2 },
             ]
@@ -222,7 +222,7 @@ export default function AlcanceExposicaoPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2024</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2025</td>
                                 <td className="px-6 py-4">
                                     <span className="flex items-center gap-2">
                                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>

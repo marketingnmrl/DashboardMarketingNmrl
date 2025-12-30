@@ -104,7 +104,7 @@ export default function LeadsPage() {
     usePageMetrics({
         pagina: "Conversões e Leads",
         descricao: "Métricas de leads e conversões por campanha",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             leads_totais: 3200,
             leads_meta: 1480,
@@ -231,7 +231,7 @@ export default function LeadsPage() {
 
                 <div className="space-y-4">
                     {[
-                        { name: "Black Friday 2024", leads: 1250, percentage: 39 },
+                        { name: "Black Friday 2025", leads: 1250, percentage: 39 },
                         { name: "Remarketing Verão", leads: 890, percentage: 28 },
                         { name: "Lançamento Produto X", leads: 620, percentage: 19 },
                         { name: "Promoção Natal", leads: 440, percentage: 14 },
@@ -275,7 +275,7 @@ export default function LeadsPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2024</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2025</td>
                                 <td className="px-6 py-4">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#C2DF0C] text-[#19069E]">
                                         Ativo

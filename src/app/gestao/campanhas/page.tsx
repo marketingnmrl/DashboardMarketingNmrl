@@ -54,7 +54,7 @@ export default function CampanhasPage() {
     usePageMetrics({
         pagina: "Gestão de Campanhas",
         descricao: "Gerenciamento e performance de campanhas",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             investimento_total: 42500,
             impressoes_totais: 2400000,
@@ -169,7 +169,7 @@ export default function CampanhasPage() {
                                             <span className="material-symbols-outlined text-[#19069E]">campaign</span>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">Black Friday 2024</p>
+                                            <p className="font-bold text-gray-900">Black Friday 2025</p>
                                             <p className="text-xs text-gray-500">Google Ads • Meta Ads</p>
                                         </div>
                                     </div>
@@ -330,7 +330,7 @@ export default function CampanhasPage() {
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 font-medium text-gray-900">Banner Promo 50%</td>
-                                <td className="px-6 py-4 text-gray-500">Black Friday 2024</td>
+                                <td className="px-6 py-4 text-gray-500">Black Friday 2025</td>
                                 <td className="px-6 py-4 text-right">R$ 3.802</td>
                                 <td className="px-6 py-4 text-right font-bold">8.450</td>
                                 <td className="px-6 py-4 text-right text-green-600 font-bold">4.2%</td>

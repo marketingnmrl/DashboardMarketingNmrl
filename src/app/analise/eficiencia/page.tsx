@@ -105,7 +105,7 @@ export default function EficienciaPage() {
     usePageMetrics({
         pagina: "Métricas de Eficiência",
         descricao: "CTR, taxa de conversão e performance geral",
-        periodo: "Dezembro 2024",
+        periodo: "Dezembro 2025",
         kpis: {
             ctr_total: 3.55,
             taxa_conversao: 14.06,
@@ -280,7 +280,7 @@ export default function EficienciaPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2024</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">Black Friday 2025</td>
                                 <td className="px-6 py-4 text-right">580K</td>
                                 <td className="px-6 py-4 text-right">24.360</td>
                                 <td className="px-6 py-4 text-right">
