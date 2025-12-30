@@ -4,8 +4,6 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 // Map paths to page titles and filter visibility
-// showFilters: show the entire filter row (date + export)
-// showCampaignFilters: show campaign/channel filter buttons
 const pageTitles: Record<string, {
     title: string;
     description: string;
@@ -16,61 +14,61 @@ const pageTitles: Record<string, {
         title: "Visão Geral do Desempenho",
         description: "Métricas consolidadas e análise de resultados.",
         showFilters: true,
-        showCampaignFilters: true, // Aggregate view of all campaigns
+        showCampaignFilters: true,
     },
     "/analise/alcance": {
         title: "Alcance e Exposição",
         description: "Acompanhe a visibilidade da marca e o desempenho das campanhas.",
         showFilters: true,
-        showCampaignFilters: true, // Platform-specific reach metrics
+        showCampaignFilters: true,
     },
     "/analise/trafego": {
         title: "Análise de Tráfego",
         description: "Métricas detalhadas de cliques, campanhas e performance.",
         showFilters: true,
-        showCampaignFilters: true, // Traffic by source/platform
+        showCampaignFilters: true,
     },
     "/analise/conteudo": {
         title: "Desempenho de Conteúdo",
         description: "Análise detalhada de posts e engajamento em tempo real.",
         showFilters: true,
-        showCampaignFilters: false, // Content analysis, not campaign-based
+        showCampaignFilters: false,
     },
     "/analise/funil": {
         title: "Métricas de Funil",
         description: "Visualize a jornada do cliente e a eficiência de conversão.",
         showFilters: true,
-        showCampaignFilters: true, // Funnel can be filtered by campaign
+        showCampaignFilters: true,
     },
     "/analise/eficiencia": {
         title: "Métricas de Eficiência",
         description: "Acompanhe a performance detalhada dos seus anúncios.",
         showFilters: true,
-        showCampaignFilters: true, // Efficiency by platform
+        showCampaignFilters: true,
     },
     "/analise/investimentos": {
         title: "Investimentos em Marketing",
         description: "CPM, CPC, CPL, CAC, ROI e distribuição de verba.",
         showFilters: true,
-        showCampaignFilters: true, // Costs by platform
+        showCampaignFilters: true,
     },
     "/conversoes/leads": {
         title: "Conversões e Leads",
         description: "Visão geral de performance e KPIs em tempo real.",
         showFilters: true,
-        showCampaignFilters: true, // Leads by source
+        showCampaignFilters: true,
     },
     "/conversoes/financeiro": {
         title: "Gestão Financeira",
         description: "Caixa, vendas, metas e negócios em aberto.",
         showFilters: true,
-        showCampaignFilters: false, // Management view, not campaign-based
+        showCampaignFilters: false,
     },
     "/gestao/campanhas": {
         title: "Gestão de Campanhas",
         description: "Acompanhe métricas, Leads e o ROI em tempo real.",
         showFilters: true,
-        showCampaignFilters: true, // Campaign management
+        showCampaignFilters: true,
     },
     "/gestao/relatorios": {
         title: "Relatórios e Exportação",
@@ -125,33 +123,34 @@ export default function Header() {
     const shouldShowCampaignFilters = pageInfo.showCampaignFilters ?? false;
 
     return (
-        <header className="bg-[#19069E] border-b border-[#12047A] px-4 py-4 md:px-6 md:py-5 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                {/* Left side: Hamburger + Page Title */}
-                <div className="flex items-center gap-3">
+        <header className="bg-[#19069E] border-b border-[#12047A] px-3 py-2.5 md:px-6 md:py-4 lg:px-8 lg:py-5">
+            {/* Main Row: Hamburger + Title + Actions */}
+            <div className="flex items-center justify-between gap-2">
+                {/* Left: Hamburger + Title */}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                     {/* Hamburger Menu Button - Mobile/Tablet only */}
                     <button
                         onClick={openSidebar}
-                        className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-white/10 text-white transition-colors"
+                        className="lg:hidden p-1.5 -ml-1 rounded-lg hover:bg-white/10 text-white transition-colors shrink-0"
                         aria-label="Abrir menu"
                     >
-                        <span className="material-symbols-outlined text-[28px]">menu</span>
+                        <span className="material-symbols-outlined text-[24px]">menu</span>
                     </button>
 
                     {/* Page Title */}
-                    <div className="flex flex-col gap-0.5">
-                        <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-white">
+                    <div className="min-w-0">
+                        <h1 className="text-base md:text-xl lg:text-2xl font-extrabold tracking-tight text-white truncate">
                             {pageInfo.title}
                         </h1>
-                        <p className="text-blue-200 text-xs md:text-sm lg:text-base font-medium opacity-90 hidden sm:block">
+                        <p className="text-blue-200 text-xs md:text-sm font-medium opacity-90 hidden md:block truncate">
                             {pageInfo.description}
                         </p>
                     </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-3">
-                    {/* Search (Desktop) */}
+                {/* Right: Actions */}
+                <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+                    {/* Search (Desktop only) */}
                     <div className="hidden lg:block relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#19069E]">
                             <span className="material-symbols-outlined text-[20px]">search</span>
@@ -159,57 +158,54 @@ export default function Header() {
                         <input
                             type="text"
                             placeholder="Buscar métricas..."
-                            className="h-10 pl-10 pr-4 rounded-lg bg-white border-none focus:ring-2 focus:ring-[#C2DF0C] text-sm text-[#19069E] w-64 placeholder-[#19069E]/50 font-regular"
+                            className="h-9 pl-10 pr-4 rounded-lg bg-white border-none focus:ring-2 focus:ring-[#C2DF0C] text-sm text-[#19069E] w-56 placeholder-[#19069E]/50"
                         />
                     </div>
 
                     {/* Notifications */}
-                    <button className="relative p-2 rounded-full hover:bg-white/10 text-white transition-colors">
-                        <span className="material-symbols-outlined text-[22px]">notifications</span>
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-[#C2DF0C] rounded-full border-2 border-[#19069E]"></span>
+                    <button className="relative p-1.5 md:p-2 rounded-full hover:bg-white/10 text-white transition-colors">
+                        <span className="material-symbols-outlined text-[20px] md:text-[22px]">notifications</span>
+                        <span className="absolute top-1 right-1 md:top-2 md:right-2 w-2 h-2 bg-[#C2DF0C] rounded-full border border-[#19069E]"></span>
                     </button>
 
                     {/* User Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-white/10 overflow-hidden border border-white/20 cursor-pointer hover:ring-2 hover:ring-[#C2DF0C] transition-all">
-                        <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/10 overflow-hidden border border-white/20 cursor-pointer hover:ring-2 hover:ring-[#C2DF0C] transition-all">
+                        <div className="w-full h-full flex items-center justify-center text-white text-xs md:text-sm font-bold">
                             AD
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Filters Row */}
+            {/* Filters Row - More compact */}
             {shouldShowFilters && (
-                <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-4 md:mt-5 pt-4 md:pt-5 border-t border-white/10">
+                <div className="flex items-center gap-1.5 md:gap-2 mt-2.5 md:mt-4 pt-2.5 md:pt-4 border-t border-white/10 overflow-x-auto">
                     {/* Date Picker */}
-                    <button className="flex items-center justify-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-lg border border-white/20 bg-white/10 text-white text-xs md:text-sm font-medium hover:bg-white/20 transition-colors">
-                        <span className="material-symbols-outlined text-[16px] md:text-[18px]">calendar_today</span>
+                    <button className="flex items-center gap-1.5 h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-white/20 bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors shrink-0">
+                        <span className="material-symbols-outlined text-[14px] md:text-[16px]">calendar_today</span>
                         <span>Este Mês</span>
                     </button>
 
-                    {/* Channel Filters - only show on campaign-relevant pages */}
+                    {/* Channel Filters */}
                     {shouldShowCampaignFilters && (
-                        <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
-                            <button className="flex items-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-full bg-white text-[#19069E] text-xs font-bold whitespace-nowrap shadow-sm">
+                        <>
+                            <button className="flex items-center gap-1 h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white text-[#19069E] text-xs font-bold whitespace-nowrap shadow-sm shrink-0">
                                 Todas
-                                <span className="material-symbols-outlined text-[14px] md:text-[16px]">check</span>
+                                <span className="material-symbols-outlined text-[12px] md:text-[14px]">check</span>
                             </button>
-                            <button className="flex items-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all">
+                            <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
                                 Facebook
                             </button>
-                            <button className="flex items-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all">
+                            <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
                                 Google
                             </button>
-                            <button className="hidden sm:flex items-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all">
-                                Email
-                            </button>
-                        </div>
+                        </>
                     )}
 
                     {/* Export Button */}
-                    <button className="ml-auto flex items-center justify-center gap-2 h-8 md:h-9 px-3 md:px-4 rounded-lg bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] text-xs md:text-sm font-bold shadow-lg transition-all">
+                    <button className="ml-auto flex items-center justify-center h-7 md:h-8 w-7 md:w-auto md:px-3 rounded-lg bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] text-xs font-bold shadow-lg transition-all shrink-0">
                         <span className="material-symbols-outlined text-[16px] md:text-[18px]">download</span>
-                        <span className="hidden sm:inline">Exportar</span>
+                        <span className="hidden md:inline ml-1.5">Exportar</span>
                     </button>
                 </div>
             )}
