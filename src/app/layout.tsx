@@ -14,6 +14,10 @@ const rubik = Rubik({
 export const metadata: Metadata = {
   title: "Marketing Na Moral | Dashboard",
   description: "Painel de controle para gestão de campanhas de marketing digital",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
