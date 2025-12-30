@@ -52,7 +52,7 @@ export default function LoginPage() {
                     <div className="flex justify-center mb-4">
                         <Image
                             src="/logo-namoral-white.png"
-                            alt="Marketing na Moral"
+                            alt="Marketing Na Moral"
                             width={200}
                             height={60}
                             priority
@@ -150,7 +150,7 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <p className="text-center text-blue-200 text-xs mt-6">
-                    © 2025 Marketing na Moral. Todos os direitos reservados.
+                    © 2025 Marketing Na Moral. Todos os direitos reservados.
                 </p>
             </div>
         </div>

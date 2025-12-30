@@ -200,7 +200,7 @@ export default function AIAssistant() {
             {!isOpen && (
                 <button
                     onClick={handleOpen}
-                    className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-[#19069E] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all group"
+                    className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-[#19069E] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all group cursor-pointer"
                     title="Assistente IA"
                 >
                     <span className="material-symbols-outlined text-[28px] text-[#C2DF0C] group-hover:rotate-12 transition-transform">

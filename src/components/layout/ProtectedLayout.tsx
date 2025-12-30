@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar, Header } from "@/components/layout";
+import AIAssistant from "@/components/AIAssistant";
 
 const PUBLIC_ROUTES = ["/login"];
 
@@ -44,12 +45,12 @@ export default function ProtectedLayout({
         );
     }
 
-    // Public routes (login) - render without layout
+    // Public routes (login) - render without layout and without AI
     if (isPublicRoute) {
         return <>{children}</>;
     }
 
-    // Protected routes - render with full layout
+    // Protected routes - render with full layout and AI assistant
     if (!user) {
         return null; // Will redirect to login
     }
@@ -63,6 +64,7 @@ export default function ProtectedLayout({
                     {children}
                 </div>
             </main>
+            <AIAssistant />
         </div>
     );
 }

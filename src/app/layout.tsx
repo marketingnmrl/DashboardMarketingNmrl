@@ -4,7 +4,6 @@ import "./globals.css";
 import { MetricsProvider } from "@/contexts/MetricsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
-import AIAssistant from "@/components/AIAssistant";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -36,7 +35,6 @@ export default function RootLayout({
             <ProtectedLayout>
               {children}
             </ProtectedLayout>
-            <AIAssistant />
           </MetricsProvider>
         </AuthProvider>
       </body>
