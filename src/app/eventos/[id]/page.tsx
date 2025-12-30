@@ -131,35 +131,35 @@ export default function EventoDetalhePage({ params }: { params: Promise<{ id: st
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                 <Link
                     href="/eventos"
-                    className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors mt-1"
+                    className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors self-start"
                 >
                     <span className="material-symbols-outlined">arrow_back</span>
                 </Link>
-                <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-extrabold text-[#19069E]">{event.name}</h1>
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#19069E]">{event.name}</h1>
                         {attention && (
-                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[16px]">warning</span>
-                                Precisa de atenção
+                            <span className="px-2 sm:px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs sm:text-sm font-medium flex items-center gap-1 whitespace-nowrap">
+                                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">warning</span>
+                                Atenção
                             </span>
                         )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
                         {formatEventDate(event.startDate)} • {event.location}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-start sm:self-center">
                     {!isEditing ? (
                         <>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#19069E] text-white rounded-xl font-medium hover:bg-[#0D0450] transition-colors"
+                                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-[#19069E] text-white rounded-xl font-medium hover:bg-[#0D0450] transition-colors text-sm"
                             >
-                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">edit</span>
                                 Editar
                             </button>
                             <button
@@ -167,7 +167,7 @@ export default function EventoDetalhePage({ params }: { params: Promise<{ id: st
                                 disabled={isDeleting}
                                 className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
                             >
-                                <span className="material-symbols-outlined">delete</span>
+                                <span className="material-symbols-outlined text-[20px]">delete</span>
                             </button>
                         </>
                     ) : (
@@ -175,18 +175,18 @@ export default function EventoDetalhePage({ params }: { params: Promise<{ id: st
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#C2DF0C] text-[#19069E] rounded-xl font-bold hover:bg-[#B0CC0B] transition-colors disabled:opacity-50"
+                                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-[#C2DF0C] text-[#19069E] rounded-xl font-bold hover:bg-[#B0CC0B] transition-colors disabled:opacity-50 text-sm"
                             >
                                 {isSaving ? (
-                                    <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                    <span className="material-symbols-outlined animate-spin text-[16px] sm:text-[18px]">progress_activity</span>
                                 ) : (
-                                    <span className="material-symbols-outlined text-[18px]">save</span>
+                                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">save</span>
                                 )}
                                 Salvar
                             </button>
                             <button
                                 onClick={() => setIsEditing(false)}
-                                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                                className="px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors text-sm"
                             >
                                 Cancelar
                             </button>

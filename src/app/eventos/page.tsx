@@ -39,14 +39,14 @@ export default function EventosPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#19069E]">Visão Geral de Eventos</h1>
-                    <p className="text-sm text-gray-500">Gerencie os eventos presenciais da equipe</p>
+                    <h1 className="text-xl md:text-2xl font-extrabold text-[#19069E]">Visão Geral de Eventos</h1>
+                    <p className="text-xs md:text-sm text-gray-500">Gerencie os eventos presenciais da equipe</p>
                 </div>
                 <Link
                     href="/eventos/novo"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold rounded-xl shadow-lg transition-all"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold rounded-xl shadow-lg transition-all whitespace-nowrap"
                 >
                     <span className="material-symbols-outlined text-[20px]">add</span>
                     Novo Evento
@@ -100,17 +100,17 @@ export default function EventosPage() {
             </div>
 
             {/* View Switcher */}
-            <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
-                <Link href="/eventos" className="px-4 py-2 rounded-lg bg-[#19069E] text-white font-medium text-sm">
+            <div className="flex items-center gap-1 md:gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-full sm:w-fit overflow-x-auto">
+                <Link href="/eventos" className="flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg bg-[#19069E] text-white font-medium text-xs md:text-sm text-center whitespace-nowrap">
                     Visão Geral
                 </Link>
-                <Link href="/eventos/trimestral" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
+                <Link href="/eventos/trimestral" className="flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-xs md:text-sm transition-colors text-center whitespace-nowrap">
                     Trimestral
                 </Link>
-                <Link href="/eventos/mensal" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
+                <Link href="/eventos/mensal" className="flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-xs md:text-sm transition-colors text-center whitespace-nowrap">
                     Mensal
                 </Link>
-                <Link href="/eventos/anual" className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition-colors">
+                <Link href="/eventos/anual" className="flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-xs md:text-sm transition-colors text-center whitespace-nowrap">
                     Anual
                 </Link>
             </div>
@@ -141,42 +141,42 @@ export default function EventosPage() {
                                 <Link
                                     key={event.id}
                                     href={`/eventos/${event.id}`}
-                                    className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gray-50 transition-colors"
                                 >
                                     {/* Date Badge */}
-                                    <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center ${attention ? 'bg-amber-100' : 'bg-[#19069E]/10'}`}>
-                                        <span className={`text-xs font-medium ${attention ? 'text-amber-600' : 'text-[#19069E]'}`}>
+                                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${attention ? 'bg-amber-100' : 'bg-[#19069E]/10'}`}>
+                                        <span className={`text-[10px] md:text-xs font-medium ${attention ? 'text-amber-600' : 'text-[#19069E]'}`}>
                                             {new Date(event.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase()}
                                         </span>
-                                        <span className={`text-xl font-bold ${attention ? 'text-amber-700' : 'text-[#19069E]'}`}>
+                                        <span className={`text-lg md:text-xl font-bold ${attention ? 'text-amber-700' : 'text-[#19069E]'}`}>
                                             {new Date(event.startDate + 'T00:00:00').getDate()}
                                         </span>
                                     </div>
 
                                     {/* Event Info */}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-bold text-gray-900 truncate">{event.name}</p>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="font-bold text-gray-900 text-sm md:text-base truncate">{event.name}</p>
                                             {attention && (
-                                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium whitespace-nowrap">
                                                     Atenção
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                                        <div className="flex items-center gap-2 md:gap-4 mt-1 text-xs md:text-sm text-gray-500 flex-wrap">
                                             <span className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                                                {event.location}
+                                                <span className="material-symbols-outlined text-[14px] md:text-[16px]">location_on</span>
+                                                <span className="truncate max-w-[100px] md:max-w-none">{event.location}</span>
                                             </span>
-                                            <span className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                                            <span className="hidden sm:flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[14px] md:text-[16px]">calendar_today</span>
                                                 {formatEventDate(event.startDate)}
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Status Badges */}
-                                    <div className="flex items-center gap-2">
+                                    {/* Status Badges - Hidden on mobile */}
+                                    <div className="hidden md:flex items-center gap-2">
                                         <span className={`px-2 py-1 rounded-lg text-xs font-medium ${statusLabels[event.flightStatus].color}`}>
                                             ✈️ {statusLabels[event.flightStatus].label}
                                         </span>
@@ -185,7 +185,7 @@ export default function EventosPage() {
                                         </span>
                                     </div>
 
-                                    <span className="material-symbols-outlined text-gray-300">chevron_right</span>
+                                    <span className="material-symbols-outlined text-gray-300 text-[20px] md:text-[24px]">chevron_right</span>
                                 </Link>
                             );
                         })}
