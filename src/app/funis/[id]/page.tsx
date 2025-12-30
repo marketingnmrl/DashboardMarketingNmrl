@@ -547,6 +547,7 @@ export default function FunilDetailPage() {
                                                 ? `${(value / 1000000).toFixed(1)}M`
                                                 : value >= 1000
                                                     ? `${(value / 1000).toFixed(1)}K`
+                                                    : value.toLocaleString("pt-BR")
                                         ) : "—"}
                                     </p>
                                 </div>
