@@ -1,8 +1,135 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 
-// Large KPI Card for main metrics
+// Storage key for financial data
+const FINANCIAL_STORAGE_KEY = "financial_data";
+
+// Hook to manage financial data with localStorage
+function useFinancialData() {
+    const [data, setData] = useState({
+        caixa: 85000,
+        meta: 60000,
+    });
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const stored = localStorage.getItem(FINANCIAL_STORAGE_KEY);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                setData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error("Error parsing financial data:", e);
+            }
+        }
+        setIsLoaded(true);
+    }, []);
+
+    // Save to localStorage
+    const saveData = (newData: Partial<typeof data>) => {
+        const updated = { ...data, ...newData };
+        setData(updated);
+        localStorage.setItem(FINANCIAL_STORAGE_KEY, JSON.stringify(updated));
+    };
+
+    return { data, saveData, isLoaded };
+}
+
+// Editable Value Component
+function EditableValue({
+    label,
+    value,
+    onSave,
+    icon,
+    color = "primary",
+}: {
+    label: string;
+    value: number;
+    onSave: (newValue: number) => void;
+    icon: string;
+    color?: "primary" | "green" | "orange";
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(value.toString());
+
+    const handleSave = () => {
+        const numValue = parseFloat(editValue.replace(/[^\d.-]/g, "")) || 0;
+        onSave(numValue);
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") handleSave();
+        if (e.key === "Escape") {
+            setEditValue(value.toString());
+            setIsEditing(false);
+        }
+    };
+
+    useEffect(() => {
+        setEditValue(value.toString());
+    }, [value]);
+
+    const cardColors = {
+        primary: "bg-[#19069E]",
+        green: "bg-green-600",
+        orange: "bg-orange-500",
+    };
+
+    return (
+        <div className={`p-6 rounded-xl ${cardColors[color]} text-white shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group`}>
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <span className="material-symbols-outlined text-[100px] text-white">{icon}</span>
+            </div>
+            <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <span className="material-symbols-outlined text-white text-[24px]">{icon}</span>
+                </div>
+                <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+                    title="Editar valor"
+                >
+                    <span className="material-symbols-outlined text-white text-[18px]">
+                        {isEditing ? "close" : "edit"}
+                    </span>
+                </button>
+            </div>
+            <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1 relative z-10">
+                {label}
+            </p>
+
+            {isEditing ? (
+                <div className="flex items-center gap-2 relative z-10">
+                    <span className="text-2xl font-bold">R$</span>
+                    <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onBlur={handleSave}
+                        autoFocus
+                        className="w-full px-2 py-1 text-2xl font-extrabold bg-white/20 rounded-lg border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                        placeholder="0"
+                    />
+                </div>
+            ) : (
+                <p className="text-3xl font-extrabold text-white relative z-10">
+                    R$ {value.toLocaleString("pt-BR")}
+                </p>
+            )}
+
+            <p className="text-xs text-white/70 mt-2 font-medium relative z-10">
+                {isEditing ? "Pressione Enter para salvar" : "Clique no lápis para editar"}
+            </p>
+        </div>
+    );
+}
+
+// Large KPI Card for main metrics (non-editable)
 function MainKPICard({
     icon,
     label,
@@ -78,10 +205,12 @@ function GoalProgress({
     currentValue,
     goalValue,
     label,
+    onEditGoal,
 }: {
     currentValue: number;
     goalValue: number;
     label: string;
+    onEditGoal: () => void;
 }) {
     const percentage = Math.min((currentValue / goalValue) * 100, 100);
     const remaining = goalValue - currentValue;
@@ -94,8 +223,17 @@ function GoalProgress({
                     <h4 className="text-lg font-bold text-[#19069E]">{label}</h4>
                     <p className="text-sm text-gray-500">Meta mensal</p>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-bold ${isAchieved ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
-                    {isAchieved ? "✓ Atingida" : `Faltam R$ ${remaining.toLocaleString("pt-BR")}`}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={onEditGoal}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#19069E] transition-colors"
+                        title="Editar meta"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${isAchieved ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                        {isAchieved ? "✓ Atingida" : `Faltam R$ ${remaining.toLocaleString("pt-BR")}`}
+                    </div>
                 </div>
             </div>
 
@@ -123,6 +261,75 @@ function GoalProgress({
             <p className="text-sm text-gray-500 mt-2 text-center font-medium">
                 {percentage.toFixed(1)}% da meta
             </p>
+        </div>
+    );
+}
+
+// Edit Modal Component
+function EditModal({
+    isOpen,
+    title,
+    value,
+    onSave,
+    onClose,
+}: {
+    isOpen: boolean;
+    title: string;
+    value: number;
+    onSave: (value: number) => void;
+    onClose: () => void;
+}) {
+    const [inputValue, setInputValue] = useState(value.toString());
+
+    useEffect(() => {
+        setInputValue(value.toString());
+    }, [value, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        const numValue = parseFloat(inputValue.replace(/[^\d.-]/g, "")) || 0;
+        onSave(numValue);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-[#19069E]">{title}</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+                        <span className="material-symbols-outlined text-gray-500">close</span>
+                    </button>
+                </div>
+
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Valor (R$)</label>
+                    <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#19069E] focus:border-transparent text-lg font-bold"
+                        placeholder="0"
+                        autoFocus
+                    />
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="flex-1 py-3 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold rounded-lg transition-colors"
+                    >
+                        Salvar
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -168,14 +375,12 @@ function DealCard({
 }
 
 export default function FinanceiroPage() {
-    // Mock data - would come from Google Sheets or API
-    const financialData = {
-        caixa: 85000,
-        vendas: 42500,
-        aReceber: 28000,
-        meta: 60000,
-        vendido: 42500,
-    };
+    const { data: financialData, saveData, isLoaded } = useFinancialData();
+    const [editingMeta, setEditingMeta] = useState(false);
+
+    // Static data (could also be made editable)
+    const vendas = 42500;
+    const aReceber = 28000;
 
     const openDeals = [
         { name: "Empresa ABC Ltda", value: 15000, stage: "Proposta", probability: 60, daysOpen: 5 },
@@ -194,31 +399,40 @@ export default function FinanceiroPage() {
         periodo: "Dezembro 2024",
         kpis: {
             dinheiro_caixa: financialData.caixa,
-            vendas_mes: financialData.vendas,
-            a_receber: financialData.aReceber,
+            vendas_mes: vendas,
+            a_receber: aReceber,
             meta_mensal: financialData.meta,
             pipeline_total: totalPipeline,
             negocios_abertos: openDeals.length,
         }
     });
 
+    if (!isLoaded) {
+        return (
+            <div className="max-w-7xl mx-auto flex items-center justify-center h-64">
+                <div className="flex items-center gap-3 text-[#19069E]">
+                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                    <span className="font-medium">Carregando...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-7xl mx-auto space-y-8">
             {/* Main Financial KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <MainKPICard
+                <EditableValue
                     icon="account_balance"
                     label="Dinheiro em Caixa"
-                    value={`R$ ${financialData.caixa.toLocaleString("pt-BR")}`}
-                    change="8.5%"
-                    changeType="positive"
-                    subtitle="Saldo disponível"
+                    value={financialData.caixa}
+                    onSave={(value) => saveData({ caixa: value })}
                     color="primary"
                 />
                 <MainKPICard
                     icon="point_of_sale"
                     label="Vendas do Mês"
-                    value={`R$ ${financialData.vendas.toLocaleString("pt-BR")}`}
+                    value={`R$ ${vendas.toLocaleString("pt-BR")}`}
                     change="12.3%"
                     changeType="positive"
                     subtitle="15 vendas fechadas"
@@ -227,7 +441,7 @@ export default function FinanceiroPage() {
                 <MainKPICard
                     icon="schedule"
                     label="A Receber"
-                    value={`R$ ${financialData.aReceber.toLocaleString("pt-BR")}`}
+                    value={`R$ ${aReceber.toLocaleString("pt-BR")}`}
                     subtitle="8 faturas pendentes"
                     color="orange"
                 />
@@ -243,9 +457,10 @@ export default function FinanceiroPage() {
             {/* Goal Progress Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <GoalProgress
-                    currentValue={financialData.vendido}
+                    currentValue={vendas}
                     goalValue={financialData.meta}
                     label="Meta de Vendas"
+                    onEditGoal={() => setEditingMeta(true)}
                 />
 
                 {/* Quick Stats */}
@@ -342,6 +557,15 @@ export default function FinanceiroPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Edit Meta Modal */}
+            <EditModal
+                isOpen={editingMeta}
+                title="Editar Meta de Vendas"
+                value={financialData.meta}
+                onSave={(value) => saveData({ meta: value })}
+                onClose={() => setEditingMeta(false)}
+            />
         </div>
     );
 }
