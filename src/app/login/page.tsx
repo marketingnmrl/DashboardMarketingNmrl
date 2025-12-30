@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
+import WaveBackground from "@/components/WaveBackground";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -45,8 +46,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#19069E] to-[#0D0450] flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen bg-gradient-to-br from-[#19069E] to-[#0D0450] flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Animated Wave Background */}
+            <WaveBackground />
+
+            <div className="w-full max-w-md relative z-10">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
