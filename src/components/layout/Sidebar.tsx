@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Navigation structure matching the PRD architecture
 const navigation = [
@@ -46,12 +47,27 @@ const bottomNavigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   const isActive = (href: string) => {
     if (href === "/") {
       return pathname === "/";
     }
     return pathname.startsWith(href);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    const parts = user.email.split("@")[0].split(/[._-]/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return user.email.slice(0, 2).toUpperCase();
   };
 
   return (
@@ -147,12 +163,21 @@ export default function Sidebar() {
         {/* User Profile */}
         <div className="mt-4 flex items-center gap-3 px-3 py-3 bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="w-9 h-9 rounded-full bg-[#19069E] flex items-center justify-center text-white text-sm font-bold">
-            AD
+            {getUserInitials()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">Admin User</p>
-            <p className="text-xs text-gray-500 truncate">admin@namoral.com</p>
+            <p className="text-sm font-bold text-gray-900 truncate">
+              {user?.email?.split("@")[0] || "Usuário"}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{user?.email || ""}</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+            title="Sair"
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+          </button>
         </div>
       </div>
     </aside>
