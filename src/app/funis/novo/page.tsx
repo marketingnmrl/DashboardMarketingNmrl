@@ -42,20 +42,25 @@ export default function NovoFunilPage() {
         setStages(stages.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!funnelName.trim() || stages.length === 0) return;
 
         setIsSubmitting(true);
-        const newFunnel = addFunnel(funnelName.trim());
+        try {
+            const newFunnel = await addFunnel(funnelName.trim());
 
-        // Add all stages
-        stages.forEach((stage) => {
-            const stageObj = createNewStage(stage.name, "", stage.unit);
-            addStage(newFunnel.id, stageObj);
-        });
+            // Add all stages
+            for (const stage of stages) {
+                const stageObj = createNewStage(stage.name, "", stage.unit);
+                await addStage(newFunnel.id, stageObj);
+            }
 
-        router.push(`/funis/${newFunnel.id}`);
+            router.push(`/funis/${newFunnel.id}`);
+        } catch (error) {
+            console.error("Error creating funnel:", error);
+            setIsSubmitting(false);
+        }
     };
 
     return (

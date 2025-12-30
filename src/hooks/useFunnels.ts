@@ -2,28 +2,46 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Funnel, FunnelStage, FunnelStageThresholds, FunnelMetricData } from "@/types/funnel";
+import { getSupabase } from "@/lib/supabase";
 
-const STORAGE_KEY = "marketing-na-moral-funnels";
-
-// Generate unique ID
-function generateId(): string {
-    return `funnel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// Database types
+interface DBFunnel {
+    id: string;
+    name: string;
+    sheets_url: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
-function generateStageId(): string {
-    return `stage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+interface DBFunnelStage {
+    id: string;
+    funnel_id: string;
+    name: string;
+    emoji: string;
+    unit: "absolute" | "percentage";
+    thresholds: FunnelStageThresholds;
+    position: number;
+    created_at: string;
 }
 
-// Create a new empty funnel
-export function createNewFunnel(name: string): Funnel {
-    const now = new Date().toISOString();
+// Convert DB funnel to app funnel
+function dbToFunnel(dbFunnel: DBFunnel, stages: DBFunnelStage[]): Funnel {
     return {
-        id: generateId(),
-        name,
-        createdAt: now,
-        updatedAt: now,
-        stages: [],
-        sheetsUrl: undefined,
+        id: dbFunnel.id,
+        name: dbFunnel.name,
+        sheetsUrl: dbFunnel.sheets_url || undefined,
+        createdAt: dbFunnel.created_at,
+        updatedAt: dbFunnel.updated_at,
+        stages: stages
+            .filter(s => s.funnel_id === dbFunnel.id)
+            .sort((a, b) => a.position - b.position)
+            .map(s => ({
+                id: s.id,
+                name: s.name,
+                emoji: s.emoji || "",
+                unit: s.unit,
+                thresholds: s.thresholds,
+            })),
     };
 }
 
@@ -46,7 +64,7 @@ export function createNewStage(
         };
 
     return {
-        id: generateStageId(),
+        id: crypto.randomUUID(),
         name,
         emoji,
         unit,
@@ -57,36 +75,75 @@ export function createNewStage(
 export function useFunnels() {
     const [funnels, setFunnels] = useState<Funnel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load funnels from localStorage on mount
-    useEffect(() => {
+    // Load funnels from Supabase
+    const loadFunnels = useCallback(async () => {
+        if (typeof window === 'undefined') return;
+
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                setFunnels(JSON.parse(stored));
-            }
-        } catch (error) {
-            console.error("Error loading funnels:", error);
+            setIsLoading(true);
+            const supabase = getSupabase();
+
+            // Fetch funnels
+            const { data: dbFunnels, error: funnelsError } = await supabase
+                .from('funnels')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (funnelsError) throw funnelsError;
+
+            // Fetch all stages
+            const { data: dbStages, error: stagesError } = await supabase
+                .from('funnel_stages')
+                .select('*')
+                .order('position', { ascending: true });
+
+            if (stagesError) throw stagesError;
+
+            // Convert to app format
+            const loadedFunnels = (dbFunnels || []).map(f =>
+                dbToFunnel(f as DBFunnel, (dbStages || []) as DBFunnelStage[])
+            );
+
+            setFunnels(loadedFunnels);
+            setError(null);
+        } catch (err) {
+            console.error("Error loading funnels:", err);
+            setError(err instanceof Error ? err.message : "Erro ao carregar funis");
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    // Save funnels to localStorage whenever they change
+    // Load on mount
     useEffect(() => {
-        if (!isLoading) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(funnels));
-            } catch (error) {
-                console.error("Error saving funnels:", error);
-            }
-        }
-    }, [funnels, isLoading]);
+        loadFunnels();
+    }, [loadFunnels]);
 
     // Add a new funnel
-    const addFunnel = useCallback((name: string): Funnel => {
-        const newFunnel = createNewFunnel(name);
-        setFunnels((prev) => [...prev, newFunnel]);
+    const addFunnel = useCallback(async (name: string): Promise<Funnel> => {
+        const supabase = getSupabase();
+        const now = new Date().toISOString();
+
+        const { data, error } = await supabase
+            .from('funnels')
+            .insert({ name, created_at: now, updated_at: now })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        const newFunnel: Funnel = {
+            id: data.id,
+            name: data.name,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            stages: [],
+            sheetsUrl: undefined,
+        };
+
+        setFunnels(prev => [...prev, newFunnel]);
         return newFunnel;
     }, []);
 
@@ -99,56 +156,104 @@ export function useFunnels() {
     );
 
     // Update a funnel
-    const updateFunnel = useCallback((id: string, updates: Partial<Funnel>) => {
-        setFunnels((prev) =>
-            prev.map((f) =>
-                f.id === id
-                    ? { ...f, ...updates, updatedAt: new Date().toISOString() }
-                    : f
+    const updateFunnel = useCallback(async (id: string, updates: Partial<Funnel>) => {
+        const supabase = getSupabase();
+        const now = new Date().toISOString();
+
+        const dbUpdates: Partial<DBFunnel> = {
+            updated_at: now,
+        };
+        if (updates.name) dbUpdates.name = updates.name;
+        if (updates.sheetsUrl !== undefined) dbUpdates.sheets_url = updates.sheetsUrl || null;
+
+        const { error } = await supabase
+            .from('funnels')
+            .update(dbUpdates)
+            .eq('id', id);
+
+        if (error) throw error;
+
+        setFunnels(prev =>
+            prev.map(f =>
+                f.id === id ? { ...f, ...updates, updatedAt: now } : f
             )
         );
     }, []);
 
     // Add a stage to a funnel
     const addStage = useCallback(
-        (funnelId: string, stage: FunnelStage, afterStageId?: string) => {
-            setFunnels((prev) =>
-                prev.map((f) => {
-                    if (f.id !== funnelId) return f;
+        async (funnelId: string, stage: FunnelStage, afterStageId?: string) => {
+            const supabase = getSupabase();
 
-                    let newStages: FunnelStage[];
-                    if (afterStageId) {
-                        const index = f.stages.findIndex((s) => s.id === afterStageId);
-                        newStages = [
-                            ...f.stages.slice(0, index + 1),
-                            stage,
-                            ...f.stages.slice(index + 1),
-                        ];
-                    } else {
-                        newStages = [...f.stages, stage];
-                    }
+            // Get current funnel to determine position
+            const funnel = funnels.find(f => f.id === funnelId);
+            if (!funnel) return;
 
-                    return {
-                        ...f,
-                        stages: newStages,
-                        updatedAt: new Date().toISOString(),
-                    };
+            let position = funnel.stages.length;
+            if (afterStageId) {
+                const afterIndex = funnel.stages.findIndex(s => s.id === afterStageId);
+                position = afterIndex + 1;
+            }
+
+            const { data, error } = await supabase
+                .from('funnel_stages')
+                .insert({
+                    id: stage.id,
+                    funnel_id: funnelId,
+                    name: stage.name,
+                    emoji: stage.emoji || "",
+                    unit: stage.unit,
+                    thresholds: stage.thresholds,
+                    position,
                 })
-            );
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Update funnel timestamp
+            await supabase
+                .from('funnels')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', funnelId);
+
+            // Reload to get correct order
+            await loadFunnels();
         },
-        []
+        [funnels, loadFunnels]
     );
 
     // Update a stage
     const updateStage = useCallback(
-        (funnelId: string, stageId: string, updates: Partial<FunnelStage>) => {
-            setFunnels((prev) =>
-                prev.map((f) =>
+        async (funnelId: string, stageId: string, updates: Partial<FunnelStage>) => {
+            const supabase = getSupabase();
+
+            const dbUpdates: Record<string, unknown> = {};
+            if (updates.name) dbUpdates.name = updates.name;
+            if (updates.emoji !== undefined) dbUpdates.emoji = updates.emoji;
+            if (updates.unit) dbUpdates.unit = updates.unit;
+            if (updates.thresholds) dbUpdates.thresholds = updates.thresholds;
+
+            const { error } = await supabase
+                .from('funnel_stages')
+                .update(dbUpdates)
+                .eq('id', stageId);
+
+            if (error) throw error;
+
+            // Update funnel timestamp
+            await supabase
+                .from('funnels')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', funnelId);
+
+            setFunnels(prev =>
+                prev.map(f =>
                     f.id === funnelId
                         ? {
                             ...f,
                             updatedAt: new Date().toISOString(),
-                            stages: f.stages.map((s) =>
+                            stages: f.stages.map(s =>
                                 s.id === stageId ? { ...s, ...updates } : s
                             ),
                         }
@@ -160,14 +265,23 @@ export function useFunnels() {
     );
 
     // Remove a stage
-    const removeStage = useCallback((funnelId: string, stageId: string) => {
-        setFunnels((prev) =>
-            prev.map((f) =>
+    const removeStage = useCallback(async (funnelId: string, stageId: string) => {
+        const supabase = getSupabase();
+
+        const { error } = await supabase
+            .from('funnel_stages')
+            .delete()
+            .eq('id', stageId);
+
+        if (error) throw error;
+
+        setFunnels(prev =>
+            prev.map(f =>
                 f.id === funnelId
                     ? {
                         ...f,
                         updatedAt: new Date().toISOString(),
-                        stages: f.stages.filter((s) => s.id !== stageId),
+                        stages: f.stages.filter(s => s.id !== stageId),
                     }
                     : f
             )
@@ -176,43 +290,41 @@ export function useFunnels() {
 
     // Update thresholds
     const updateThresholds = useCallback(
-        (funnelId: string, stageId: string, thresholds: FunnelStageThresholds) => {
-            setFunnels((prev) =>
-                prev.map((f) =>
-                    f.id === funnelId
-                        ? {
-                            ...f,
-                            updatedAt: new Date().toISOString(),
-                            stages: f.stages.map((s) =>
-                                s.id === stageId ? { ...s, thresholds } : s
-                            ),
-                        }
-                        : f
-                )
-            );
+        async (funnelId: string, stageId: string, thresholds: FunnelStageThresholds) => {
+            await updateStage(funnelId, stageId, { thresholds });
         },
-        []
+        [updateStage]
     );
 
     // Set Google Sheets URL
-    const setSheetsUrl = useCallback((funnelId: string, url: string) => {
-        setFunnels((prev) =>
-            prev.map((f) =>
-                f.id === funnelId
-                    ? { ...f, sheetsUrl: url, updatedAt: new Date().toISOString() }
-                    : f
-            )
-        );
-    }, []);
+    const setSheetsUrl = useCallback(async (funnelId: string, url: string) => {
+        await updateFunnel(funnelId, { sheetsUrl: url });
+    }, [updateFunnel]);
 
     // Delete a funnel
-    const deleteFunnel = useCallback((id: string) => {
-        setFunnels((prev) => prev.filter((f) => f.id !== id));
+    const deleteFunnel = useCallback(async (id: string) => {
+        const supabase = getSupabase();
+
+        // Stages will be deleted automatically due to CASCADE
+        const { error } = await supabase
+            .from('funnels')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        setFunnels(prev => prev.filter(f => f.id !== id));
     }, []);
+
+    // Refresh data
+    const refresh = useCallback(() => {
+        loadFunnels();
+    }, [loadFunnels]);
 
     return {
         funnels,
         isLoading,
+        error,
         addFunnel,
         getFunnel,
         updateFunnel,
@@ -222,6 +334,7 @@ export function useFunnels() {
         updateThresholds,
         setSheetsUrl,
         deleteFunnel,
+        refresh,
     };
 }
 

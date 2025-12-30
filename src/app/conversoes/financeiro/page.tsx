@@ -2,41 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
+import { useFinancialData } from "@/hooks/useFinancialData";
 
-// Storage key for financial data
-const FINANCIAL_STORAGE_KEY = "financial_data";
-
-// Hook to manage financial data with localStorage
-function useFinancialData() {
-    const [data, setData] = useState({
-        caixa: 85000,
-        meta: 60000,
-    });
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    // Load from localStorage on mount
-    useEffect(() => {
-        const stored = localStorage.getItem(FINANCIAL_STORAGE_KEY);
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                setData(prev => ({ ...prev, ...parsed }));
-            } catch (e) {
-                console.error("Error parsing financial data:", e);
-            }
-        }
-        setIsLoaded(true);
-    }, []);
-
-    // Save to localStorage
-    const saveData = (newData: Partial<typeof data>) => {
-        const updated = { ...data, ...newData };
-        setData(updated);
-        localStorage.setItem(FINANCIAL_STORAGE_KEY, JSON.stringify(updated));
-    };
-
-    return { data, saveData, isLoaded };
-}
 
 // Editable Value Component
 function EditableValue({
@@ -375,7 +342,7 @@ function DealCard({
 }
 
 export default function FinanceiroPage() {
-    const { data: financialData, saveData, isLoaded } = useFinancialData();
+    const { data: financialData, saveData, isLoading } = useFinancialData();
     const [editingMeta, setEditingMeta] = useState(false);
 
     // Static data (could also be made editable)
@@ -407,7 +374,7 @@ export default function FinanceiroPage() {
         }
     });
 
-    if (!isLoaded) {
+    if (isLoading) {
         return (
             <div className="max-w-7xl mx-auto flex items-center justify-center h-64">
                 <div className="flex items-center gap-3 text-[#19069E]">
