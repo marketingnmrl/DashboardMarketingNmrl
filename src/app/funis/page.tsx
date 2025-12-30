@@ -107,19 +107,19 @@ export default function FunisPage() {
 
                             {/* Stage Preview */}
                             {funnel.stages.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-4">
-                                    {funnel.stages.slice(0, 6).map((stage) => (
+                                <div className="flex flex-wrap gap-1.5 mb-4">
+                                    {funnel.stages.slice(0, 3).map((stage) => (
                                         <span
                                             key={stage.id}
-                                            className="text-lg"
+                                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md font-medium"
                                             title={stage.name}
                                         >
-                                            {stage.emoji}
+                                            {stage.name}
                                         </span>
                                     ))}
-                                    {funnel.stages.length > 6 && (
-                                        <span className="text-sm text-gray-400">
-                                            +{funnel.stages.length - 6}
+                                    {funnel.stages.length > 3 && (
+                                        <span className="px-2 py-1 bg-gray-50 text-gray-400 text-xs rounded-md">
+                                            +{funnel.stages.length - 3}
                                         </span>
                                     )}
                                 </div>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFunnels, createNewStage } from "@/hooks/useFunnels";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
-import { STAGE_EMOJIS } from "@/types/funnel";
 
 export default function NovoFunilPage() {
     const router = useRouter();
@@ -16,7 +15,6 @@ export default function NovoFunilPage() {
         unit: "absolute" | "percentage";
     }>>([]);
     const [newStageName, setNewStageName] = useState("");
-    const [newStageEmoji, setNewStageEmoji] = useState("🪣");
     const [newStageUnit, setNewStageUnit] = useState<"absolute" | "percentage">("absolute");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,14 +29,13 @@ export default function NovoFunilPage() {
         if (!newStageName.trim()) return;
         setStages([...stages, {
             name: newStageName.trim(),
-            emoji: newStageEmoji,
+            emoji: "", // Removed emoji
             unit: newStageUnit,
         }]);
         setNewStageName("");
-        // Cycle to next emoji
-        const currentIdx = STAGE_EMOJIS.indexOf(newStageEmoji);
-        setNewStageEmoji(STAGE_EMOJIS[(currentIdx + 1) % STAGE_EMOJIS.length]);
-        setNewStageUnit("percentage"); // After first stage, default to percentage
+        if (stages.length === 0) {
+            setNewStageUnit("percentage"); // After first stage, default to percentage
+        }
     };
 
     const handleRemoveStage = (index: number) => {
@@ -54,7 +51,7 @@ export default function NovoFunilPage() {
 
         // Add all stages
         stages.forEach((stage) => {
-            const stageObj = createNewStage(stage.name, stage.emoji, stage.unit);
+            const stageObj = createNewStage(stage.name, "", stage.unit);
             addStage(newFunnel.id, stageObj);
         });
 
@@ -100,7 +97,6 @@ export default function NovoFunilPage() {
                                     key={index}
                                     className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 group"
                                 >
-                                    <span className="text-2xl">{stage.emoji}</span>
                                     <div className="flex-1">
                                         <p className="font-medium text-gray-900 text-sm">{stage.name}</p>
                                         <p className="text-xs text-gray-500">

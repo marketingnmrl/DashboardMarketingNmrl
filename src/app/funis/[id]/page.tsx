@@ -537,7 +537,7 @@ export default function FunilDetailPage() {
 
                                     {/* Stage Name */}
                                     <p className={`${subTextColor} text-xs font-bold uppercase tracking-wider mb-1`}>
-                                        {stage.emoji} {stage.name}
+                                        {stage.name}
                                     </p>
 
                                     {/* Value */}
@@ -621,7 +621,6 @@ export default function FunilDetailPage() {
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-2xl">{stage.emoji}</span>
                                     <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
                                 </div>
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
