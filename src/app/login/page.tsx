@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -48,13 +49,16 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#C2DF0C] rounded-2xl mb-4">
-                        <span className="material-symbols-outlined text-[#19069E] text-[32px]">
-                            analytics
-                        </span>
+                    <div className="flex justify-center mb-4">
+                        <Image
+                            src="/logo-namoral-white.png"
+                            alt="Marketing na Moral"
+                            width={200}
+                            height={60}
+                            priority
+                        />
                     </div>
-                    <h1 className="text-2xl font-extrabold text-white">Marketing na Moral</h1>
-                    <p className="text-blue-200 text-sm mt-1">Dashboard de Performance</p>
+                    <p className="text-blue-200 text-sm">Dashboard de Performance</p>
                 </div>
 
                 {/* Form Card */}
