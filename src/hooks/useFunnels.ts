@@ -182,20 +182,25 @@ export function useFunnels() {
 
     // Add a stage to a funnel
     const addStage = useCallback(
-        async (funnelId: string, stage: FunnelStage, afterStageId?: string) => {
+        async (funnelId: string, stage: FunnelStage, position?: number) => {
             const supabase = getSupabase();
 
-            // Get current funnel to determine position
-            const funnel = funnels.find(f => f.id === funnelId);
-            if (!funnel) return;
+            // If position not provided, query current max position from database
+            let stagePosition = position ?? 0;
+            if (position === undefined) {
+                const { data: existingStages } = await supabase
+                    .from('funnel_stages')
+                    .select('position')
+                    .eq('funnel_id', funnelId)
+                    .order('position', { ascending: false })
+                    .limit(1);
 
-            let position = funnel.stages.length;
-            if (afterStageId) {
-                const afterIndex = funnel.stages.findIndex(s => s.id === afterStageId);
-                position = afterIndex + 1;
+                if (existingStages && existingStages.length > 0) {
+                    stagePosition = (existingStages[0].position ?? 0) + 1;
+                }
             }
 
-            const { data, error } = await supabase
+            const { error } = await supabase
                 .from('funnel_stages')
                 .insert({
                     id: stage.id,
@@ -204,12 +209,13 @@ export function useFunnels() {
                     emoji: stage.emoji || "",
                     unit: stage.unit,
                     thresholds: stage.thresholds,
-                    position,
-                })
-                .select()
-                .single();
+                    position: stagePosition,
+                });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error adding stage:", error);
+                throw error;
+            }
 
             // Update funnel timestamp
             await supabase
@@ -220,7 +226,7 @@ export function useFunnels() {
             // Reload to get correct order
             await loadFunnels();
         },
-        [funnels, loadFunnels]
+        [loadFunnels]
     );
 
     // Update a stage

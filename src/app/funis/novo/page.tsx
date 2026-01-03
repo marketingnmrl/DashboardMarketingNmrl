@@ -50,10 +50,11 @@ export default function NovoFunilPage() {
         try {
             const newFunnel = await addFunnel(funnelName.trim());
 
-            // Add all stages
-            for (const stage of stages) {
+            // Add all stages with explicit position
+            for (let i = 0; i < stages.length; i++) {
+                const stage = stages[i];
                 const stageObj = createNewStage(stage.name, "", stage.unit);
-                await addStage(newFunnel.id, stageObj);
+                await addStage(newFunnel.id, stageObj, i);
             }
 
             router.push(`/funis/${newFunnel.id}`);
