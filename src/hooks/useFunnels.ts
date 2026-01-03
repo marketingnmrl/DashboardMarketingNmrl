@@ -349,31 +349,37 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
     const [data, setData] = useState<FunnelMetricData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (!sheetsUrl) {
             setData([]);
             return;
         }
 
-        const fetchData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetsUrl)}&funnel=${encodeURIComponent(funnelName)}`);
-                if (!res.ok) throw new Error("Falha ao buscar dados da planilha");
-                const result = await res.json();
-                setData(result.data || []);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Erro desconhecido");
-                setData([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
+        setIsLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetsUrl)}&funnel=${encodeURIComponent(funnelName)}&t=${Date.now()}`);
+            if (!res.ok) throw new Error("Falha ao buscar dados da planilha");
+            const result = await res.json();
+            setData(result.data || []);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Erro desconhecido");
+            setData([]);
+        } finally {
+            setIsLoading(false);
+        }
     }, [sheetsUrl, funnelName]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData, refreshKey]);
+
+    // Manual refresh function
+    const refresh = useCallback(() => {
+        setRefreshKey(prev => prev + 1);
+    }, []);
 
     // Get value for a specific stage and date range
     const getStageValue = useCallback(
@@ -400,5 +406,5 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         [data]
     );
 
-    return { data, isLoading, error, getStageValue };
+    return { data, isLoading, error, getStageValue, refresh };
 }

@@ -289,7 +289,7 @@ export default function FunilDetailPage() {
     });
 
     const funnel = getFunnel(params.id as string);
-    const { getStageValue, isLoading: isLoadingData, error: dataError } = useFunnelData(
+    const { getStageValue, isLoading: isLoadingData, error: dataError, refresh: refreshData } = useFunnelData(
         funnel?.sheetsUrl,
         funnel?.name || ""
     );
@@ -488,6 +488,20 @@ export default function FunilDetailPage() {
                                 </button>
                             </div>
                         </div>
+                    )}
+
+                    {/* Refresh Data Button */}
+                    {funnel.sheetsUrl && (
+                        <button
+                            onClick={refreshData}
+                            disabled={isLoadingData}
+                            className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors disabled:opacity-50"
+                            title="Atualizar dados"
+                        >
+                            <span className={`material-symbols-outlined text-[20px] ${isLoadingData ? 'animate-spin' : ''}`}>
+                                {isLoadingData ? 'progress_activity' : 'refresh'}
+                            </span>
+                        </button>
                     )}
 
                     {/* Sheets Config Button */}
