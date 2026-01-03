@@ -20,7 +20,6 @@ const navigation = [
       { name: "Alcance & Exposição", href: "/analise/alcance", icon: "campaign" },
       { name: "Tráfego", href: "/analise/trafego", icon: "bar_chart" },
       { name: "Conteúdo", href: "/analise/conteudo", icon: "article" },
-      { name: "Funil", href: "/analise/funil", icon: "filter_alt" },
       { name: "Eficiência", href: "/analise/eficiencia", icon: "speed" },
       { name: "Investimentos", href: "/analise/investimentos", icon: "payments" },
       { name: "Meus Funis", href: "/funis", icon: "conversion_path" },
