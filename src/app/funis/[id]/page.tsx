@@ -130,6 +130,72 @@ function ThresholdEditor({
     );
 }
 
+// Rename Modal
+function RenameModal({
+    currentName,
+    onSave,
+    onClose,
+}: {
+    currentName: string;
+    onSave: (newName: string) => void;
+    onClose: () => void;
+}) {
+    const [name, setName] = useState(currentName);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (name.trim()) {
+            onSave(name.trim());
+            onClose();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E]">Renomear Funil</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Nome do Funil
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#19069E] focus:border-transparent text-sm"
+                            autoFocus
+                            required
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 py-2.5 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg hover:bg-[#B0CC0B]"
+                        >
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // Sheets Config Modal
 function SheetsConfigModal({
     currentUrl,
@@ -211,9 +277,10 @@ function SheetsConfigModal({
 export default function FunilDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { getFunnel, updateThresholds, setSheetsUrl, deleteFunnel, isLoading } = useFunnels();
+    const { getFunnel, updateFunnel, updateThresholds, setSheetsUrl, deleteFunnel, isLoading } = useFunnels();
     const [editingStage, setEditingStage] = useState<string | null>(null);
     const [showSheetsConfig, setShowSheetsConfig] = useState(false);
+    const [showRenameModal, setShowRenameModal] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState("hoje");
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string }>({
@@ -322,7 +389,16 @@ export default function FunilDetailPage() {
                         <span className="material-symbols-outlined">arrow_back</span>
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-extrabold text-[#19069E]">{funnel.name}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-extrabold text-[#19069E]">{funnel.name}</h1>
+                            <button
+                                onClick={() => setShowRenameModal(true)}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#19069E] transition-colors"
+                                title="Renomear funil"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                        </div>
                         <p className="text-sm text-gray-500">
                             {funnel.stages.length} etapas
                             {funnel.sheetsUrl && " • Planilha conectada"}
@@ -480,81 +556,101 @@ export default function FunilDetailPage() {
                     <p className="text-sm text-gray-500">Jornada do cliente com taxas de conversão</p>
                 </div>
 
-                <div className="flex flex-col items-center space-y-2">
-                    {funnel.stages.map((stage, index) => {
-                        const value = getStageValue(stage.name);
-                        const firstStageValue = getStageValue(funnel.stages[0]?.name);
-                        const previousValue = index > 0 ? getStageValue(funnel.stages[index - 1]?.name) : null;
+                {funnel.stages.length === 0 ? (
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-3xl text-amber-600">warning</span>
+                        </div>
+                        <h4 className="text-lg font-bold text-gray-900 mb-2">Nenhuma etapa cadastrada</h4>
+                        <p className="text-sm text-gray-500 mb-4 max-w-md mx-auto">
+                            Este funil não possui etapas. As etapas podem não ter sido salvas corretamente durante a criação.
+                            Você pode excluir este funil e criar um novo com as etapas desejadas.
+                        </p>
+                        <button
+                            onClick={handleDelete}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            Excluir e criar novo
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center space-y-2">
+                        {funnel.stages.map((stage, index) => {
+                            const value = getStageValue(stage.name);
+                            const firstStageValue = getStageValue(funnel.stages[0]?.name);
+                            const previousValue = index > 0 ? getStageValue(funnel.stages[index - 1]?.name) : null;
 
-                        // Calculate percentage relative to first stage
-                        const percentOfTotal = firstStageValue && value !== null
-                            ? ((value / firstStageValue) * 100)
-                            : (index === 0 ? 100 : null);
+                            // Calculate percentage relative to first stage
+                            const percentOfTotal = firstStageValue && value !== null
+                                ? ((value / firstStageValue) * 100)
+                                : (index === 0 ? 100 : null);
 
-                        // Calculate conversion rate from previous stage
-                        const conversionRate = previousValue && value !== null
-                            ? ((value / previousValue) * 100)
-                            : null;
+                            // Calculate conversion rate from previous stage
+                            const conversionRate = previousValue && value !== null
+                                ? ((value / previousValue) * 100)
+                                : null;
 
-                        const status = getPerformanceStatus(value, stage.thresholds);
-                        const config = PERFORMANCE_CONFIG[status];
-                        const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
+                            const status = getPerformanceStatus(value, stage.thresholds);
+                            const config = PERFORMANCE_CONFIG[status];
+                            const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
 
-                        // Use brand colors - first stage is primary color, last is accent
-                        const isLastStage = index === funnel.stages.length - 1;
-                        const bgColor = isLastStage ? "bg-[#C2DF0C]" : "bg-[#19069E]";
-                        const textColor = isLastStage ? "text-[#19069E]" : "text-white";
-                        const subTextColor = isLastStage ? "text-[#19069E]/70" : "text-white/70";
+                            // Use brand colors - first stage is primary color, last is accent
+                            const isLastStage = index === funnel.stages.length - 1;
+                            const bgColor = isLastStage ? "bg-[#C2DF0C]" : "bg-[#19069E]";
+                            const textColor = isLastStage ? "text-[#19069E]" : "text-white";
+                            const subTextColor = isLastStage ? "text-[#19069E]/70" : "text-white/70";
 
-                        return (
-                            <div key={stage.id} className="relative w-full flex flex-col items-center">
-                                {/* Conversion Rate Badge */}
-                                {index > 0 && conversionRate !== null && (
-                                    <div className="py-2">
-                                        <span className="inline-flex items-center px-3 py-1 bg-[#C2DF0C] text-[#19069E] text-xs font-bold rounded-full shadow">
-                                            {conversionRate.toFixed(2)}% conversão
-                                        </span>
-                                    </div>
-                                )}
+                            return (
+                                <div key={stage.id} className="relative w-full flex flex-col items-center">
+                                    {/* Conversion Rate Badge */}
+                                    {index > 0 && conversionRate !== null && (
+                                        <div className="py-2">
+                                            <span className="inline-flex items-center px-3 py-1 bg-[#C2DF0C] text-[#19069E] text-xs font-bold rounded-full shadow">
+                                                {conversionRate.toFixed(2)}% conversão
+                                            </span>
+                                        </div>
+                                    )}
 
-                                {/* Stage Bar */}
-                                <div
-                                    className={`relative py-4 px-6 rounded-lg text-center transition-all hover:scale-[1.01] ${bgColor} group cursor-pointer`}
-                                    style={{ width: `${widthPercent}%`, maxWidth: "700px", minWidth: "200px" }}
-                                    onClick={() => setEditingStage(stage.id)}
-                                >
-                                    {/* Performance Indicator */}
-                                    <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${config.color}`} title={config.label}></div>
-
-                                    {/* Edit Button */}
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setEditingStage(stage.id); }}
-                                        className={`absolute top-2 right-2 p-1.5 rounded-lg ${isLastStage ? "bg-[#19069E]/10 text-[#19069E]" : "bg-white/20 text-white"} opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30`}
-                                        title="Editar critérios"
+                                    {/* Stage Bar */}
+                                    <div
+                                        className={`relative py-4 px-6 rounded-lg text-center transition-all hover:scale-[1.01] ${bgColor} group cursor-pointer`}
+                                        style={{ width: `${widthPercent}%`, maxWidth: "700px", minWidth: "200px" }}
+                                        onClick={() => setEditingStage(stage.id)}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">tune</span>
-                                    </button>
+                                        {/* Performance Indicator */}
+                                        <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${config.color}`} title={config.label}></div>
 
-                                    {/* Stage Name */}
-                                    <p className={`${subTextColor} text-xs font-bold uppercase tracking-wider mb-1`}>
-                                        {stage.name}
-                                    </p>
+                                        {/* Edit Button */}
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingStage(stage.id); }}
+                                            className={`absolute top-2 right-2 p-1.5 rounded-lg ${isLastStage ? "bg-[#19069E]/10 text-[#19069E]" : "bg-white/20 text-white"} opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30`}
+                                            title="Editar critérios"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px]">tune</span>
+                                        </button>
 
-                                    {/* Value */}
-                                    <p className={`${textColor} text-3xl font-extrabold`}>
-                                        {value !== null ? (
-                                            value >= 1000000
-                                                ? `${(value / 1000000).toFixed(1)}M`
-                                                : value >= 1000
-                                                    ? `${(value / 1000).toFixed(1)}K`
-                                                    : value.toLocaleString("pt-BR")
-                                        ) : "—"}
-                                    </p>
+                                        {/* Stage Name */}
+                                        <p className={`${subTextColor} text-xs font-bold uppercase tracking-wider mb-1`}>
+                                            {stage.name}
+                                        </p>
+
+                                        {/* Value */}
+                                        <p className={`${textColor} text-3xl font-extrabold`}>
+                                            {value !== null ? (
+                                                value >= 1000000
+                                                    ? `${(value / 1000000).toFixed(1)}M`
+                                                    : value >= 1000
+                                                        ? `${(value / 1000).toFixed(1)}K`
+                                                        : value.toLocaleString("pt-BR")
+                                            ) : "—"}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Summary Metrics */}
                 {funnel.stages.length >= 2 && (
@@ -699,6 +795,16 @@ export default function FunilDetailPage() {
                         currentUrl={funnel.sheetsUrl}
                         onSave={(url) => setSheetsUrl(funnel.id, url)}
                         onClose={() => setShowSheetsConfig(false)}
+                    />
+                )
+            }
+
+            {
+                showRenameModal && (
+                    <RenameModal
+                        currentName={funnel.name}
+                        onSave={(newName) => updateFunnel(funnel.id, { name: newName })}
+                        onClose={() => setShowRenameModal(false)}
                     />
                 )
             }
