@@ -156,8 +156,8 @@ function DatePresetSelector({
           key={preset}
           onClick={() => onChange(preset)}
           className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${value === preset
-              ? "bg-[#19069E] text-white shadow-md"
-              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            ? "bg-[#19069E] text-white shadow-md"
+            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
             }`}
         >
           {DATE_PRESET_LABELS[preset]}
@@ -293,6 +293,18 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* LP Views - antes de cliques (funil) */}
+        <div className="col-span-6 md:col-span-3 lg:col-span-2">
+          <BentoCard
+            icon="view_in_ar"
+            label="LP Views"
+            value={hasData ? formatNumber(metrics.totalLandingPageViews) : "—"}
+            isLoading={isLoading}
+            size="sm"
+            variant="primary"
+          />
+        </div>
+
         {/* Cliques */}
         <div className="col-span-6 md:col-span-3 lg:col-span-2">
           <BentoCard
@@ -313,7 +325,7 @@ export default function DashboardPage() {
             value={hasData ? formatPercent(metrics.avgCtr) : "—"}
             subtitle="Taxa de cliques sobre impressões"
             isLoading={isLoading}
-            size="lg"
+            size="md"
             variant="secondary"
           />
         </div>
@@ -355,17 +367,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* LP Views */}
-        <div className="col-span-6 md:col-span-3 lg:col-span-2">
-          <BentoCard
-            icon="view_in_ar"
-            label="LP Views"
-            value={hasData ? formatNumber(metrics.totalLandingPageViews) : "—"}
-            isLoading={isLoading}
-            size="sm"
-            variant="light"
-          />
-        </div>
 
         {/* Leads */}
         <div className="col-span-12 md:col-span-6 lg:col-span-4">
