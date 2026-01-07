@@ -1,8 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
+import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 
 export default function ConfiguracoesPage() {
+    const { settings, isLoading, isSaving, updateSheetUrl, testSheetUrl } = useDashboardSettings();
+    const [visaoGeralUrl, setVisaoGeralUrl] = useState("");
+    const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [isTesting, setIsTesting] = useState(false);
+    const [urlInitialized, setUrlInitialized] = useState(false);
+
+    // Initialize URL from settings when loaded
+    if (settings && !urlInitialized && !isLoading) {
+        setVisaoGeralUrl(settings.visaoGeralSheetUrl || "");
+        setUrlInitialized(true);
+    }
+
     usePageMetrics({
         pagina: "Configurações",
         descricao: "Configurações de integrações e conta",
@@ -10,8 +24,131 @@ export default function ConfiguracoesPage() {
         kpis: {}
     });
 
+    const handleTestConnection = async () => {
+        if (!visaoGeralUrl) {
+            setTestResult({ success: false, message: "Cole a URL da planilha primeiro" });
+            return;
+        }
+        setIsTesting(true);
+        setTestResult(null);
+        const result = await testSheetUrl(visaoGeralUrl);
+        setTestResult(result);
+        setIsTesting(false);
+    };
+
+    const handleSaveUrl = async () => {
+        await updateSheetUrl("visaoGeralSheetUrl", visaoGeralUrl || null);
+        setTestResult({ success: true, message: "URL salva com sucesso!" });
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-8">
+            {/* Planilhas de Dados Section */}
+            <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <div className="mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E] flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#C2DF0C]">table_chart</span>
+                        Planilhas de Dados
+                    </h3>
+                    <p className="text-sm text-gray-500">Configure as URLs das planilhas do Google Sheets (Stract) para cada seção do dashboard</p>
+                </div>
+
+                <div className="space-y-6">
+                    {/* Visão Geral Sheet */}
+                    <div className="p-4 rounded-lg border border-gray-200 hover:border-[#19069E]/30 transition-colors">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-[#19069E] rounded-lg">
+                                <span className="material-symbols-outlined text-[20px] text-[#C2DF0C]">dashboard</span>
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-900">Visão Geral</p>
+                                <p className="text-xs text-gray-500">Dados de campanhas para o dashboard principal</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    URL do Google Sheets
+                                </label>
+                                <input
+                                    type="url"
+                                    value={visaoGeralUrl}
+                                    onChange={(e) => {
+                                        setVisaoGeralUrl(e.target.value);
+                                        setTestResult(null);
+                                    }}
+                                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#19069E] focus:border-transparent text-sm"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">
+                                    A planilha deve estar pública ou compartilhada com &quot;qualquer pessoa com o link&quot;
+                                </p>
+                            </div>
+
+                            {testResult && (
+                                <div className={`p-3 rounded-lg text-sm ${testResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                                    <span className="material-symbols-outlined text-[16px] mr-1 align-middle">
+                                        {testResult.success ? "check_circle" : "error"}
+                                    </span>
+                                    {testResult.message}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleTestConnection}
+                                    disabled={isTesting || !visaoGeralUrl}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isTesting ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                            Testando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px]">lan</span>
+                                            Testar Conexão
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleSaveUrl}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold text-sm rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                            Salvando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px]">save</span>
+                                            Salvar
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Placeholder for future sheets */}
+                    <div className="p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 opacity-60">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gray-200 rounded-lg">
+                                <span className="material-symbols-outlined text-[20px] text-gray-400">add</span>
+                            </div>
+                            <div>
+                                <p className="font-medium text-gray-500">Mais planilhas em breve...</p>
+                                <p className="text-xs text-gray-400">Investimentos, Tráfego, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Integrations Section */}
             <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
                 <div className="mb-6">
