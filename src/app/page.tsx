@@ -65,30 +65,30 @@ export default function DashboardPage() {
   usePageMetrics({
     pagina: "Visão Geral do Desempenho",
     descricao: "Dashboard principal com métricas consolidadas de todas as campanhas",
-    periodo: "Dezembro 2025",
+    periodo: "Janeiro 2026",
     filtros: {
       campanha: "Todas",
       plataforma: "Todas",
     },
     kpis: {
-      investimento_total: 42500,
-      impressoes: 2400000,
-      cliques: 85340,
-      leads: 3200,
-      conversoes: 450,
-      cpc_medio: 0.50,
-      cpm_medio: 17.70,
-      ctr_medio: 3.55,
-      taxa_conversao: 14.06,
+      investimento_total: 176.14,
+      impressoes: 11619,
+      cliques: 289,
+      leads: 0,
+      conversoes: 0,
+      cpc_medio: 0.61,
+      cpm_medio: 15.16,
+      ctr_medio: 2.49,
+      taxa_conversao: 0,
     },
     dados_adicionais: {
-      campanhas_ativas: 4,
-      melhor_campanha: "Black Friday 2025",
+      campanhas_ativas: 1,
+      melhor_campanha: "Campanha Ativa",
       origem_trafego: {
-        google_search: 45,
-        redes_sociais: 25,
-        pago_ads: 20,
-        direto_email: 10,
+        google_search: 0,
+        redes_sociais: 0,
+        pago_ads: 100,
+        direto_email: 0,
       },
     },
   });
@@ -101,74 +101,74 @@ export default function DashboardPage() {
         <KPICard
           icon="payments"
           label="Investimento Total"
-          value="R$ 42.500"
-          change="12.5%"
-          changeType="positive"
-          subtitle="vs. R$ 37.800 (Mês anterior)"
+          value="R$ 176,14"
+          change="—"
+          changeType="neutral"
+          subtitle="Período atual"
         />
         <KPICard
           icon="visibility"
           label="Total de Impressões"
-          value="2.4M"
-          change="8.2%"
-          changeType="positive"
-          subtitle="vs. 2.2M (Mês anterior)"
+          value="11.619"
+          change="—"
+          changeType="neutral"
+          subtitle="Período atual"
         />
         <KPICard
           icon="ads_click"
           label="Total de Cliques"
-          value="85.340"
-          change="5.4%"
-          changeType="positive"
-          subtitle="vs. 80.950 (Mês anterior)"
+          value="289"
+          change="—"
+          changeType="neutral"
+          subtitle="Período atual"
         />
         <KPICard
           icon="group_add"
           label="Total de Leads"
-          value="3.200"
-          change="15.3%"
-          changeType="positive"
-          subtitle="vs. 2.775 (Mês anterior)"
+          value="0"
+          change="—"
+          changeType="neutral"
+          subtitle="Período atual"
         />
         <KPICard
           icon="shopping_cart_checkout"
           label="Total de Conversões"
-          value="450"
-          change="22.1%"
-          changeType="positive"
-          subtitle="vs. 368 (Mês anterior)"
+          value="0"
+          change="—"
+          changeType="neutral"
+          subtitle="Período atual"
         />
         <KPICard
           icon="price_change"
           label="CPC Médio"
-          value="R$ 0,50"
-          change="-2.1%"
-          changeType="positive"
-          subtitle="Otimização positiva"
+          value="R$ 0,61"
+          change="—"
+          changeType="neutral"
+          subtitle="Custo por clique"
         />
         <KPICard
           icon="campaign"
           label="CPM Médio"
-          value="R$ 17,70"
-          change="0.5%"
+          value="R$ 15,16"
+          change="—"
           changeType="neutral"
-          subtitle="Estável vs. mês anterior"
+          subtitle="Custo por mil impressões"
         />
         <KPICard
           icon="percent"
           label="CTR Médio"
-          value="3.55%"
-          change="0.5%"
-          changeType="positive"
-          subtitle="Acima da média do setor"
+          value="2,49%"
+          change="—"
+          changeType="neutral"
+          subtitle="Taxa de cliques"
         />
         <KPICard
           icon="fact_check"
           label="Taxa de Conversão Total"
-          value="14.06%"
-          change="1.2%"
-          changeType="positive"
-          subtitle="Alta performance"
+          value="0,00%"
+          change="—"
+          changeType="neutral"
+          subtitle="Conversões / Leads"
         />
       </div>
 
