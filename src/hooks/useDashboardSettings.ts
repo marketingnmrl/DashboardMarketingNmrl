@@ -172,30 +172,24 @@ export function useDashboardSettings() {
         }
     }, []);
 
-    // Toggle menu item visibility
-    const toggleMenuItemVisibility = useCallback(async (href: string) => {
+    // Save hidden menu items array (called by Settings page with explicit save button)
+    const saveHiddenMenuItems = useCallback(async (hiddenItems: string[]) => {
         setIsSaving(true);
         try {
             const supabase = getSupabase();
             const now = new Date().toISOString();
 
-            const currentHidden = settings?.hiddenMenuItems || [];
-            const isCurrentlyHidden = currentHidden.includes(href);
-            const newHidden = isCurrentlyHidden
-                ? currentHidden.filter(h => h !== href)
-                : [...currentHidden, href];
-
             if (settings?.id) {
                 const { error: updateError } = await supabase
                     .from("dashboard_settings")
-                    .update({ hidden_menu_items: newHidden, updated_at: now })
+                    .update({ hidden_menu_items: hiddenItems, updated_at: now })
                     .eq("id", settings.id);
 
                 if (updateError) throw updateError;
             } else {
                 const { data, error: insertError } = await supabase
                     .from("dashboard_settings")
-                    .insert({ hidden_menu_items: newHidden, updated_at: now })
+                    .insert({ hidden_menu_items: hiddenItems, updated_at: now })
                     .select()
                     .single();
 
@@ -203,27 +197,30 @@ export function useDashboardSettings() {
 
                 if (data) {
                     setSettings(dbToSettings(data as DBDashboardSettings));
+                    setIsSaving(false);
                     return;
                 }
             }
 
-            setSettings(prev => prev ? { ...prev, hiddenMenuItems: newHidden, updatedAt: now } : null);
-            localStorage.setItem("dashboard_settings", JSON.stringify({ ...settings, hiddenMenuItems: newHidden }));
+            setSettings(prev => prev ? { ...prev, hiddenMenuItems: hiddenItems, updatedAt: now } : null);
         } catch (err) {
-            console.error("Error toggling menu visibility:", err);
-            // Fallback to localStorage
-            const currentHidden = settings?.hiddenMenuItems || [];
-            const isCurrentlyHidden = currentHidden.includes(href);
-            const newHidden = isCurrentlyHidden
-                ? currentHidden.filter(h => h !== href)
-                : [...currentHidden, href];
-
-            setSettings(prev => prev ? { ...prev, hiddenMenuItems: newHidden } : null);
-            localStorage.setItem("dashboard_settings", JSON.stringify({ ...settings, hiddenMenuItems: newHidden }));
+            console.error("Error saving hidden menu items:", err);
+            throw err; // Re-throw so the caller can handle it
         } finally {
             setIsSaving(false);
         }
     }, [settings]);
+
+    // Toggle menu item visibility (legacy, used by Sidebar auto-toggle)
+    const toggleMenuItemVisibility = useCallback(async (href: string) => {
+        const currentHidden = settings?.hiddenMenuItems || [];
+        const isCurrentlyHidden = currentHidden.includes(href);
+        const newHidden = isCurrentlyHidden
+            ? currentHidden.filter(h => h !== href)
+            : [...currentHidden, href];
+
+        await saveHiddenMenuItems(newHidden);
+    }, [settings, saveHiddenMenuItems]);
 
     return {
         settings,
@@ -232,7 +229,9 @@ export function useDashboardSettings() {
         isSaving,
         updateSheetUrl,
         testSheetUrl,
+        saveHiddenMenuItems,
         toggleMenuItemVisibility,
         refresh: loadSettings,
     };
 }
+

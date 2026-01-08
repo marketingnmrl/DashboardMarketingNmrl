@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 
@@ -23,12 +23,28 @@ const allMenuItems = [
     { section: "Gestão", name: "Relatórios", href: "/gestao/relatorios" },
 ];
 
+// LocalStorage key for hidden items
+const HIDDEN_ITEMS_KEY = "dashboard_hidden_menu_items";
+
 export default function ConfiguracoesPage() {
-    const { settings, isLoading, isSaving, updateSheetUrl, testSheetUrl, toggleMenuItemVisibility } = useDashboardSettings();
+    const { settings, isLoading, isSaving, updateSheetUrl, testSheetUrl, saveHiddenMenuItems } = useDashboardSettings();
     const [visaoGeralUrl, setVisaoGeralUrl] = useState("");
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isTesting, setIsTesting] = useState(false);
     const [urlInitialized, setUrlInitialized] = useState(false);
+    const [hiddenItemsInitialized, setHiddenItemsInitialized] = useState(false);
+
+    // Local state for hidden menu items
+    const [localHiddenItems, setLocalHiddenItems] = useState<string[]>([]);
+    const [menuSaveResult, setMenuSaveResult] = useState<{ success: boolean; message: string } | null>(null);
+
+    // Load hidden items from Supabase settings when available
+    useEffect(() => {
+        if (settings && !hiddenItemsInitialized && !isLoading) {
+            setLocalHiddenItems(settings.hiddenMenuItems || []);
+            setHiddenItemsInitialized(true);
+        }
+    }, [settings, hiddenItemsInitialized, isLoading]);
 
     // Initialize URL from settings when loaded
     if (settings && !urlInitialized && !isLoading) {
@@ -60,7 +76,25 @@ export default function ConfiguracoesPage() {
         setTestResult({ success: true, message: "URL salva com sucesso!" });
     };
 
-    const hiddenItems = settings?.hiddenMenuItems || [];
+    // Toggle local hidden item (doesn't save until button clicked)
+    const toggleLocalHiddenItem = (href: string) => {
+        setLocalHiddenItems(prev =>
+            prev.includes(href)
+                ? prev.filter(h => h !== href)
+                : [...prev, href]
+        );
+        setMenuSaveResult(null); // Clear result when changes are made
+    };
+
+    // Save hidden items to Supabase
+    const handleSaveMenuVisibility = async () => {
+        try {
+            await saveHiddenMenuItems(localHiddenItems);
+            setMenuSaveResult({ success: true, message: "Configurações do menu salvas com sucesso!" });
+        } catch {
+            setMenuSaveResult({ success: false, message: "Erro ao salvar. Tente novamente." });
+        }
+    };
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
@@ -175,7 +209,7 @@ export default function ConfiguracoesPage() {
                                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">{section}</p>
                                 <div className="space-y-2">
                                     {sectionItems.map((item) => {
-                                        const isHidden = hiddenItems.includes(item.href);
+                                        const isHidden = localHiddenItems.includes(item.href);
                                         return (
                                             <div
                                                 key={item.href}
@@ -185,8 +219,7 @@ export default function ConfiguracoesPage() {
                                                     {item.name}
                                                 </span>
                                                 <button
-                                                    onClick={() => toggleMenuItemVisibility(item.href)}
-                                                    disabled={isSaving}
+                                                    onClick={() => toggleLocalHiddenItem(item.href)}
                                                     className={`p-2 rounded-lg transition-all ${isHidden
                                                         ? "text-gray-400 hover:text-[#19069E] hover:bg-white"
                                                         : "text-[#19069E] hover:bg-[#19069E] hover:text-white"
@@ -204,6 +237,36 @@ export default function ConfiguracoesPage() {
                             </div>
                         );
                     })}
+                </div>
+
+                {/* Save Menu Visibility Button */}
+                {menuSaveResult && (
+                    <div className={`mt-4 p-3 rounded-lg text-sm ${menuSaveResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        <span className="material-symbols-outlined text-[16px] mr-1 align-middle">
+                            {menuSaveResult.success ? "check_circle" : "error"}
+                        </span>
+                        {menuSaveResult.message}
+                    </div>
+                )}
+
+                <div className="mt-4 flex justify-end">
+                    <button
+                        onClick={handleSaveMenuVisibility}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold text-sm rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        {isSaving ? (
+                            <>
+                                <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                Salvando...
+                            </>
+                        ) : (
+                            <>
+                                <span className="material-symbols-outlined text-[18px]">save</span>
+                                Salvar Configurações do Menu
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
 

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS dashboard_settings (
     visao_geral_sheet_url TEXT,
     investimentos_sheet_url TEXT,
     trafego_sheet_url TEXT,
+    hidden_menu_items TEXT[] DEFAULT '{}',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -18,3 +19,6 @@ CREATE POLICY "Allow all access to dashboard_settings" ON dashboard_settings
 
 -- Insert a default row (optional, the app will create one if needed)
 -- INSERT INTO dashboard_settings (id) VALUES (gen_random_uuid()) ON CONFLICT DO NOTHING;
+
+-- If you already have the table, run this to add the new column:
+-- ALTER TABLE dashboard_settings ADD COLUMN IF NOT EXISTS hidden_menu_items TEXT[] DEFAULT '{}';
