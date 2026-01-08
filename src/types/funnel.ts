@@ -20,6 +20,7 @@ export interface Funnel {
     createdAt: string;
     updatedAt: string;
     stages: FunnelStage[];
+    evaluationStages?: FunnelStage[]; // Etapas de avaliação (não fazem parte do funil principal)
     sheetsUrl?: string; // Google Sheets URL
 }
 

@@ -21,27 +21,42 @@ interface DBFunnelStage {
     unit: "absolute" | "percentage";
     thresholds: FunnelStageThresholds;
     position: number;
+    is_evaluation?: boolean; // true = etapa de avaliação
     created_at: string;
 }
 
 // Convert DB funnel to app funnel
 function dbToFunnel(dbFunnel: DBFunnel, stages: DBFunnelStage[]): Funnel {
+    const funnelStages = stages.filter(s => s.funnel_id === dbFunnel.id);
+    const regularStages = funnelStages
+        .filter(s => !s.is_evaluation)
+        .sort((a, b) => a.position - b.position)
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            emoji: s.emoji || "",
+            unit: s.unit,
+            thresholds: s.thresholds,
+        }));
+    const evaluationStages = funnelStages
+        .filter(s => s.is_evaluation)
+        .sort((a, b) => a.position - b.position)
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            emoji: s.emoji || "",
+            unit: s.unit,
+            thresholds: s.thresholds,
+        }));
+
     return {
         id: dbFunnel.id,
         name: dbFunnel.name,
         sheetsUrl: dbFunnel.sheets_url || undefined,
         createdAt: dbFunnel.created_at,
         updatedAt: dbFunnel.updated_at,
-        stages: stages
-            .filter(s => s.funnel_id === dbFunnel.id)
-            .sort((a, b) => a.position - b.position)
-            .map(s => ({
-                id: s.id,
-                name: s.name,
-                emoji: s.emoji || "",
-                unit: s.unit,
-                thresholds: s.thresholds,
-            })),
+        stages: regularStages,
+        evaluationStages: evaluationStages.length > 0 ? evaluationStages : undefined,
     };
 }
 
@@ -182,7 +197,7 @@ export function useFunnels() {
 
     // Add a stage to a funnel
     const addStage = useCallback(
-        async (funnelId: string, stage: FunnelStage, position?: number) => {
+        async (funnelId: string, stage: FunnelStage, position?: number, isEvaluation: boolean = false) => {
             const supabase = getSupabase();
 
             // If position not provided, query current max position from database
@@ -192,6 +207,7 @@ export function useFunnels() {
                     .from('funnel_stages')
                     .select('position')
                     .eq('funnel_id', funnelId)
+                    .eq('is_evaluation', isEvaluation)
                     .order('position', { ascending: false })
                     .limit(1);
 
@@ -210,6 +226,7 @@ export function useFunnels() {
                     unit: stage.unit,
                     thresholds: stage.thresholds,
                     position: stagePosition,
+                    is_evaluation: isEvaluation,
                 });
 
             if (error) {

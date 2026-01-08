@@ -375,7 +375,8 @@ export default function FunilDetailPage() {
         }
     };
 
-    const editingStageData = funnel.stages.find(s => s.id === editingStage);
+    const editingStageData = funnel.stages.find(s => s.id === editingStage)
+        || funnel.evaluationStages?.find(s => s.id === editingStage);
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
@@ -767,6 +768,69 @@ export default function FunilDetailPage() {
                     );
                 })}
             </div>
+
+            {/* Evaluation Stages Section */}
+            {funnel.evaluationStages && funnel.evaluationStages.length > 0 && (
+                <div className="p-6 rounded-xl bg-amber-50 border border-amber-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="material-symbols-outlined text-amber-600">assessment</span>
+                        <h3 className="text-lg font-bold text-amber-700">Etapas de Avaliação</h3>
+                    </div>
+                    <p className="text-sm text-amber-600 mb-4">
+                        Métricas acessórias que não fazem parte do fluxo principal do funil
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {funnel.evaluationStages.map((stage) => {
+                            const value = getStageValue(stage.name);
+                            const status = getPerformanceStatus(value, stage.thresholds);
+                            const config = PERFORMANCE_CONFIG[status];
+
+                            return (
+                                <div
+                                    key={stage.id}
+                                    className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-amber-500 text-[18px]">assessment</span>
+                                            <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
+                                        </div>
+                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
+                                            <span className={`material-symbols-outlined text-[18px] ${config.textColor}`}>
+                                                {config.icon}
+                                            </span>
+                                            <span className={`text-xs font-bold ${config.textColor}`}>
+                                                {config.label}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-3xl font-extrabold text-amber-700 mb-3">
+                                        {value !== null ? value : "—"}
+                                        <span className="text-lg font-medium text-gray-500 ml-1">
+                                            {stage.unit === "absolute" ? "/dia" : "%"}
+                                        </span>
+                                    </p>
+
+                                    <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
+                                        <span className="text-gray-500">
+                                            Meta: {stage.thresholds.otimo.min}+
+                                            {stage.unit === "percentage" ? "%" : ""}
+                                        </span>
+                                        <button
+                                            onClick={() => setEditingStage(stage.id)}
+                                            className="text-amber-600 hover:underline font-medium"
+                                        >
+                                            Editar critérios
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Legend */}
             <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">

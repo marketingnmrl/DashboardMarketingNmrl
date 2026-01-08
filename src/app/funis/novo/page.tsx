@@ -5,17 +5,27 @@ import { useRouter } from "next/navigation";
 import { useFunnels, createNewStage } from "@/hooks/useFunnels";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 
+type StageInput = {
+    name: string;
+    emoji: string;
+    unit: "absolute" | "percentage";
+};
+
 export default function NovoFunilPage() {
     const router = useRouter();
     const { addFunnel, addStage } = useFunnels();
     const [funnelName, setFunnelName] = useState("");
-    const [stages, setStages] = useState<Array<{
-        name: string;
-        emoji: string;
-        unit: "absolute" | "percentage";
-    }>>([]);
+
+    // Regular stages
+    const [stages, setStages] = useState<StageInput[]>([]);
     const [newStageName, setNewStageName] = useState("");
     const [newStageUnit, setNewStageUnit] = useState<"absolute" | "percentage">("absolute");
+
+    // Evaluation stages
+    const [evaluationStages, setEvaluationStages] = useState<StageInput[]>([]);
+    const [newEvalStageName, setNewEvalStageName] = useState("");
+    const [newEvalStageUnit, setNewEvalStageUnit] = useState<"absolute" | "percentage">("absolute");
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     usePageMetrics({
@@ -29,17 +39,31 @@ export default function NovoFunilPage() {
         if (!newStageName.trim()) return;
         setStages([...stages, {
             name: newStageName.trim(),
-            emoji: "", // Removed emoji
+            emoji: "",
             unit: newStageUnit,
         }]);
         setNewStageName("");
         if (stages.length === 0) {
-            setNewStageUnit("percentage"); // After first stage, default to percentage
+            setNewStageUnit("percentage");
         }
     };
 
     const handleRemoveStage = (index: number) => {
         setStages(stages.filter((_, i) => i !== index));
+    };
+
+    const handleAddEvalStage = () => {
+        if (!newEvalStageName.trim()) return;
+        setEvaluationStages([...evaluationStages, {
+            name: newEvalStageName.trim(),
+            emoji: "",
+            unit: newEvalStageUnit,
+        }]);
+        setNewEvalStageName("");
+    };
+
+    const handleRemoveEvalStage = (index: number) => {
+        setEvaluationStages(evaluationStages.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -50,11 +74,18 @@ export default function NovoFunilPage() {
         try {
             const newFunnel = await addFunnel(funnelName.trim());
 
-            // Add all stages with explicit position
+            // Add all regular stages with explicit position
             for (let i = 0; i < stages.length; i++) {
                 const stage = stages[i];
                 const stageObj = createNewStage(stage.name, "", stage.unit);
-                await addStage(newFunnel.id, stageObj, i);
+                await addStage(newFunnel.id, stageObj, i, false);
+            }
+
+            // Add all evaluation stages
+            for (let i = 0; i < evaluationStages.length; i++) {
+                const stage = evaluationStages[i];
+                const stageObj = createNewStage(stage.name, "", stage.unit);
+                await addStage(newFunnel.id, stageObj, i, true);
             }
 
             router.push(`/funis/${newFunnel.id}`);
@@ -91,9 +122,10 @@ export default function NovoFunilPage() {
                     />
                 </div>
 
-                {/* Stages */}
+                {/* Main Stages */}
                 <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
-                    <h3 className="font-bold text-[#19069E] mb-4">Etapas do Funil</h3>
+                    <h3 className="font-bold text-[#19069E] mb-1">Etapas do Funil</h3>
+                    <p className="text-xs text-gray-500 mb-4">Etapas que compõem o fluxo principal de conversão</p>
 
                     {/* Current Stages */}
                     {stages.length > 0 && (
@@ -101,8 +133,11 @@ export default function NovoFunilPage() {
                             {stages.map((stage, index) => (
                                 <div
                                     key={index}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 group"
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-[#19069E]/5 border border-[#19069E]/10 group"
                                 >
+                                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-[#19069E] text-white text-xs font-bold">
+                                        {index + 1}
+                                    </div>
                                     <div className="flex-1">
                                         <p className="font-medium text-gray-900 text-sm">{stage.name}</p>
                                         <p className="text-xs text-gray-500">
@@ -126,7 +161,6 @@ export default function NovoFunilPage() {
                         <p className="text-xs font-medium text-gray-500 mb-3">ADICIONAR ETAPA</p>
                         <div className="flex flex-col gap-3">
                             <div className="flex gap-2">
-                                {/* Stage Name */}
                                 <input
                                     type="text"
                                     value={newStageName}
@@ -137,7 +171,6 @@ export default function NovoFunilPage() {
                             </div>
 
                             <div className="flex gap-2">
-                                {/* Unit Type */}
                                 <div className="flex-1 flex gap-2">
                                     <button
                                         type="button"
@@ -161,7 +194,6 @@ export default function NovoFunilPage() {
                                     </button>
                                 </div>
 
-                                {/* Add Button */}
                                 <button
                                     type="button"
                                     onClick={handleAddStage}
@@ -179,6 +211,97 @@ export default function NovoFunilPage() {
                             Adicione pelo menos uma etapa para criar o funil
                         </p>
                     )}
+                </div>
+
+                {/* Evaluation Stages Section */}
+                <div className="p-6 rounded-xl bg-white border border-amber-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="material-symbols-outlined text-amber-500 text-[20px]">assessment</span>
+                        <h3 className="font-bold text-amber-700">Etapas de Avaliação</h3>
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Opcional</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4">
+                        Métricas acessórias que não fazem parte do fluxo principal (ex: Leads Não Qualificados, Leads em Negociação)
+                    </p>
+
+                    {/* Current Evaluation Stages */}
+                    {evaluationStages.length > 0 && (
+                        <div className="space-y-2 mb-6">
+                            {evaluationStages.map((stage, index) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 group"
+                                >
+                                    <div className="w-6 h-6 flex items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">
+                                        <span className="material-symbols-outlined text-[14px]">assessment</span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-medium text-gray-900 text-sm">{stage.name}</p>
+                                        <p className="text-xs text-gray-500">
+                                            {stage.unit === "absolute" ? "Valor absoluto" : "Percentual"}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveEvalStage(index)}
+                                        className="p-1.5 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">close</span>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Add New Evaluation Stage */}
+                    <div className="p-4 rounded-lg border-2 border-dashed border-amber-200 bg-amber-50/50">
+                        <p className="text-xs font-medium text-amber-600 mb-3">ADICIONAR ETAPA DE AVALIAÇÃO</p>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newEvalStageName}
+                                    onChange={(e) => setNewEvalStageName(e.target.value)}
+                                    placeholder="Ex: Leads Não Qualificados"
+                                    className="flex-1 px-3 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white"
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <div className="flex-1 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewEvalStageUnit("absolute")}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${newEvalStageUnit === "absolute"
+                                            ? "bg-amber-500 text-white"
+                                            : "bg-white border border-amber-200 text-gray-600 hover:bg-amber-50"
+                                            }`}
+                                    >
+                                        Valor/dia
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewEvalStageUnit("percentage")}
+                                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${newEvalStageUnit === "percentage"
+                                            ? "bg-amber-500 text-white"
+                                            : "bg-white border border-amber-200 text-gray-600 hover:bg-amber-50"
+                                            }`}
+                                    >
+                                        Percentual %
+                                    </button>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddEvalStage}
+                                    disabled={!newEvalStageName.trim()}
+                                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">add</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Info */}
