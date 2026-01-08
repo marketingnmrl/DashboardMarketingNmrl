@@ -98,14 +98,17 @@ export function useStractData(
                 totalSpend: 0,
                 totalImpressions: 0,
                 totalClicks: 0,
+                totalLinkClicks: 0,
                 totalLandingPageViews: 0,
                 totalLeads: 0,
+                totalReach: 0,
+                totalResults: 0,
                 avgCpc: 0,
                 avgCpm: 0,
                 avgCtr: 0,
-                avgResultRate: 0,
+                avgCpl: 0,
+                avgRoas: 0,
                 uniqueCampaigns: 0,
-                uniqueAdsets: 0,
                 uniqueAds: 0,
             };
         }
@@ -113,31 +116,42 @@ export function useStractData(
         const totalSpend = filteredData.reduce((sum, r) => sum + r.spend, 0);
         const totalImpressions = filteredData.reduce((sum, r) => sum + r.impressions, 0);
         const totalClicks = filteredData.reduce((sum, r) => sum + r.clicks, 0);
+        const totalLinkClicks = filteredData.reduce((sum, r) => sum + r.linkClicks, 0);
         const totalLandingPageViews = filteredData.reduce((sum, r) => sum + r.landingPageViews, 0);
         const totalLeads = filteredData.reduce((sum, r) => sum + r.leads, 0);
+        const totalReach = filteredData.reduce((sum, r) => sum + r.reach, 0);
+        const totalResults = filteredData.reduce((sum, r) => sum + r.results, 0);
 
-        // Calculate averages based on totals (not row averages)
-        const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+        // Calculate averages based on totals (use LinkClicks for CPC/CTR as it's more relevant)
+        const avgCpc = totalLinkClicks > 0 ? totalSpend / totalLinkClicks : 0;
         const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-        const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-        const avgResultRate = filteredData.reduce((sum, r) => sum + r.resultRate, 0) / filteredData.length;
+        const avgCtr = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
+        const avgCpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
+
+        // ROAS average from rows that have ROAS
+        const roasRows = filteredData.filter(r => r.roas > 0);
+        const avgRoas = roasRows.length > 0
+            ? roasRows.reduce((sum, r) => sum + r.roas, 0) / roasRows.length
+            : 0;
 
         const uniqueCampaigns = new Set(filteredData.map(r => r.campaignName)).size;
-        const uniqueAdsets = new Set(filteredData.map(r => r.adsetName)).size;
         const uniqueAds = new Set(filteredData.map(r => r.adName)).size;
 
         return {
             totalSpend,
             totalImpressions,
             totalClicks,
+            totalLinkClicks,
             totalLandingPageViews,
             totalLeads,
+            totalReach,
+            totalResults,
             avgCpc,
             avgCpm,
             avgCtr,
-            avgResultRate,
+            avgCpl,
+            avgRoas,
             uniqueCampaigns,
-            uniqueAdsets,
             uniqueAds,
         };
     }, [filteredData]);
@@ -152,14 +166,18 @@ export function useStractData(
                 existing.spend += row.spend;
                 existing.impressions += row.impressions;
                 existing.clicks += row.clicks;
+                existing.linkClicks += row.linkClicks;
                 existing.leads += row.leads;
+                existing.reach += row.reach;
             } else {
                 byDate.set(row.date, {
                     date: row.date,
                     spend: row.spend,
                     impressions: row.impressions,
                     clicks: row.clicks,
+                    linkClicks: row.linkClicks,
                     leads: row.leads,
+                    reach: row.reach,
                 });
             }
         });
@@ -177,26 +195,34 @@ export function useStractData(
                 existing.spend += row.spend;
                 existing.impressions += row.impressions;
                 existing.clicks += row.clicks;
+                existing.linkClicks += row.linkClicks;
                 existing.leads += row.leads;
+                existing.reach += row.reach;
+                existing.results += row.results;
             } else {
                 byCampaign.set(row.campaignName, {
                     campaignName: row.campaignName,
                     spend: row.spend,
                     impressions: row.impressions,
                     clicks: row.clicks,
+                    linkClicks: row.linkClicks,
                     leads: row.leads,
+                    reach: row.reach,
+                    results: row.results,
                     ctr: 0,
                     cpc: 0,
+                    cpl: 0,
                 });
             }
         });
 
-        // Calculate CTR and CPC for each campaign
+        // Calculate CTR, CPC, CPL for each campaign
         return Array.from(byCampaign.values())
             .map(c => ({
                 ...c,
-                ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
-                cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
+                ctr: c.impressions > 0 ? (c.linkClicks / c.impressions) * 100 : 0,
+                cpc: c.linkClicks > 0 ? c.spend / c.linkClicks : 0,
+                cpl: c.leads > 0 ? c.spend / c.leads : 0,
             }))
             .sort((a, b) => b.spend - a.spend);
     }, [filteredData]);
@@ -214,7 +240,7 @@ export function useStractData(
     };
 }
 
-// Date preset helpers
+// Date preset helpers (kept for backwards compatibility)
 export type DatePreset = "today" | "yesterday" | "last7days" | "last30days" | "thisMonth" | "lastMonth" | "custom";
 
 export function getDateRangeFromPreset(preset: DatePreset): { startDate: string; endDate: string } {

@@ -1,34 +1,37 @@
 // Types for Stract Campaign Data Integration
+// Updated to match user's actual spreadsheet columns
 
 export interface StractCampaignRow {
     date: string; // Format: YYYY-MM-DD
-    spend: number;
     campaignName: string;
-    adsetName: string;
     adName: string;
+    spend: number;
     impressions: number;
-    clicks: number;
-    landingPageViews: number;
-    leads: number;
-    cpc: number;
-    cpm: number;
-    ctr: number;
-    resultRate: number;
+    clicks: number; // Engagement clicks
+    linkClicks: number; // Action Link Clicks - clicks to website
+    leads: number; // Action Leads
+    reach: number; // Reach (Estimated)
+    landingPageViews: number; // Action Landing Page View
+    results: number; // Results/Conversions
+    roas: number; // Purchase ROAS
 }
 
 // Aggregated metrics for KPIs
 export interface StractAggregatedMetrics {
     totalSpend: number;
     totalImpressions: number;
-    totalClicks: number;
+    totalClicks: number; // Engagement clicks
+    totalLinkClicks: number; // Website clicks
     totalLandingPageViews: number;
     totalLeads: number;
-    avgCpc: number;
-    avgCpm: number;
-    avgCtr: number;
-    avgResultRate: number;
+    totalReach: number;
+    totalResults: number;
+    avgCpc: number; // Calculated: Spend / LinkClicks
+    avgCpm: number; // Calculated: (Spend / Impressions) * 1000
+    avgCtr: number; // Calculated: (LinkClicks / Impressions) * 100
+    avgCpl: number; // Calculated: Spend / Leads
+    avgRoas: number;
     uniqueCampaigns: number;
-    uniqueAdsets: number;
     uniqueAds: number;
 }
 
@@ -38,7 +41,9 @@ export interface StractDailyData {
     spend: number;
     impressions: number;
     clicks: number;
+    linkClicks: number;
     leads: number;
+    reach: number;
 }
 
 // Data grouped by campaign
@@ -47,9 +52,13 @@ export interface StractCampaignSummary {
     spend: number;
     impressions: number;
     clicks: number;
+    linkClicks: number;
     leads: number;
-    ctr: number;
-    cpc: number;
+    reach: number;
+    results: number;
+    ctr: number; // Calculated
+    cpc: number; // Calculated
+    cpl: number; // Calculated
 }
 
 // Dashboard settings stored in Supabase
@@ -72,19 +81,37 @@ export function parseBrazilianNumber(value: string): number {
     return isNaN(num) ? 0 : num;
 }
 
-// CSV column mapping for Stract format
-export const STRACT_COLUMNS = {
-    DATE: 0,
-    SPEND: 1,
-    CAMPAIGN_NAME: 2,
-    ADSET_NAME: 3,
-    AD_NAME: 4,
-    IMPRESSIONS: 5,
-    CLICKS: 6,
-    LANDING_PAGE_VIEWS: 7,
-    LEADS: 8,
-    CPC: 9,
-    CPM: 10,
-    CTR: 11,
-    RESULT_RATE: 12,
-} as const;
+// Column name mapping - maps various possible header names to our fields
+// This allows flexibility in column naming
+export const COLUMN_MAPPINGS: Record<string, string[]> = {
+    date: ["date", "data"],
+    campaignName: ["campaign name", "campaign", "nome da campanha", "campanha"],
+    adName: ["ad name", "ad", "nome do anúncio", "anúncio", "anuncio"],
+    spend: ["spend", "cost", "amount spent", "gasto", "custo", "investimento"],
+    impressions: ["impressions", "impressões", "impressoes"],
+    clicks: ["clicks", "cliques"],
+    linkClicks: ["action link clicks", "link clicks", "cliques no link", "outbound clicks"],
+    leads: ["action leads", "leads", "lead"],
+    reach: ["reach", "reach (estimated)", "alcance"],
+    landingPageViews: ["action landing page view", "landing page views", "lp views", "visualizações da lp"],
+    results: ["results", "resultados", "conversions", "conversões"],
+    roas: ["purchase roas", "roas", "retorno"],
+};
+
+// Find column index by matching header name
+export function findColumnIndex(headers: string[], fieldName: string): number {
+    const possibleNames = COLUMN_MAPPINGS[fieldName] || [fieldName];
+    const headerLower = headers.map(h => h.toLowerCase().trim());
+
+    for (const name of possibleNames) {
+        // Try exact match first
+        const exactIndex = headerLower.indexOf(name.toLowerCase());
+        if (exactIndex !== -1) return exactIndex;
+
+        // Try partial match (header contains the name)
+        const partialIndex = headerLower.findIndex(h => h.includes(name.toLowerCase()));
+        if (partialIndex !== -1) return partialIndex;
+    }
+
+    return -1; // Not found
+}

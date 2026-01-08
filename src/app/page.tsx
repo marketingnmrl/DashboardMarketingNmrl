@@ -253,21 +253,21 @@ export default function DashboardPage() {
           variant="primary"
         />
 
-        {/* LP Views */}
+        {/* Alcance */}
         <BentoCard
-          icon="view_in_ar"
-          label="LP Views"
-          value={hasData ? formatNumber(metrics.totalLandingPageViews) : "—"}
+          icon="group"
+          label="Alcance"
+          value={hasData ? formatNumber(metrics.totalReach) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="primary"
         />
 
-        {/* Cliques */}
+        {/* Link Clicks */}
         <BentoCard
           icon="ads_click"
-          label="Cliques"
-          value={hasData ? formatNumber(metrics.totalClicks) : "—"}
+          label="Cliques no Link"
+          value={hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="primary"
@@ -313,17 +313,17 @@ export default function DashboardPage() {
           variant="light"
         />
         <BentoCard
-          icon="work"
-          label="Campanhas"
-          value={hasData ? formatNumber(metrics.uniqueCampaigns) : "—"}
+          icon="person_add"
+          label="CPL Médio"
+          value={hasData ? formatCurrency(metrics.avgCpl) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="light"
         />
         <BentoCard
-          icon="calendar_today"
-          label="Período"
-          value={`${dailyData.length} dias`}
+          icon="work"
+          label="Campanhas"
+          value={hasData ? formatNumber(metrics.uniqueCampaigns) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="light"

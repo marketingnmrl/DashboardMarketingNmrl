@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StractCampaignRow, parseBrazilianNumber, STRACT_COLUMNS } from "@/types/stract";
+import { StractCampaignRow, parseBrazilianNumber, findColumnIndex } from "@/types/stract";
 
 // API route to fetch and parse Stract data from Google Sheets
 // The sheet must be "Published to the web" or shared publicly
@@ -53,29 +53,59 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ data: [], message: "Planilha vazia ou sem dados" });
         }
 
-        // Skip header row and parse data
+        // Get headers from first row and find column indices dynamically
+        const headers = rows[0];
+        const columnIndices = {
+            date: findColumnIndex(headers, "date"),
+            campaignName: findColumnIndex(headers, "campaignName"),
+            adName: findColumnIndex(headers, "adName"),
+            spend: findColumnIndex(headers, "spend"),
+            impressions: findColumnIndex(headers, "impressions"),
+            clicks: findColumnIndex(headers, "clicks"),
+            linkClicks: findColumnIndex(headers, "linkClicks"),
+            leads: findColumnIndex(headers, "leads"),
+            reach: findColumnIndex(headers, "reach"),
+            landingPageViews: findColumnIndex(headers, "landingPageViews"),
+            results: findColumnIndex(headers, "results"),
+            roas: findColumnIndex(headers, "roas"),
+        };
+
+        // Validate required columns
+        if (columnIndices.date === -1) {
+            return NextResponse.json(
+                { error: "Coluna 'Date' não encontrada na planilha" },
+                { status: 400 }
+            );
+        }
+
+        // Parse data rows
         const data: StractCampaignRow[] = rows.slice(1)
-            .filter(row => row.length >= 10 && row[STRACT_COLUMNS.DATE])
+            .filter(row => row.length > 1 && getCell(row, columnIndices.date))
             .map(row => ({
-                date: row[STRACT_COLUMNS.DATE] || "",
-                spend: parseBrazilianNumber(row[STRACT_COLUMNS.SPEND] || "0"),
-                campaignName: row[STRACT_COLUMNS.CAMPAIGN_NAME] || "",
-                adsetName: row[STRACT_COLUMNS.ADSET_NAME] || "",
-                adName: row[STRACT_COLUMNS.AD_NAME] || "",
-                impressions: parseInt(row[STRACT_COLUMNS.IMPRESSIONS] || "0") || 0,
-                clicks: parseInt(row[STRACT_COLUMNS.CLICKS] || "0") || 0,
-                landingPageViews: parseInt(row[STRACT_COLUMNS.LANDING_PAGE_VIEWS] || "0") || 0,
-                leads: parseBrazilianNumber(row[STRACT_COLUMNS.LEADS] || "0"),
-                cpc: parseBrazilianNumber(row[STRACT_COLUMNS.CPC] || "0"),
-                cpm: parseBrazilianNumber(row[STRACT_COLUMNS.CPM] || "0"),
-                ctr: parseBrazilianNumber(row[STRACT_COLUMNS.CTR] || "0"),
-                resultRate: parseBrazilianNumber(row[STRACT_COLUMNS.RESULT_RATE] || "0"),
+                date: getCell(row, columnIndices.date),
+                campaignName: getCell(row, columnIndices.campaignName),
+                adName: getCell(row, columnIndices.adName),
+                spend: parseBrazilianNumber(getCell(row, columnIndices.spend)),
+                impressions: parseIntSafe(getCell(row, columnIndices.impressions)),
+                clicks: parseIntSafe(getCell(row, columnIndices.clicks)),
+                linkClicks: parseIntSafe(getCell(row, columnIndices.linkClicks)),
+                leads: parseIntSafe(getCell(row, columnIndices.leads)),
+                reach: parseIntSafe(getCell(row, columnIndices.reach)),
+                landingPageViews: parseIntSafe(getCell(row, columnIndices.landingPageViews)),
+                results: parseIntSafe(getCell(row, columnIndices.results)),
+                roas: parseBrazilianNumber(getCell(row, columnIndices.roas)),
             }))
             .filter(row => row.date && row.date.match(/^\d{4}-\d{2}-\d{2}$/));
+
+        // Sort by date descending (most recent first)
+        data.sort((a, b) => b.date.localeCompare(a.date));
 
         return NextResponse.json({
             data,
             count: data.length,
+            columnsFound: Object.entries(columnIndices)
+                .filter(([, idx]) => idx !== -1)
+                .map(([name]) => name),
             dateRange: data.length > 0 ? {
                 start: data[data.length - 1].date,
                 end: data[0].date,
@@ -88,6 +118,21 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
+}
+
+// Helper to safely get cell value
+function getCell(row: string[], index: number): string {
+    if (index === -1 || index >= row.length) return "";
+    return row[index] || "";
+}
+
+// Helper to parse integer safely
+function parseIntSafe(value: string): number {
+    if (!value || value === "-") return 0;
+    // Handle Brazilian format with dots as thousands separator
+    const cleaned = value.replace(/\./g, "").replace(",", ".");
+    const num = parseInt(cleaned);
+    return isNaN(num) ? 0 : num;
 }
 
 // Parse CSV handling quoted fields properly
