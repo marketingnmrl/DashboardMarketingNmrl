@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useDateFilter, DatePreset } from "@/contexts/DateFilterContext";
+import { useState, useRef, useEffect } from "react";
 
 // Map paths to page titles and filter visibility
 const pageTitles: Record<string, {
@@ -96,9 +98,53 @@ const pageTitles: Record<string, {
     },
 };
 
+const presetLabels: Record<DatePreset, string> = {
+    today: "Hoje",
+    yesterday: "Ontem",
+    last7days: "Últimos 7 dias",
+    thisMonth: "Este mês",
+    lastMonth: "Mês passado",
+    custom: "Personalizado",
+};
+
 export default function Header() {
     const pathname = usePathname();
     const { openSidebar } = useSidebar();
+    const { preset, dateRange, setPreset, setCustomRange, availableDates } = useDateFilter();
+
+    const [showDateDropdown, setShowDateDropdown] = useState(false);
+    const [showCustomPicker, setShowCustomPicker] = useState(false);
+    const [customStart, setCustomStart] = useState(dateRange.startDate);
+    const [customEnd, setCustomEnd] = useState(dateRange.endDate);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDateDropdown(false);
+                setShowCustomPicker(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handlePresetClick = (newPreset: DatePreset) => {
+        if (newPreset === "custom") {
+            setShowCustomPicker(true);
+        } else {
+            setPreset(newPreset);
+            setShowDateDropdown(false);
+            setShowCustomPicker(false);
+        }
+    };
+
+    const applyCustomRange = () => {
+        setCustomRange(customStart, customEnd);
+        setShowDateDropdown(false);
+        setShowCustomPicker(false);
+    };
 
     // Handle dynamic routes
     let pageInfo = pageTitles[pathname];
@@ -177,36 +223,105 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* Filters Row - More compact */}
+            {/* Filters Row - Channel filters left, Date picker right */}
             {shouldShowFilters && (
-                <div className="flex items-center gap-1.5 md:gap-2 mt-2.5 md:mt-4 pt-2.5 md:pt-4 border-t border-white/10 overflow-x-auto">
-                    {/* Date Picker */}
-                    <button className="flex items-center gap-1.5 h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-white/20 bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors shrink-0">
-                        <span className="material-symbols-outlined text-[14px] md:text-[16px]">calendar_today</span>
-                        <span>Este Mês</span>
-                    </button>
+                <div className="flex items-center justify-between gap-2 mt-2.5 md:mt-4 pt-2.5 md:pt-4 border-t border-white/10">
+                    {/* Left: Channel Filters */}
+                    <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto">
+                        {shouldShowCampaignFilters && (
+                            <>
+                                <button className="flex items-center gap-1 h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white text-[#19069E] text-xs font-bold whitespace-nowrap shadow-sm shrink-0">
+                                    Todas
+                                    <span className="material-symbols-outlined text-[12px] md:text-[14px]">check</span>
+                                </button>
+                                <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
+                                    Facebook
+                                </button>
+                                <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
+                                    Google
+                                </button>
+                            </>
+                        )}
 
-                    {/* Channel Filters */}
-                    {shouldShowCampaignFilters && (
-                        <>
-                            <button className="flex items-center gap-1 h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white text-[#19069E] text-xs font-bold whitespace-nowrap shadow-sm shrink-0">
-                                Todas
-                                <span className="material-symbols-outlined text-[12px] md:text-[14px]">check</span>
-                            </button>
-                            <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
-                                Facebook
-                            </button>
-                            <button className="h-7 md:h-8 px-2.5 md:px-3 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium whitespace-nowrap hover:bg-white hover:text-[#19069E] transition-all shrink-0">
-                                Google
-                            </button>
-                        </>
-                    )}
+                        {/* Export Button */}
+                        <button className="flex items-center justify-center h-7 md:h-8 w-7 md:w-auto md:px-3 rounded-lg bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] text-xs font-bold shadow-lg transition-all shrink-0">
+                            <span className="material-symbols-outlined text-[16px] md:text-[18px]">download</span>
+                            <span className="hidden md:inline ml-1.5">Exportar</span>
+                        </button>
+                    </div>
 
-                    {/* Export Button */}
-                    <button className="ml-auto flex items-center justify-center h-7 md:h-8 w-7 md:w-auto md:px-3 rounded-lg bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] text-xs font-bold shadow-lg transition-all shrink-0">
-                        <span className="material-symbols-outlined text-[16px] md:text-[18px]">download</span>
-                        <span className="hidden md:inline ml-1.5">Exportar</span>
-                    </button>
+                    {/* Right: Date Picker Dropdown */}
+                    <div className="relative shrink-0" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowDateDropdown(!showDateDropdown)}
+                            className="flex items-center gap-1.5 h-7 md:h-8 px-2.5 md:px-3 rounded-lg bg-white text-[#19069E] text-xs font-bold hover:bg-gray-100 transition-colors shadow-sm"
+                        >
+                            <span className="material-symbols-outlined text-[14px] md:text-[16px]">calendar_today</span>
+                            <span>{presetLabels[preset]}</span>
+                            <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showDateDropdown && (
+                            <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                {!showCustomPicker ? (
+                                    <div className="py-1">
+                                        {(Object.keys(presetLabels) as DatePreset[]).map((presetKey) => (
+                                            <button
+                                                key={presetKey}
+                                                onClick={() => handlePresetClick(presetKey)}
+                                                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${preset === presetKey ? "bg-[#19069E]/5 text-[#19069E] font-bold" : "text-gray-700"
+                                                    }`}
+                                            >
+                                                <span>{presetLabels[presetKey]}</span>
+                                                {preset === presetKey && (
+                                                    <span className="material-symbols-outlined text-[16px] text-[#C2DF0C]">check</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 space-y-3">
+                                        <p className="text-xs font-bold text-gray-500 uppercase">Período Personalizado</p>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <label className="text-xs text-gray-500 block mb-1">Data Inicial</label>
+                                                <input
+                                                    type="date"
+                                                    value={customStart}
+                                                    onChange={(e) => setCustomStart(e.target.value)}
+                                                    className="w-full h-9 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 focus:ring-2 focus:ring-[#19069E] focus:border-transparent"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500 block mb-1">Data Final</label>
+                                                <input
+                                                    type="date"
+                                                    value={customEnd}
+                                                    onChange={(e) => setCustomEnd(e.target.value)}
+                                                    className="w-full h-9 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 focus:ring-2 focus:ring-[#19069E] focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <button
+                                                onClick={() => setShowCustomPicker(false)}
+                                                className="flex-1 h-8 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                                            >
+                                                Voltar
+                                            </button>
+                                            <button
+                                                onClick={applyCustomRange}
+                                                className="flex-1 h-8 rounded-lg bg-[#19069E] text-white text-xs font-bold hover:bg-[#12047A]"
+                                            >
+                                                Aplicar
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </header>

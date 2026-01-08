@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
-import { useStractData, DatePreset, getDateRangeFromPreset, DATE_PRESET_LABELS } from "@/hooks/useStractData";
+import { useStractData } from "@/hooks/useStractData";
+import { useDateFilter } from "@/contexts/DateFilterContext";
 
 // Format currency
 function formatCurrency(value: number): string {
@@ -139,43 +140,9 @@ function MiniStat({ label, value, icon }: { label: string; value: string; icon: 
   );
 }
 
-// Date Preset Selector Component
-function DatePresetSelector({
-  value,
-  onChange,
-}: {
-  value: DatePreset;
-  onChange: (preset: DatePreset) => void;
-}) {
-  const presets: DatePreset[] = ["today", "yesterday", "last7days", "last30days", "thisMonth", "lastMonth"];
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {presets.map((preset) => (
-        <button
-          key={preset}
-          onClick={() => onChange(preset)}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${value === preset
-            ? "bg-[#19069E] text-white shadow-md"
-            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-            }`}
-        >
-          {DATE_PRESET_LABELS[preset]}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { settings, isLoading: settingsLoading } = useDashboardSettings();
-  const [datePreset, setDatePreset] = useState<DatePreset>("last7days");
-  const [dateRange, setDateRange] = useState(() => getDateRangeFromPreset("last7days"));
-
-  // Update date range when preset changes
-  useEffect(() => {
-    setDateRange(getDateRangeFromPreset(datePreset));
-  }, [datePreset]);
+  const { dateRange, setAvailableDates } = useDateFilter();
 
   // Fetch Stract data
   const {
@@ -189,6 +156,14 @@ export default function DashboardPage() {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
+
+  // Update available dates in context when data loads
+  useEffect(() => {
+    if (dailyData.length > 0) {
+      const dates = dailyData.map(d => d.date);
+      setAvailableDates(dates);
+    }
+  }, [dailyData, setAvailableDates]);
 
   const isLoading = settingsLoading || dataLoading;
   const hasData = !error && metrics.totalImpressions > 0;
@@ -218,18 +193,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header with Date Selector */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <div>
-          <h2 className="text-2xl font-bold text-[#19069E]">Visão Geral</h2>
-          {availableDateRange && (
-            <p className="text-sm text-gray-500">
-              Dados: {availableDateRange.start} → {availableDateRange.end}
-            </p>
-          )}
-        </div>
-        <DatePresetSelector value={datePreset} onChange={setDatePreset} />
-      </div>
 
       {/* Error Message */}
       {error && (

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { DateFilterProvider } from "@/contexts/DateFilterContext";
 import { Sidebar, Header } from "@/components/layout";
 import AIAssistant from "@/components/AIAssistant";
 
@@ -77,7 +78,10 @@ export default function ProtectedLayout({
 }) {
     return (
         <SidebarProvider>
-            <ProtectedLayoutInner>{children}</ProtectedLayoutInner>
+            <DateFilterProvider>
+                <ProtectedLayoutInner>{children}</ProtectedLayoutInner>
+            </DateFilterProvider>
         </SidebarProvider>
     );
 }
+
