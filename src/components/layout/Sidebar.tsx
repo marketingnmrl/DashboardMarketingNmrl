@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 
 // Navigation structure matching the PRD architecture
 const navigation = [
@@ -58,6 +59,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { isOpen, closeSidebar } = useSidebar();
+  const { settings } = useDashboardSettings();
+
+  // Get hidden items from settings
+  const hiddenItems = settings?.hiddenMenuItems || [];
 
   const isActive = (href: string) => {
     if (href === "/") {
@@ -129,45 +134,53 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-          {navigation.map((group) => (
-            <div key={group.section}>
-              <p className="px-3 mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-                {group.section}
-              </p>
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const active = isActive(item.href);
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={handleLinkClick}
-                      className={`
-                        flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
-                        ${active
-                          ? "bg-[#19069E] text-white shadow-lg"
-                          : "text-gray-600 hover:bg-white hover:text-[#19069E] hover:shadow-sm"
-                        }
-                      `}
-                    >
-                      <span
+          {navigation.map((group) => {
+            // Filter out hidden items from this section
+            const visibleItems = group.items.filter(item => !hiddenItems.includes(item.href));
+
+            // Skip rendering section if all items are hidden
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={group.section}>
+                <p className="px-3 mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  {group.section}
+                </p>
+                <div className="space-y-1">
+                  {visibleItems.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={handleLinkClick}
                         className={`
-                          material-symbols-outlined text-[22px] transition-colors
-                          ${active ? "text-[#C2DF0C]" : "text-gray-400 group-hover:text-[#19069E]"}
+                          flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
+                          ${active
+                            ? "bg-[#19069E] text-white shadow-lg"
+                            : "text-gray-600 hover:bg-white hover:text-[#19069E] hover:shadow-sm"
+                          }
                         `}
-                        style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
                       >
-                        {item.icon}
-                      </span>
-                      <span className={`text-sm ${active ? "font-bold" : "font-medium"}`}>
-                        {item.name}
-                      </span>
-                    </Link>
-                  );
-                })}
+                        <span
+                          className={`
+                            material-symbols-outlined text-[22px] transition-colors
+                            ${active ? "text-[#C2DF0C]" : "text-gray-400 group-hover:text-[#19069E]"}
+                          `}
+                          style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+                        >
+                          {item.icon}
+                        </span>
+                        <span className={`text-sm ${active ? "font-bold" : "font-medium"}`}>
+                          {item.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         {/* Bottom Navigation */}

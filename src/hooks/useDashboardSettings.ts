@@ -10,6 +10,7 @@ interface DBDashboardSettings {
     visao_geral_sheet_url: string | null;
     investimentos_sheet_url: string | null;
     trafego_sheet_url: string | null;
+    hidden_menu_items: string[] | null;
     updated_at: string;
 }
 
@@ -20,6 +21,7 @@ function dbToSettings(db: DBDashboardSettings): DashboardSettings {
         visaoGeralSheetUrl: db.visao_geral_sheet_url,
         investimentosSheetUrl: db.investimentos_sheet_url,
         trafegoSheetUrl: db.trafego_sheet_url,
+        hiddenMenuItems: db.hidden_menu_items || [],
         updatedAt: db.updated_at,
     };
 }
@@ -52,6 +54,7 @@ export function useDashboardSettings() {
                         visaoGeralSheetUrl: null,
                         investimentosSheetUrl: null,
                         trafegoSheetUrl: null,
+                        hiddenMenuItems: [],
                     });
                 } else {
                     throw fetchError;
@@ -169,6 +172,59 @@ export function useDashboardSettings() {
         }
     }, []);
 
+    // Toggle menu item visibility
+    const toggleMenuItemVisibility = useCallback(async (href: string) => {
+        setIsSaving(true);
+        try {
+            const supabase = getSupabase();
+            const now = new Date().toISOString();
+
+            const currentHidden = settings?.hiddenMenuItems || [];
+            const isCurrentlyHidden = currentHidden.includes(href);
+            const newHidden = isCurrentlyHidden
+                ? currentHidden.filter(h => h !== href)
+                : [...currentHidden, href];
+
+            if (settings?.id) {
+                const { error: updateError } = await supabase
+                    .from("dashboard_settings")
+                    .update({ hidden_menu_items: newHidden, updated_at: now })
+                    .eq("id", settings.id);
+
+                if (updateError) throw updateError;
+            } else {
+                const { data, error: insertError } = await supabase
+                    .from("dashboard_settings")
+                    .insert({ hidden_menu_items: newHidden, updated_at: now })
+                    .select()
+                    .single();
+
+                if (insertError) throw insertError;
+
+                if (data) {
+                    setSettings(dbToSettings(data as DBDashboardSettings));
+                    return;
+                }
+            }
+
+            setSettings(prev => prev ? { ...prev, hiddenMenuItems: newHidden, updatedAt: now } : null);
+            localStorage.setItem("dashboard_settings", JSON.stringify({ ...settings, hiddenMenuItems: newHidden }));
+        } catch (err) {
+            console.error("Error toggling menu visibility:", err);
+            // Fallback to localStorage
+            const currentHidden = settings?.hiddenMenuItems || [];
+            const isCurrentlyHidden = currentHidden.includes(href);
+            const newHidden = isCurrentlyHidden
+                ? currentHidden.filter(h => h !== href)
+                : [...currentHidden, href];
+
+            setSettings(prev => prev ? { ...prev, hiddenMenuItems: newHidden } : null);
+            localStorage.setItem("dashboard_settings", JSON.stringify({ ...settings, hiddenMenuItems: newHidden }));
+        } finally {
+            setIsSaving(false);
+        }
+    }, [settings]);
+
     return {
         settings,
         isLoading,
@@ -176,6 +232,7 @@ export function useDashboardSettings() {
         isSaving,
         updateSheetUrl,
         testSheetUrl,
+        toggleMenuItemVisibility,
         refresh: loadSettings,
     };
 }

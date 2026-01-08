@@ -67,6 +67,7 @@ export interface DashboardSettings {
     visaoGeralSheetUrl: string | null;
     investimentosSheetUrl?: string | null;
     trafegoSheetUrl?: string | null;
+    hiddenMenuItems?: string[]; // Array of href paths to hide from sidebar
     updatedAt?: string;
 }
 

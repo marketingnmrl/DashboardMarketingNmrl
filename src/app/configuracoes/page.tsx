@@ -4,8 +4,27 @@ import { useState } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 
+// All menu items for visibility toggle
+const allMenuItems = [
+    { section: "Dashboard", name: "Visão Geral", href: "/" },
+    { section: "Análise", name: "Alcance & Exposição", href: "/analise/alcance" },
+    { section: "Análise", name: "Tráfego", href: "/analise/trafego" },
+    { section: "Análise", name: "Conteúdo", href: "/analise/conteudo" },
+    { section: "Análise", name: "Eficiência", href: "/analise/eficiencia" },
+    { section: "Análise", name: "Investimentos", href: "/analise/investimentos" },
+    { section: "Análise", name: "Meus Funis", href: "/funis" },
+    { section: "Conversões", name: "Leads & Conversões", href: "/conversoes/leads" },
+    { section: "Conversões", name: "Financeiro", href: "/conversoes/financeiro" },
+    { section: "Eventos", name: "Visão Geral (Eventos)", href: "/eventos" },
+    { section: "Eventos", name: "Trimestral", href: "/eventos/trimestral" },
+    { section: "Eventos", name: "Mensal", href: "/eventos/mensal" },
+    { section: "Eventos", name: "Anual", href: "/eventos/anual" },
+    { section: "Gestão", name: "Campanhas", href: "/gestao/campanhas" },
+    { section: "Gestão", name: "Relatórios", href: "/gestao/relatorios" },
+];
+
 export default function ConfiguracoesPage() {
-    const { settings, isLoading, isSaving, updateSheetUrl, testSheetUrl } = useDashboardSettings();
+    const { settings, isLoading, isSaving, updateSheetUrl, testSheetUrl, toggleMenuItemVisibility } = useDashboardSettings();
     const [visaoGeralUrl, setVisaoGeralUrl] = useState("");
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isTesting, setIsTesting] = useState(false);
@@ -40,6 +59,8 @@ export default function ConfiguracoesPage() {
         await updateSheetUrl("visaoGeralSheetUrl", visaoGeralUrl || null);
         setTestResult({ success: true, message: "URL salva com sucesso!" });
     };
+
+    const hiddenItems = settings?.hiddenMenuItems || [];
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
@@ -133,19 +154,56 @@ export default function ConfiguracoesPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    {/* Placeholder for future sheets */}
-                    <div className="p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 opacity-60">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gray-200 rounded-lg">
-                                <span className="material-symbols-outlined text-[20px] text-gray-400">add</span>
+            {/* Menu Visibility Section */}
+            <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <div className="mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E] flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#C2DF0C]">visibility</span>
+                        Visibilidade do Menu
+                    </h3>
+                    <p className="text-sm text-gray-500">Oculte ou mostre itens do menu lateral clicando no ícone de olho</p>
+                </div>
+
+                <div className="space-y-4">
+                    {["Dashboard", "Análise", "Conversões", "Eventos", "Gestão"].map((section) => {
+                        const sectionItems = allMenuItems.filter(item => item.section === section);
+                        return (
+                            <div key={section} className="p-4 rounded-lg border border-gray-200">
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">{section}</p>
+                                <div className="space-y-2">
+                                    {sectionItems.map((item) => {
+                                        const isHidden = hiddenItems.includes(item.href);
+                                        return (
+                                            <div
+                                                key={item.href}
+                                                className={`flex items-center justify-between p-2 rounded-lg transition-colors ${isHidden ? "bg-gray-100 opacity-60" : "hover:bg-gray-50"}`}
+                                            >
+                                                <span className={`text-sm ${isHidden ? "text-gray-400 line-through" : "text-gray-700"}`}>
+                                                    {item.name}
+                                                </span>
+                                                <button
+                                                    onClick={() => toggleMenuItemVisibility(item.href)}
+                                                    disabled={isSaving}
+                                                    className={`p-2 rounded-lg transition-all ${isHidden
+                                                        ? "text-gray-400 hover:text-[#19069E] hover:bg-white"
+                                                        : "text-[#19069E] hover:bg-[#19069E] hover:text-white"
+                                                        }`}
+                                                    title={isHidden ? "Mostrar item" : "Ocultar item"}
+                                                >
+                                                    <span className="material-symbols-outlined text-[20px]">
+                                                        {isHidden ? "visibility_off" : "visibility"}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-medium text-gray-500">Mais planilhas em breve...</p>
-                                <p className="text-xs text-gray-400">Investimentos, Tráfego, etc.</p>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
 
