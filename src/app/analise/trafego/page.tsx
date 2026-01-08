@@ -1,35 +1,39 @@
 "use client";
 
 import { usePageMetrics } from "@/hooks/usePageMetrics";
+import { useDashboardSettings } from "@/hooks/useDashboardSettings";
+import { useStractData } from "@/hooks/useStractData";
+import { useDateFilter } from "@/contexts/DateFilterContext";
+
+// Format number
+function formatNumber(value: number): string {
+    return value.toLocaleString("pt-BR");
+}
+
+// Format currency
+function formatCurrency(value: number): string {
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// Format percentage
+function formatPercent(value: number): string {
+    return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+}
 
 // KPI Card Component
 function KPICard({
     icon,
     label,
     value,
-    change,
-    changeType = "positive",
     subtitle,
+    isLoading,
 }: {
     icon: string;
     label: string;
     value: string;
-    change: string;
-    changeType?: "positive" | "negative" | "neutral";
     subtitle?: string;
+    isLoading?: boolean;
 }) {
-    const changeColors = {
-        positive: "bg-[#C2DF0C] text-[#19069E]",
-        negative: "bg-red-100 text-red-700",
-        neutral: "bg-white/90 text-gray-600",
-    };
-
-    const changeIcons = {
-        positive: "trending_up",
-        negative: "trending_down",
-        neutral: "trending_flat",
-    };
-
     return (
         <div className="p-6 rounded-xl bg-[#19069E] text-white shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -39,15 +43,15 @@ function KPICard({
                 <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
                     <span className="material-symbols-outlined text-[#C2DF0C] text-[24px]">{icon}</span>
                 </div>
-                <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${changeColors[changeType]}`}>
-                    <span className="material-symbols-outlined text-[14px] mr-1">{changeIcons[changeType]}</span>
-                    {change}
-                </span>
             </div>
             <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1 relative z-10">
                 {label}
             </p>
-            <p className="text-3xl font-extrabold text-white relative z-10">{value}</p>
+            {isLoading ? (
+                <div className="h-9 w-24 bg-white/20 rounded animate-pulse" />
+            ) : (
+                <p className="text-3xl font-extrabold text-white relative z-10">{value}</p>
+            )}
             {subtitle && (
                 <p className="text-xs text-blue-200 mt-2 font-medium relative z-10">{subtitle}</p>
             )}
@@ -55,87 +59,97 @@ function KPICard({
     );
 }
 
-// Traffic Source Card
-function SourceCard({
-    source,
-    icon,
-    clicks,
-    percentage,
-    color,
-}: {
-    source: string;
-    icon: string;
-    clicks: string;
-    percentage: number;
-    color: string;
-}) {
-    return (
-        <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className={`p-3 rounded-lg ${color}`}>
-                <span className="material-symbols-outlined text-[24px] text-white">{icon}</span>
-            </div>
-            <div className="flex-1">
-                <p className="font-bold text-gray-900">{source}</p>
-                <p className="text-sm text-gray-500">{clicks} cliques</p>
-            </div>
-            <div className="text-right">
-                <p className="text-xl font-extrabold text-[#19069E]">{percentage}%</p>
-            </div>
-        </div>
-    );
-}
-
 export default function TrafegoPage() {
+    const { settings, isLoading: settingsLoading } = useDashboardSettings();
+    const { dateRange } = useDateFilter();
+
+    const {
+        metrics,
+        campaignSummary,
+        dailyData,
+        isLoading: dataLoading,
+        error,
+    } = useStractData(settings?.visaoGeralSheetUrl, {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+    });
+
+    const isLoading = settingsLoading || dataLoading;
+    const hasData = !error && metrics.totalImpressions > 0;
+
     usePageMetrics({
         pagina: "Análise de Tráfego",
         descricao: "Métricas de cliques e fontes de tráfego",
-        periodo: "Dezembro 2025",
+        periodo: `${dateRange.startDate} a ${dateRange.endDate}`,
         kpis: {
-            cliques_totais: 85340,
-            cliques_unicos: 72150,
-            cliques_google: 48200,
-            cliques_meta: 37140,
-            cpc_medio: 0.50,
-            ctr_medio: 3.55,
+            cliques_totais: metrics.totalClicks,
+            cliques_link: metrics.totalLinkClicks,
+            cpc_medio: metrics.avgCpc,
+            ctr_medio: metrics.avgCtr,
         },
-        dados_adicionais: {
-            fontes: { google_ads: 38, meta_ads: 33, organico: 19, direto: 10 }
-        }
     });
 
     return (
         <div className="max-w-7xl mx-auto space-y-8">
+            {/* Error Message */}
+            {error && (
+                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700">
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-red-500">error</span>
+                        <div>
+                            <p className="font-bold">Erro ao carregar dados</p>
+                            <p className="text-sm">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* No Sheet Warning */}
+            {!settings?.visaoGeralSheetUrl && !settingsLoading && (
+                <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-700">
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-yellow-500">info</span>
+                        <div>
+                            <p className="font-bold">Planilha não configurada</p>
+                            <p className="text-sm">Configure a URL do Google Sheets nas Configurações.</p>
+                            <a href="/configuracoes" className="inline-flex items-center gap-1 mt-2 text-sm font-bold text-[#19069E] hover:underline">
+                                <span className="material-symbols-outlined text-[16px]">settings</span>
+                                Ir para Configurações
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <KPICard
                     icon="ads_click"
-                    label="Total de Cliques"
-                    value="85.340"
-                    change="5.4%"
-                    changeType="positive"
-                    subtitle="vs. 80.950 (Mês anterior)"
+                    label="Cliques no Link"
+                    value={hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
+                    isLoading={isLoading}
+                    subtitle="Cliques para o site"
                 />
                 <KPICard
                     icon="touch_app"
-                    label="Cliques Únicos"
-                    value="72.150"
-                    change="4.2%"
-                    changeType="positive"
-                    subtitle="Visitantes únicos"
+                    label="Cliques Totais"
+                    value={hasData ? formatNumber(metrics.totalClicks) : "—"}
+                    isLoading={isLoading}
+                    subtitle="Engajamento total"
                 />
                 <KPICard
-                    icon="search"
-                    label="Cliques Google"
-                    value="48.200"
-                    change="7.1%"
-                    changeType="positive"
+                    icon="percent"
+                    label="CTR Médio"
+                    value={hasData ? formatPercent(metrics.avgCtr) : "—"}
+                    isLoading={isLoading}
+                    subtitle="Taxa de cliques"
                 />
                 <KPICard
-                    icon="thumb_up"
-                    label="Cliques Meta"
-                    value="37.140"
-                    change="3.8%"
-                    changeType="positive"
+                    icon="price_change"
+                    label="CPC Médio"
+                    value={hasData ? formatCurrency(metrics.avgCpc) : "—"}
+                    isLoading={isLoading}
+                    subtitle="Custo por clique"
                 />
             </div>
 
@@ -143,150 +157,179 @@ export default function TrafegoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Traffic Trend Chart */}
                 <div className="lg:col-span-2 p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <div>
-                            <h3 className="text-lg font-bold text-[#19069E]">Tendência de Cliques</h3>
-                            <p className="text-sm text-gray-500">Comparativo com mês anterior</p>
-                        </div>
-                        <div className="flex gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-[#19069E]"></span>
-                                <span className="text-gray-600">Este mês</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                                <span className="text-gray-600">Mês anterior</span>
-                            </div>
-                        </div>
+                    <div className="mb-6">
+                        <h3 className="text-lg font-bold text-[#19069E]">Evolução de Cliques</h3>
+                        <p className="text-sm text-gray-500">Cliques diários no período selecionado</p>
                     </div>
 
-                    {/* Chart Placeholder */}
-                    <div className="relative w-full h-[280px] bg-gradient-to-b from-[#19069E]/5 to-transparent rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                            <span className="material-symbols-outlined text-6xl text-[#19069E]/30">trending_up</span>
-                            <p className="text-sm text-gray-400 mt-2">Gráfico de área - Evolução de cliques</p>
+                    {isLoading ? (
+                        <div className="h-[200px] flex items-center justify-center">
+                            <span className="material-symbols-outlined text-4xl text-gray-300 animate-pulse">hourglass_empty</span>
                         </div>
-                    </div>
-
-                    <div className="flex justify-between mt-4 text-xs text-gray-400 font-medium">
-                        <span>Sem 1</span>
-                        <span>Sem 2</span>
-                        <span>Sem 3</span>
-                        <span>Sem 4</span>
-                    </div>
+                    ) : dailyData.length > 0 ? (
+                        <div className="space-y-2">
+                            {dailyData.slice(-10).map((day) => {
+                                const maxClicks = Math.max(...dailyData.map(d => d.linkClicks));
+                                const barWidth = maxClicks > 0 ? (day.linkClicks / maxClicks) * 100 : 0;
+                                return (
+                                    <div key={day.date} className="flex items-center gap-3 group">
+                                        <span className="text-xs text-gray-500 w-16 font-mono">{day.date.slice(5)}</span>
+                                        <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                                            <div
+                                                className="bg-gradient-to-r from-[#19069E] to-blue-400 h-full rounded-full flex items-center justify-end pr-2"
+                                                style={{ width: `${Math.max(barWidth, 8)}%` }}
+                                            >
+                                                <span className="text-[10px] text-white font-bold">
+                                                    {formatNumber(day.linkClicks)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="h-[200px] flex items-center justify-center text-gray-400">
+                            <div className="text-center">
+                                <span className="material-symbols-outlined text-4xl">show_chart</span>
+                                <p className="text-sm mt-2">Sem dados para o período</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Traffic Sources */}
+                {/* Quick Stats */}
                 <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-[#19069E] mb-1">Fontes de Tráfego</h3>
-                    <p className="text-sm text-gray-500 mb-6">Distribuição por origem</p>
+                    <h3 className="text-lg font-bold text-[#19069E] mb-1">Resumo de Tráfego</h3>
+                    <p className="text-sm text-gray-500 mb-6">Métricas consolidadas</p>
 
-                    <div className="space-y-3">
-                        <SourceCard source="Google Ads" icon="ads_click" clicks="32.5K" percentage={38} color="bg-blue-500" />
-                        <SourceCard source="Meta Ads" icon="thumb_up" clicks="28.2K" percentage={33} color="bg-[#19069E]" />
-                        <SourceCard source="Orgânico" icon="search" clicks="15.8K" percentage={19} color="bg-[#C2DF0C]" />
-                        <SourceCard source="Direto" icon="link" clicks="8.8K" percentage={10} color="bg-gray-400" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Clicks by Campaign Chart */}
-            <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div>
-                        <h3 className="text-lg font-bold text-[#19069E]">Cliques por Campanha</h3>
-                        <p className="text-sm text-gray-500">Top 5 campanhas por performance</p>
-                    </div>
-                </div>
-
-                {/* Horizontal Bar Chart Placeholder */}
-                <div className="space-y-4">
-                    {[
-                        { name: "Black Friday 2025", clicks: 18500, percentage: 85 },
-                        { name: "Remarketing Verão", clicks: 14200, percentage: 65 },
-                        { name: "Lançamento Produto X", clicks: 12800, percentage: 59 },
-                        { name: "Promoção Natal", clicks: 9400, percentage: 43 },
-                        { name: "Campanha Institucional", clicks: 6200, percentage: 28 },
-                    ].map((campaign) => (
-                        <div key={campaign.name} className="flex items-center gap-4">
-                            <div className="w-48 text-sm font-medium text-gray-700 truncate">{campaign.name}</div>
-                            <div className="flex-1 bg-gray-100 h-8 rounded-lg overflow-hidden relative">
-                                <div
-                                    className="h-full bg-gradient-to-r from-[#19069E] to-[#3B28B8] rounded-lg transition-all duration-500"
-                                    style={{ width: `${campaign.percentage}%` }}
-                                ></div>
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-600">
-                                    {campaign.clicks.toLocaleString()} cliques
-                                </span>
-                            </div>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Impressões</span>
+                            <span className="font-bold text-[#19069E]">{hasData ? formatNumber(metrics.totalImpressions) : "—"}</span>
                         </div>
-                    ))}
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Alcance</span>
+                            <span className="font-bold text-[#19069E]">{hasData ? formatNumber(metrics.totalReach) : "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">LP Views</span>
+                            <span className="font-bold text-[#19069E]">{hasData ? formatNumber(metrics.totalLandingPageViews) : "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Campanhas</span>
+                            <span className="font-bold text-[#19069E]">{hasData ? metrics.uniqueCampaigns : "—"}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Ad Performance Table */}
-            <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-bold text-[#19069E]">Desempenho por Anúncio</h3>
-                    <p className="text-sm text-gray-500">Métricas detalhadas de cada anúncio</p>
+            {/* Clicks by Campaign */}
+            <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <div className="mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E]">Cliques por Campanha</h3>
+                    <p className="text-sm text-gray-500">Performance de tráfego por campanha</p>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gray-50 text-xs uppercase font-bold text-[#19069E]">
-                            <tr>
-                                <th className="px-6 py-4">Anúncio</th>
-                                <th className="px-6 py-4">Campanha</th>
-                                <th className="px-6 py-4 text-right">Cliques</th>
-                                <th className="px-6 py-4 text-right">CTR</th>
-                                <th className="px-6 py-4 text-right">CPC</th>
-                                <th className="px-6 py-4 text-right">Custo Total</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Banner Promo 50%</td>
-                                <td className="px-6 py-4">Black Friday 2025</td>
-                                <td className="px-6 py-4 text-right font-bold">8.450</td>
-                                <td className="px-6 py-4 text-right">
-                                    <span className="text-green-600 font-bold">4.2%</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">R$ 0,45</td>
-                                <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 3.802</td>
-                            </tr>
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Video Institucional</td>
-                                <td className="px-6 py-4">Remarketing Verão</td>
-                                <td className="px-6 py-4 text-right font-bold">6.200</td>
-                                <td className="px-6 py-4 text-right">
-                                    <span className="text-green-600 font-bold">3.8%</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">R$ 0,52</td>
-                                <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 3.224</td>
-                            </tr>
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Carrossel Produtos</td>
-                                <td className="px-6 py-4">Lançamento Produto X</td>
-                                <td className="px-6 py-4 text-right font-bold">5.800</td>
-                                <td className="px-6 py-4 text-right">
-                                    <span className="text-yellow-600 font-bold">2.9%</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">R$ 0,58</td>
-                                <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 3.364</td>
-                            </tr>
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">Stories Natal</td>
-                                <td className="px-6 py-4">Promoção Natal</td>
-                                <td className="px-6 py-4 text-right font-bold">4.120</td>
-                                <td className="px-6 py-4 text-right">
-                                    <span className="text-green-600 font-bold">3.5%</span>
-                                </td>
-                                <td className="px-6 py-4 text-right">R$ 0,48</td>
-                                <td className="px-6 py-4 text-right font-bold text-[#19069E]">R$ 1.978</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                {isLoading ? (
+                    <div className="h-[150px] flex items-center justify-center">
+                        <span className="material-symbols-outlined text-4xl text-gray-300 animate-pulse">hourglass_empty</span>
+                    </div>
+                ) : campaignSummary.length > 0 ? (
+                    <div className="space-y-4">
+                        {campaignSummary.slice(0, 5).map((campaign) => {
+                            const maxClicks = Math.max(...campaignSummary.map(c => c.linkClicks));
+                            const barWidth = maxClicks > 0 ? (campaign.linkClicks / maxClicks) * 100 : 0;
+                            const shortName = campaign.campaignName.length > 40 ? campaign.campaignName.slice(0, 40) + "..." : campaign.campaignName;
+
+                            return (
+                                <div key={campaign.campaignName} className="flex items-center gap-4">
+                                    <div className="w-48 text-sm font-medium text-gray-700 truncate" title={campaign.campaignName}>
+                                        {shortName}
+                                    </div>
+                                    <div className="flex-1 bg-gray-100 h-8 rounded-lg overflow-hidden relative">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-[#19069E] to-[#3B28B8] rounded-lg transition-all duration-500"
+                                            style={{ width: `${barWidth}%` }}
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-600">
+                                            {formatNumber(campaign.linkClicks)} cliques | CTR: {formatPercent(campaign.ctr)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="h-[150px] flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                            <span className="material-symbols-outlined text-4xl">bar_chart</span>
+                            <p className="text-sm mt-2">Sem dados de campanhas</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Campaign Table */}
+            <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-[#19069E] to-[#2B1BB8]">
+                    <h3 className="text-lg font-bold text-white">Desempenho Detalhado</h3>
+                    <p className="text-sm text-blue-200">Métricas de tráfego por campanha</p>
                 </div>
+
+                {isLoading ? (
+                    <div className="p-8 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-4xl text-gray-300 animate-pulse">hourglass_empty</span>
+                    </div>
+                ) : campaignSummary.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50 text-xs uppercase font-bold text-[#19069E]">
+                                <tr>
+                                    <th className="px-6 py-4">Campanha</th>
+                                    <th className="px-6 py-4 text-right">Impressões</th>
+                                    <th className="px-6 py-4 text-right">Alcance</th>
+                                    <th className="px-6 py-4 text-right">Cliques</th>
+                                    <th className="px-6 py-4 text-right">CTR</th>
+                                    <th className="px-6 py-4 text-right">CPC</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {campaignSummary.map((campaign) => (
+                                    <tr key={campaign.campaignName} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-gray-900 max-w-[300px] truncate" title={campaign.campaignName}>
+                                            {campaign.campaignName}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">{formatNumber(campaign.impressions)}</td>
+                                        <td className="px-6 py-4 text-right">{formatNumber(campaign.reach)}</td>
+                                        <td className="px-6 py-4 text-right font-bold">{formatNumber(campaign.linkClicks)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`font-bold ${campaign.ctr >= 2 ? "text-green-600" : campaign.ctr >= 1 ? "text-yellow-600" : "text-red-600"}`}>
+                                                {formatPercent(campaign.ctr)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">{formatCurrency(campaign.cpc)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot className="bg-[#19069E]/5 font-bold">
+                                <tr>
+                                    <td className="px-6 py-4 text-[#19069E]">Total</td>
+                                    <td className="px-6 py-4 text-right text-[#19069E]">{formatNumber(metrics.totalImpressions)}</td>
+                                    <td className="px-6 py-4 text-right text-[#19069E]">{formatNumber(metrics.totalReach)}</td>
+                                    <td className="px-6 py-4 text-right text-[#19069E]">{formatNumber(metrics.totalLinkClicks)}</td>
+                                    <td className="px-6 py-4 text-right text-[#19069E]">{formatPercent(metrics.avgCtr)}</td>
+                                    <td className="px-6 py-4 text-right text-[#19069E]">{formatCurrency(metrics.avgCpc)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="p-8 text-center text-gray-400">
+                        <span className="material-symbols-outlined text-4xl">table_chart</span>
+                        <p className="text-sm mt-2">Sem dados de campanhas</p>
+                    </div>
+                )}
             </div>
         </div>
     );
