@@ -23,11 +23,17 @@ function ThresholdEditor({
     onClose: () => void;
 }) {
     const [values, setValues] = useState(thresholds);
+    const [mode, setMode] = useState<"absolute" | "percentage">(thresholds.thresholdMode || "absolute");
+
+    const handleSave = () => {
+        onSave({ ...values, thresholdMode: mode });
+        onClose();
+    };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-[#19069E]">Editar Critérios</h3>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
                         <span className="material-symbols-outlined">close</span>
@@ -37,6 +43,40 @@ function ThresholdEditor({
                 <p className="text-sm text-gray-600 mb-4">
                     Defina os critérios para <strong>{stageName}</strong>
                 </p>
+
+                {/* Mode Selector */}
+                <div className="mb-5 p-4 rounded-xl bg-gray-50 border border-gray-200">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                        Tipo de Meta
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setMode("absolute")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${mode === "absolute"
+                                ? "bg-[#19069E] text-white shadow-md"
+                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                }`}
+                        >
+                            <span className="material-symbols-outlined text-[18px]">tag</span>
+                            Número Absoluto
+                        </button>
+                        <button
+                            onClick={() => setMode("percentage")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${mode === "percentage"
+                                ? "bg-[#19069E] text-white shadow-md"
+                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                }`}
+                        >
+                            <span className="material-symbols-outlined text-[18px]">percent</span>
+                            Conversão %
+                        </button>
+                    </div>
+                    {mode === "percentage" && (
+                        <p className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg">
+                            💡 A meta será baseada na taxa de conversão da etapa anterior
+                        </p>
+                    )}
+                </div>
 
                 <div className="space-y-4">
                     {/* ÓTIMO */}
@@ -62,7 +102,7 @@ function ThresholdEditor({
                                 })}
                                 className="w-20 px-2 py-1.5 rounded border text-sm text-center"
                             />
-                            <span className="text-gray-500">{unit === "percentage" ? "%" : ""}</span>
+                            <span className="text-gray-500">{mode === "percentage" ? "%" : (unit === "percentage" ? "%" : "")}</span>
                         </div>
                     </div>
 
@@ -89,7 +129,7 @@ function ThresholdEditor({
                                 })}
                                 className="w-20 px-2 py-1.5 rounded border text-sm text-center"
                             />
-                            <span className="text-gray-500">{unit === "percentage" ? "%" : ""}</span>
+                            <span className="text-gray-500">{mode === "percentage" ? "%" : (unit === "percentage" ? "%" : "")}</span>
                         </div>
                     </div>
 
@@ -107,7 +147,7 @@ function ThresholdEditor({
                                 })}
                                 className="w-20 px-2 py-1.5 rounded border text-sm text-center"
                             />
-                            <span className="text-gray-500">{unit === "percentage" ? "%" : ""}</span>
+                            <span className="text-gray-500">{mode === "percentage" ? "%" : (unit === "percentage" ? "%" : "")}</span>
                         </div>
                     </div>
                 </div>
@@ -120,7 +160,7 @@ function ThresholdEditor({
                         Cancelar
                     </button>
                     <button
-                        onClick={() => { onSave(values); onClose(); }}
+                        onClick={handleSave}
                         className="flex-1 py-2.5 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg hover:bg-[#B0CC0B]"
                     >
                         Salvar
@@ -544,7 +584,7 @@ export default function FunilDetailPage() {
                                 ? ((value / previousValue) * 100)
                                 : null;
 
-                            const status = getPerformanceStatus(value, stage.thresholds);
+                            const status = getPerformanceStatus(value, stage.thresholds, conversionRate);
                             const config = PERFORMANCE_CONFIG[status];
                             const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
 
@@ -659,9 +699,11 @@ export default function FunilDetailPage() {
 
             {/* Stages Detail Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {funnel.stages.map((stage) => {
+                {funnel.stages.map((stage, index) => {
                     const value = getStageValueForPeriod(stage.name);
-                    const status = getPerformanceStatus(value, stage.thresholds);
+                    const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
+                    const conversionRate = previousValue && value !== null ? (value / previousValue) * 100 : null;
+                    const status = getPerformanceStatus(value, stage.thresholds, conversionRate);
                     const config = PERFORMANCE_CONFIG[status];
 
                     return (

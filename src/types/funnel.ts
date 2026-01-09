@@ -4,6 +4,7 @@ export interface FunnelStageThresholds {
     otimo: { min: number; max: number };
     ok: { min: number; max: number };
     ruim: { max: number };
+    thresholdMode?: "absolute" | "percentage"; // absolute = compare value directly, percentage = compare conversion rate
 }
 
 export interface FunnelStage {
@@ -37,16 +38,25 @@ export interface FunnelMetricData {
 export type PerformanceStatus = "otimo" | "ok" | "ruim" | "sem_dados";
 
 // Helper to get performance status from value and thresholds
+// When thresholdMode is "percentage", use conversionRate instead of value
 export function getPerformanceStatus(
     value: number | null | undefined,
-    thresholds: FunnelStageThresholds
+    thresholds: FunnelStageThresholds,
+    conversionRate?: number | null // Conversion rate from previous stage (0-100)
 ): PerformanceStatus {
     if (value === null || value === undefined) {
         return "sem_dados";
     }
-    if (value >= thresholds.otimo.min) {
+
+    // Determine which value to compare based on threshold mode
+    const mode = thresholds.thresholdMode || "absolute";
+    const compareValue = mode === "percentage" && conversionRate !== null && conversionRate !== undefined
+        ? conversionRate
+        : value;
+
+    if (compareValue >= thresholds.otimo.min) {
         return "otimo";
-    } else if (value >= thresholds.ok.min) {
+    } else if (compareValue >= thresholds.ok.min) {
         return "ok";
     }
     return "ruim";
