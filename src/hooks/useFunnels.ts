@@ -465,24 +465,6 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         return Array.from(stages);
     }, [data]);
 
-    // Get the date range available in the data (min and max dates)
-    const getAvailableDateRange = useCallback((): { minDate: Date | null; maxDate: Date | null } => {
-        if (data.length === 0) return { minDate: null, maxDate: null };
-
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
-
-        data.forEach(d => {
-            const date = parseDate(d.date);
-            if (!date) return;
-
-            if (!minDate || date < minDate) minDate = date;
-            if (!maxDate || date > maxDate) maxDate = date;
-        });
-
-        return { minDate, maxDate };
-    }, [data, parseDate]);
-
-    return { data, isLoading, error, getStageValue, getAvailableStages, getAvailableDateRange, refresh };
+    return { data, isLoading, error, getStageValue, getAvailableStages, refresh };
 }
 
