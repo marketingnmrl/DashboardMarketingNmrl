@@ -481,9 +481,10 @@ export default function FunilDetailPage() {
                                     setShowDatePicker(true);
                                 }
                             }}
-                            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 pr-8"
+                            className="px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-700 pr-10 shadow-sm hover:border-[#19069E]/30 transition-colors cursor-pointer"
                         >
                             <option value="hoje">Hoje</option>
+                            <option value="ontem">Ontem</option>
                             <option value="7d">Últimos 7 dias</option>
                             <option value="30d">Últimos 30 dias</option>
                             <option value="mes">Este mês</option>
@@ -491,54 +492,69 @@ export default function FunilDetailPage() {
                         </select>
                     </div>
 
-                    {/* Custom Date Range Display/Button */}
+                    {/* Custom Date Range Display/Button - IMPROVED VISUAL */}
                     {selectedPeriod === "custom" && (
                         <button
                             onClick={() => setShowDatePicker(true)}
-                            className="flex items-center gap-2 px-3 py-2 bg-[#19069E]/10 border border-[#19069E]/20 rounded-lg text-sm font-medium text-[#19069E] hover:bg-[#19069E]/20 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#19069E] border-2 border-[#19069E] rounded-xl text-sm font-bold text-white shadow-lg hover:bg-[#19069E]/90 transition-all hover:scale-[1.02]"
                         >
                             <span className="material-symbols-outlined text-[18px]">calendar_today</span>
                             <span>
                                 {new Date(customDateRange.start).toLocaleDateString("pt-BR")} - {new Date(customDateRange.end).toLocaleDateString("pt-BR")}
                             </span>
+                            <span className="material-symbols-outlined text-[16px] opacity-70">edit</span>
                         </button>
                     )}
+                </div>
 
-                    {/* Date Picker Dropdown */}
-                    {showDatePicker && (
-                        <div className="absolute top-full right-0 mt-2 p-4 bg-white rounded-xl border border-gray-200 shadow-xl z-50" style={{ minWidth: "300px" }}>
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-bold text-[#19069E]">Período Personalizado</h4>
-                                <button onClick={() => setShowDatePicker(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                {/* Date Picker Modal - IMPROVED */}
+                {showDatePicker && (
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="fixed inset-0 bg-black/20 z-40"
+                            onClick={() => setShowDatePicker(false)}
+                        />
+                        {/* Modal */}
+                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-6 bg-white rounded-2xl border-2 border-gray-200 shadow-2xl z-50" style={{ minWidth: "340px" }}>
+                            <div className="flex justify-between items-center mb-5">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[#19069E]">date_range</span>
+                                    <h4 className="font-bold text-[#19069E] text-lg">Período Personalizado</h4>
+                                </div>
+                                <button
+                                    onClick={() => setShowDatePicker(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[20px] text-gray-500">close</span>
                                 </button>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-600 mb-1">Data Início</label>
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Data Início</label>
                                     <input
                                         type="date"
                                         value={customDateRange.start}
                                         onChange={(e) => setCustomDateRange({ ...customDateRange, start: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E] focus:border-transparent"
+                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#19069E] focus:border-[#19069E] transition-all"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-600 mb-1">Data Fim</label>
+                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Data Fim</label>
                                     <input
                                         type="date"
                                         value={customDateRange.end}
                                         onChange={(e) => setCustomDateRange({ ...customDateRange, end: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E] focus:border-transparent"
+                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#19069E] focus:border-[#19069E] transition-all"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 mt-4">
+                            <div className="flex gap-3 mt-6">
                                 <button
                                     onClick={() => setShowDatePicker(false)}
-                                    className="flex-1 py-2 border border-gray-200 text-gray-600 font-medium text-sm rounded-lg hover:bg-gray-50"
+                                    className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 transition-colors"
                                 >
                                     Cancelar
                                 </button>
@@ -547,409 +563,413 @@ export default function FunilDetailPage() {
                                         setSelectedPeriod("custom");
                                         setShowDatePicker(false);
                                     }}
-                                    className="flex-1 py-2 bg-[#C2DF0C] text-[#19069E] font-bold text-sm rounded-lg hover:bg-[#B0CC0B]"
+                                    className="flex-1 py-3 bg-[#C2DF0C] text-[#19069E] font-bold text-sm rounded-xl hover:bg-[#B0CC0B] shadow-lg transition-all"
                                 >
-                                    Aplicar
+                                    Aplicar Período
                                 </button>
                             </div>
                         </div>
-                    )}
-
-                    {/* Refresh Data Button */}
-                    {funnel.sheetsUrl && (
-                        <button
-                            onClick={refreshData}
-                            disabled={isLoadingData}
-                            className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors disabled:opacity-50"
-                            title="Atualizar dados"
-                        >
-                            <span className={`material-symbols-outlined text-[20px] ${isLoadingData ? 'animate-spin' : ''}`}>
-                                {isLoadingData ? 'progress_activity' : 'refresh'}
-                            </span>
-                        </button>
-                    )}
-
-                    {/* Sheets Config Button */}
-                    <button
-                        onClick={() => setShowSheetsConfig(true)}
-                        className={`p-2 rounded-lg transition-colors ${funnel.sheetsUrl
-                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                        title="Configurar planilha"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">table</span>
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                        onClick={handleDelete}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-                        title="Excluir funil"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Data Status */}
-            {!funnel.sheetsUrl && (
-                <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-yellow-600">warning</span>
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-yellow-800">Planilha não configurada</p>
-                        <p className="text-xs text-yellow-700">Configure a URL do Google Sheets para visualizar os dados</p>
-                    </div>
-                    <button
-                        onClick={() => setShowSheetsConfig(true)}
-                        className="px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-medium text-sm rounded-lg"
-                    >
-                        Configurar
-                    </button>
-                </div>
-            )
-            }
-
-            {
-                dataError && (
-                    <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-red-600">error</span>
-                        <p className="text-sm text-red-700">{dataError}</p>
-                    </div>
-                )
-            }
-
-            {
-                isLoadingData && (
-                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-center gap-3">
-                        <span className="material-symbols-outlined animate-spin text-blue-600">progress_activity</span>
-                        <p className="text-sm text-blue-700">Carregando dados da planilha...</p>
-                    </div>
-                )
-            }
-
-            {/* Visual Funnel */}
-            <div className="p-8 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <div className="mb-6">
-                    <h3 className="text-lg font-bold text-[#19069E]">Visualização do Funil</h3>
-                    <p className="text-sm text-gray-500">Jornada do cliente com taxas de conversão</p>
-                </div>
-
-                {funnel.stages.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-3xl text-amber-600">warning</span>
-                        </div>
-                        <h4 className="text-lg font-bold text-gray-900 mb-2">Nenhuma etapa cadastrada</h4>
-                        <p className="text-sm text-gray-500 mb-4 max-w-md mx-auto">
-                            Este funil não possui etapas. As etapas podem não ter sido salvas corretamente durante a criação.
-                            Você pode excluir este funil e criar um novo com as etapas desejadas.
-                        </p>
-                        <button
-                            onClick={handleDelete}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg transition-colors"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                            Excluir e criar novo
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center space-y-2">
-                        {funnel.stages.map((stage, index) => {
-                            const value = getStageValueForPeriod(stage.name);
-                            const firstStageValue = getStageValueForPeriod(funnel.stages[0]?.name);
-                            const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
-
-                            // Calculate percentage relative to first stage
-                            const percentOfTotal = firstStageValue && value !== null
-                                ? ((value / firstStageValue) * 100)
-                                : (index === 0 ? 100 : null);
-
-                            // Calculate conversion rate from previous stage
-                            const conversionRate = previousValue && value !== null
-                                ? ((value / previousValue) * 100)
-                                : null;
-
-                            const status = getPerformanceStatus(value, stage.thresholds);
-                            const config = PERFORMANCE_CONFIG[status];
-                            const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
-
-                            // Use brand colors - first stage is primary color, last is accent
-                            const isLastStage = index === funnel.stages.length - 1;
-                            const bgColor = isLastStage ? "bg-[#C2DF0C]" : "bg-[#19069E]";
-                            const textColor = isLastStage ? "text-[#19069E]" : "text-white";
-                            const subTextColor = isLastStage ? "text-[#19069E]/70" : "text-white/70";
-
-                            return (
-                                <div key={stage.id} className="relative w-full flex flex-col items-center">
-                                    {/* Conversion Rate Badge */}
-                                    {index > 0 && conversionRate !== null && (
-                                        <div className="py-2">
-                                            <span className="inline-flex items-center px-3 py-1 bg-[#C2DF0C] text-[#19069E] text-xs font-bold rounded-full shadow">
-                                                {conversionRate.toFixed(2)}% conversão
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* Stage Bar */}
-                                    <div
-                                        className={`relative py-4 px-6 rounded-lg text-center transition-all hover:scale-[1.01] ${bgColor} group cursor-pointer`}
-                                        style={{ width: `${widthPercent}%`, maxWidth: "700px", minWidth: "200px" }}
-                                        onClick={() => setEditingStage(stage.id)}
-                                    >
-                                        {/* Performance Indicator */}
-                                        <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${config.color}`} title={config.label}></div>
-
-                                        {/* Edit Button */}
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setEditingStage(stage.id); }}
-                                            className={`absolute top-2 right-2 p-1.5 rounded-lg ${isLastStage ? "bg-[#19069E]/10 text-[#19069E]" : "bg-white/20 text-white"} opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30`}
-                                            title="Editar critérios"
-                                        >
-                                            <span className="material-symbols-outlined text-[16px]">tune</span>
-                                        </button>
-
-                                        {/* Stage Name */}
-                                        <p className={`${subTextColor} text-xs font-bold uppercase tracking-wider mb-1`}>
-                                            {stage.name}
-                                        </p>
-
-                                        {/* Value */}
-                                        <p className={`${textColor} text-3xl font-extrabold`}>
-                                            {value !== null ? (
-                                                value >= 1000000
-                                                    ? `${(value / 1000000).toFixed(1)}M`
-                                                    : value >= 1000
-                                                        ? `${(value / 1000).toFixed(1)}K`
-                                                        : value.toLocaleString("pt-BR")
-                                            ) : "—"}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    </>
                 )}
 
-                {/* Summary Metrics */}
-                {funnel.stages.length >= 2 && (
-                    <div className="mt-8 pt-6 border-t border-gray-200 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center">
-                            <p className="text-xs text-gray-500 font-medium">Taxa Geral</p>
-                            <p className="text-xl font-extrabold text-[#19069E]">
-                                {(() => {
-                                    const first = getStageValueForPeriod(funnel.stages[0]?.name);
-                                    const last = getStageValueForPeriod(funnel.stages[funnel.stages.length - 1]?.name);
-                                    return first && last ? `${((last / first) * 100).toFixed(3)}%` : "—";
-                                })()}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                {funnel.stages[0]?.name} → {funnel.stages[funnel.stages.length - 1]?.name}
-                            </p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-xs text-gray-500 font-medium">Etapas</p>
-                            <p className="text-xl font-extrabold text-[#19069E]">{funnel.stages.length}</p>
-                            <p className="text-xs text-gray-400">Total de etapas</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-xs text-gray-500 font-medium">Menor Conversão</p>
-                            <p className="text-xl font-extrabold text-red-500">
-                                {(() => {
-                                    let minRate = Infinity;
-                                    for (let i = 1; i < funnel.stages.length; i++) {
-                                        const prev = getStageValueForPeriod(funnel.stages[i - 1]?.name);
-                                        const curr = getStageValueForPeriod(funnel.stages[i]?.name);
-                                        if (prev && curr) {
-                                            minRate = Math.min(minRate, (curr / prev) * 100);
-                                        }
-                                    }
-                                    return minRate !== Infinity ? `${minRate.toFixed(2)}%` : "—";
-                                })()}
-                            </p>
-                            <p className="text-xs text-gray-400">Gargalo do funil</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-xs text-gray-500 font-medium">Status</p>
-                            <p className="text-xl font-extrabold">
-                                <span className={`px-3 py-1 rounded-full text-sm ${funnel.sheetsUrl ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                                    }`}>
-                                    {funnel.sheetsUrl ? "Conectado" : "Sem dados"}
-                                </span>
-                            </p>
-                            <p className="text-xs text-gray-400">Planilha</p>
-                        </div>
-                    </div>
+                {/* Refresh Data Button */}
+                {funnel.sheetsUrl && (
+                    <button
+                        onClick={refreshData}
+                        disabled={isLoadingData}
+                        className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors disabled:opacity-50"
+                        title="Atualizar dados"
+                    >
+                        <span className={`material-symbols-outlined text-[20px] ${isLoadingData ? 'animate-spin' : ''}`}>
+                            {isLoadingData ? 'progress_activity' : 'refresh'}
+                        </span>
+                    </button>
                 )}
-            </div>
 
-            {/* Stages Detail Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {funnel.stages.map((stage) => {
+                {/* Sheets Config Button */}
+                <button
+                    onClick={() => setShowSheetsConfig(true)}
+                    className={`p-2 rounded-lg transition-colors ${funnel.sheetsUrl
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                    title="Configurar planilha"
+                >
+                    <span className="material-symbols-outlined text-[20px]">table</span>
+                </button>
+
+                {/* Delete */}
+                <button
+                    onClick={handleDelete}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                    title="Excluir funil"
+                >
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+            </div>
+        </div>
+
+            {/* Data Status */ }
+    {
+        !funnel.sheetsUrl && (
+            <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center gap-3">
+                <span className="material-symbols-outlined text-yellow-600">warning</span>
+                <div className="flex-1">
+                    <p className="text-sm font-medium text-yellow-800">Planilha não configurada</p>
+                    <p className="text-xs text-yellow-700">Configure a URL do Google Sheets para visualizar os dados</p>
+                </div>
+                <button
+                    onClick={() => setShowSheetsConfig(true)}
+                    className="px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-medium text-sm rounded-lg"
+                >
+                    Configurar
+                </button>
+            </div>
+        )
+    }
+
+    {
+        dataError && (
+            <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3">
+                <span className="material-symbols-outlined text-red-600">error</span>
+                <p className="text-sm text-red-700">{dataError}</p>
+            </div>
+        )
+    }
+
+    {
+        isLoadingData && (
+            <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-center gap-3">
+                <span className="material-symbols-outlined animate-spin text-blue-600">progress_activity</span>
+                <p className="text-sm text-blue-700">Carregando dados da planilha...</p>
+            </div>
+        )
+    }
+
+    {/* Visual Funnel */ }
+    <div className="p-8 rounded-xl bg-white border border-gray-200 shadow-sm">
+        <div className="mb-6">
+            <h3 className="text-lg font-bold text-[#19069E]">Visualização do Funil</h3>
+            <p className="text-sm text-gray-500">Jornada do cliente com taxas de conversão</p>
+        </div>
+
+        {funnel.stages.length === 0 ? (
+            <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-3xl text-amber-600">warning</span>
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 mb-2">Nenhuma etapa cadastrada</h4>
+                <p className="text-sm text-gray-500 mb-4 max-w-md mx-auto">
+                    Este funil não possui etapas. As etapas podem não ter sido salvas corretamente durante a criação.
+                    Você pode excluir este funil e criar um novo com as etapas desejadas.
+                </p>
+                <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    Excluir e criar novo
+                </button>
+            </div>
+        ) : (
+            <div className="flex flex-col items-center space-y-2">
+                {funnel.stages.map((stage, index) => {
                     const value = getStageValueForPeriod(stage.name);
+                    const firstStageValue = getStageValueForPeriod(funnel.stages[0]?.name);
+                    const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
+
+                    // Calculate percentage relative to first stage
+                    const percentOfTotal = firstStageValue && value !== null
+                        ? ((value / firstStageValue) * 100)
+                        : (index === 0 ? 100 : null);
+
+                    // Calculate conversion rate from previous stage
+                    const conversionRate = previousValue && value !== null
+                        ? ((value / previousValue) * 100)
+                        : null;
+
                     const status = getPerformanceStatus(value, stage.thresholds);
                     const config = PERFORMANCE_CONFIG[status];
+                    const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
+
+                    // Use brand colors - first stage is primary color, last is accent
+                    const isLastStage = index === funnel.stages.length - 1;
+                    const bgColor = isLastStage ? "bg-[#C2DF0C]" : "bg-[#19069E]";
+                    const textColor = isLastStage ? "text-[#19069E]" : "text-white";
+                    const subTextColor = isLastStage ? "text-[#19069E]/70" : "text-white/70";
 
                     return (
-                        <div
-                            key={stage.id}
-                            className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
-                        >
-                            <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                    <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
-                                </div>
-                                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
-                                    <span className={`material-symbols-outlined text-[18px] ${config.textColor}`}>
-                                        {config.icon}
-                                    </span>
-                                    <span className={`text-xs font-bold ${config.textColor}`}>
-                                        {config.label}
+                        <div key={stage.id} className="relative w-full flex flex-col items-center">
+                            {/* Conversion Rate Badge */}
+                            {index > 0 && conversionRate !== null && (
+                                <div className="py-2">
+                                    <span className="inline-flex items-center px-3 py-1 bg-[#C2DF0C] text-[#19069E] text-xs font-bold rounded-full shadow">
+                                        {conversionRate.toFixed(2)}% conversão
                                     </span>
                                 </div>
-                            </div>
+                            )}
 
-                            <p className="text-3xl font-extrabold text-[#19069E] mb-3">
-                                {value !== null ? value : "—"}
-                                <span className="text-lg font-medium text-gray-500 ml-1">
-                                    {stage.unit === "absolute" ? "/dia" : "%"}
-                                </span>
-                            </p>
+                            {/* Stage Bar */}
+                            <div
+                                className={`relative py-4 px-6 rounded-lg text-center transition-all hover:scale-[1.01] ${bgColor} group cursor-pointer`}
+                                style={{ width: `${widthPercent}%`, maxWidth: "700px", minWidth: "200px" }}
+                                onClick={() => setEditingStage(stage.id)}
+                            >
+                                {/* Performance Indicator */}
+                                <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${config.color}`} title={config.label}></div>
 
-                            <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
-                                <span className="text-gray-500">
-                                    Meta: {stage.thresholds.otimo.min}+
-                                    {stage.unit === "percentage" ? "%" : ""}
-                                </span>
+                                {/* Edit Button */}
                                 <button
-                                    onClick={() => setEditingStage(stage.id)}
-                                    className="text-[#19069E] hover:underline font-medium"
+                                    onClick={(e) => { e.stopPropagation(); setEditingStage(stage.id); }}
+                                    className={`absolute top-2 right-2 p-1.5 rounded-lg ${isLastStage ? "bg-[#19069E]/10 text-[#19069E]" : "bg-white/20 text-white"} opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30`}
+                                    title="Editar critérios"
                                 >
-                                    Editar critérios
+                                    <span className="material-symbols-outlined text-[16px]">tune</span>
                                 </button>
+
+                                {/* Stage Name */}
+                                <p className={`${subTextColor} text-xs font-bold uppercase tracking-wider mb-1`}>
+                                    {stage.name}
+                                </p>
+
+                                {/* Value */}
+                                <p className={`${textColor} text-3xl font-extrabold`}>
+                                    {value !== null ? (
+                                        value >= 1000000
+                                            ? `${(value / 1000000).toFixed(1)}M`
+                                            : value >= 1000
+                                                ? `${(value / 1000).toFixed(1)}K`
+                                                : value.toLocaleString("pt-BR")
+                                    ) : "—"}
+                                </p>
                             </div>
                         </div>
                     );
                 })}
             </div>
+        )}
 
-            {/* Evaluation Stages Section */}
-            {funnel.evaluationStages && funnel.evaluationStages.length > 0 && (
-                <div className="p-6 rounded-xl bg-amber-50 border border-amber-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-amber-600">assessment</span>
-                        <h3 className="text-lg font-bold text-amber-700">Etapas de Avaliação</h3>
-                    </div>
-                    <p className="text-sm text-amber-600 mb-4">
-                        Métricas acessórias que não fazem parte do fluxo principal do funil
+        {/* Summary Metrics */}
+        {funnel.stages.length >= 2 && (
+            <div className="mt-8 pt-6 border-t border-gray-200 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 font-medium">Taxa Geral</p>
+                    <p className="text-xl font-extrabold text-[#19069E]">
+                        {(() => {
+                            const first = getStageValueForPeriod(funnel.stages[0]?.name);
+                            const last = getStageValueForPeriod(funnel.stages[funnel.stages.length - 1]?.name);
+                            return first && last ? `${((last / first) * 100).toFixed(3)}%` : "—";
+                        })()}
                     </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {funnel.evaluationStages.map((stage) => {
-                            const value = getStageValueForPeriod(stage.name);
-                            const status = getPerformanceStatus(value, stage.thresholds);
-                            const config = PERFORMANCE_CONFIG[status];
-
-                            return (
-                                <div
-                                    key={stage.id}
-                                    className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-amber-500 text-[18px]">assessment</span>
-                                            <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
-                                        </div>
-                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
-                                            <span className={`material-symbols-outlined text-[18px] ${config.textColor}`}>
-                                                {config.icon}
-                                            </span>
-                                            <span className={`text-xs font-bold ${config.textColor}`}>
-                                                {config.label}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-3xl font-extrabold text-amber-700 mb-3">
-                                        {value !== null ? value : "—"}
-                                        <span className="text-lg font-medium text-gray-500 ml-1">
-                                            {stage.unit === "absolute" ? "/dia" : "%"}
-                                        </span>
-                                    </p>
-
-                                    <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
-                                        <span className="text-gray-500">
-                                            Meta: {stage.thresholds.otimo.min}+
-                                            {stage.unit === "percentage" ? "%" : ""}
-                                        </span>
-                                        <button
-                                            onClick={() => setEditingStage(stage.id)}
-                                            className="text-amber-600 hover:underline font-medium"
-                                        >
-                                            Editar critérios
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <p className="text-xs text-gray-400">
+                        {funnel.stages[0]?.name} → {funnel.stages[funnel.stages.length - 1]?.name}
+                    </p>
                 </div>
-            )}
-
-            {/* Legend */}
-            <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                        <span className="text-gray-600">ÓTIMO</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                        <span className="text-gray-600">OK</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                        <span className="text-gray-600">RUIM</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-gray-400"></span>
-                        <span className="text-gray-600">SEM DADOS</span>
-                    </div>
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 font-medium">Etapas</p>
+                    <p className="text-xl font-extrabold text-[#19069E]">{funnel.stages.length}</p>
+                    <p className="text-xs text-gray-400">Total de etapas</p>
+                </div>
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 font-medium">Menor Conversão</p>
+                    <p className="text-xl font-extrabold text-red-500">
+                        {(() => {
+                            let minRate = Infinity;
+                            for (let i = 1; i < funnel.stages.length; i++) {
+                                const prev = getStageValueForPeriod(funnel.stages[i - 1]?.name);
+                                const curr = getStageValueForPeriod(funnel.stages[i]?.name);
+                                if (prev && curr) {
+                                    minRate = Math.min(minRate, (curr / prev) * 100);
+                                }
+                            }
+                            return minRate !== Infinity ? `${minRate.toFixed(2)}%` : "—";
+                        })()}
+                    </p>
+                    <p className="text-xs text-gray-400">Gargalo do funil</p>
+                </div>
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 font-medium">Status</p>
+                    <p className="text-xl font-extrabold">
+                        <span className={`px-3 py-1 rounded-full text-sm ${funnel.sheetsUrl ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                            }`}>
+                            {funnel.sheetsUrl ? "Conectado" : "Sem dados"}
+                        </span>
+                    </p>
+                    <p className="text-xs text-gray-400">Planilha</p>
                 </div>
             </div>
+        )}
+    </div>
 
-            {/* Modals */}
-            {
-                editingStageData && (
-                    <ThresholdEditor
-                        stageName={editingStageData.name}
-                        unit={editingStageData.unit}
-                        thresholds={editingStageData.thresholds}
-                        onSave={(thresholds) => updateThresholds(funnel.id, editingStageData.id, thresholds)}
-                        onClose={() => setEditingStage(null)}
-                    />
-                )
-            }
+    {/* Stages Detail Cards */ }
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {funnel.stages.map((stage) => {
+            const value = getStageValueForPeriod(stage.name);
+            const status = getPerformanceStatus(value, stage.thresholds);
+            const config = PERFORMANCE_CONFIG[status];
 
-            {
-                showSheetsConfig && (
-                    <SheetsConfigModal
-                        currentUrl={funnel.sheetsUrl}
-                        onSave={(url) => setSheetsUrl(funnel.id, url)}
-                        onClose={() => setShowSheetsConfig(false)}
-                    />
-                )
-            }
+            return (
+                <div
+                    key={stage.id}
+                    className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
+                >
+                    <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
+                        </div>
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
+                            <span className={`material-symbols-outlined text-[18px] ${config.textColor}`}>
+                                {config.icon}
+                            </span>
+                            <span className={`text-xs font-bold ${config.textColor}`}>
+                                {config.label}
+                            </span>
+                        </div>
+                    </div>
 
-            {
-                showRenameModal && (
-                    <RenameModal
-                        currentName={funnel.name}
-                        onSave={(newName) => updateFunnel(funnel.id, { name: newName })}
-                        onClose={() => setShowRenameModal(false)}
-                    />
-                )
-            }
+                    <p className="text-3xl font-extrabold text-[#19069E] mb-3">
+                        {value !== null ? value : "—"}
+                        <span className="text-lg font-medium text-gray-500 ml-1">
+                            {stage.unit === "absolute" ? "/dia" : "%"}
+                        </span>
+                    </p>
+
+                    <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
+                        <span className="text-gray-500">
+                            Meta: {stage.thresholds.otimo.min}+
+                            {stage.unit === "percentage" ? "%" : ""}
+                        </span>
+                        <button
+                            onClick={() => setEditingStage(stage.id)}
+                            className="text-[#19069E] hover:underline font-medium"
+                        >
+                            Editar critérios
+                        </button>
+                    </div>
+                </div>
+            );
+        })}
+    </div>
+
+    {/* Evaluation Stages Section */ }
+    {
+        funnel.evaluationStages && funnel.evaluationStages.length > 0 && (
+            <div className="p-6 rounded-xl bg-amber-50 border border-amber-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-amber-600">assessment</span>
+                    <h3 className="text-lg font-bold text-amber-700">Etapas de Avaliação</h3>
+                </div>
+                <p className="text-sm text-amber-600 mb-4">
+                    Métricas acessórias que não fazem parte do fluxo principal do funil
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {funnel.evaluationStages.map((stage) => {
+                        const value = getStageValueForPeriod(stage.name);
+                        const status = getPerformanceStatus(value, stage.thresholds);
+                        const config = PERFORMANCE_CONFIG[status];
+
+                        return (
+                            <div
+                                key={stage.id}
+                                className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
+                            >
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-amber-500 text-[18px]">assessment</span>
+                                        <h4 className="font-bold text-gray-900 text-sm">{stage.name}</h4>
+                                    </div>
+                                    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${config.bgLight}`}>
+                                        <span className={`material-symbols-outlined text-[18px] ${config.textColor}`}>
+                                            {config.icon}
+                                        </span>
+                                        <span className={`text-xs font-bold ${config.textColor}`}>
+                                            {config.label}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="text-3xl font-extrabold text-amber-700 mb-3">
+                                    {value !== null ? value : "—"}
+                                    <span className="text-lg font-medium text-gray-500 ml-1">
+                                        {stage.unit === "absolute" ? "/dia" : "%"}
+                                    </span>
+                                </p>
+
+                                <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
+                                    <span className="text-gray-500">
+                                        Meta: {stage.thresholds.otimo.min}+
+                                        {stage.unit === "percentage" ? "%" : ""}
+                                    </span>
+                                    <button
+                                        onClick={() => setEditingStage(stage.id)}
+                                        className="text-amber-600 hover:underline font-medium"
+                                    >
+                                        Editar critérios
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        )
+    }
+
+    {/* Legend */ }
+    <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                <span className="text-gray-600">ÓTIMO</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span className="text-gray-600">OK</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                <span className="text-gray-600">RUIM</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gray-400"></span>
+                <span className="text-gray-600">SEM DADOS</span>
+            </div>
+        </div>
+    </div>
+
+    {/* Modals */ }
+    {
+        editingStageData && (
+            <ThresholdEditor
+                stageName={editingStageData.name}
+                unit={editingStageData.unit}
+                thresholds={editingStageData.thresholds}
+                onSave={(thresholds) => updateThresholds(funnel.id, editingStageData.id, thresholds)}
+                onClose={() => setEditingStage(null)}
+            />
+        )
+    }
+
+    {
+        showSheetsConfig && (
+            <SheetsConfigModal
+                currentUrl={funnel.sheetsUrl}
+                onSave={(url) => setSheetsUrl(funnel.id, url)}
+                onClose={() => setShowSheetsConfig(false)}
+            />
+        )
+    }
+
+    {
+        showRenameModal && (
+            <RenameModal
+                currentName={funnel.name}
+                onSave={(newName) => updateFunnel(funnel.id, { name: newName })}
+                onClose={() => setShowRenameModal(false)}
+            />
+        )
+    }
         </div >
     );
 }
