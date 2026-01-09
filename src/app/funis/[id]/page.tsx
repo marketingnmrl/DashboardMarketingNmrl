@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useFunnels, useFunnelData } from "@/hooks/useFunnels";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { getPerformanceStatus, PERFORMANCE_CONFIG, SHEETS_FORMAT_HELP, FunnelStageThresholds } from "@/types/funnel";
@@ -287,12 +287,25 @@ export default function FunilDetailPage() {
         start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
         end: new Date().toISOString().split("T")[0],
     });
+    const [dateRangeInitialized, setDateRangeInitialized] = useState(false);
 
     const funnel = getFunnel(params.id as string);
-    const { getStageValue, isLoading: isLoadingData, error: dataError, refresh: refreshData } = useFunnelData(
+    const { getStageValue, getAvailableDateRange, isLoading: isLoadingData, error: dataError, refresh: refreshData } = useFunnelData(
         funnel?.sheetsUrl,
         funnel?.name || ""
     );
+
+    // Auto-populate custom date range from available spreadsheet data
+    useEffect(() => {
+        const availableRange = getAvailableDateRange();
+        if (!dateRangeInitialized && availableRange.minDate && availableRange.maxDate) {
+            setCustomDateRange({
+                start: availableRange.minDate.toISOString().split("T")[0],
+                end: availableRange.maxDate.toISOString().split("T")[0],
+            });
+            setDateRangeInitialized(true);
+        }
+    }, [getAvailableDateRange, dateRangeInitialized]);
 
     // Calculate date range based on selected period
     const getDateRange = useCallback((): { start: Date; end: Date } => {
