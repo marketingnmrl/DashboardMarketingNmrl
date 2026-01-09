@@ -361,7 +361,8 @@ export function useFunnels() {
     };
 }
 
-// Hook to fetch data from Google Sheets
+// Hook to fetch flow-based data from Google Sheets (dashboard_daily tab)
+// This data represents how many people PASSED THROUGH each stage, not how many ARE in each stage
 export function useFunnelData(sheetsUrl: string | undefined, funnelName: string) {
     const [data, setData] = useState<FunnelMetricData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -377,9 +378,10 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetsUrl)}&funnel=${encodeURIComponent(funnelName)}&t=${Date.now()}`);
+            const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetsUrl)}&pipeline=${encodeURIComponent(funnelName)}&t=${Date.now()}`);
             if (!res.ok) throw new Error("Falha ao buscar dados da planilha");
             const result = await res.json();
+            if (result.error) throw new Error(result.error);
             setData(result.data || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Erro desconhecido");
@@ -398,30 +400,71 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         setRefreshKey(prev => prev + 1);
     }, []);
 
-    // Get value for a specific stage and date range
+    // Parse date from DD/MM/YYYY format to Date object
+    const parseDate = useCallback((dateStr: string): Date | null => {
+        if (!dateStr) return null;
+        // Handle DD/MM/YYYY format
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const [day, month, year] = parts.map(p => parseInt(p));
+            return new Date(year, month - 1, day);
+        }
+        // Fallback to ISO format
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+    }, []);
+
+    // Check if a date is within range
+    const isDateInRange = useCallback((dateStr: string, startDate?: Date, endDate?: Date): boolean => {
+        const date = parseDate(dateStr);
+        if (!date) return false;
+
+        // Reset time parts for comparison
+        date.setHours(0, 0, 0, 0);
+
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            if (date < start) return false;
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            if (date > end) return false;
+        }
+        return true;
+    }, [parseDate]);
+
+    // Get TOTAL value for a specific stage within a date range
+    // This SUMS created_count + stage_changed_count for all days in the range
     const getStageValue = useCallback(
-        (stageName: string, startDate?: string, endDate?: string): number | null => {
+        (stageName: string, startDate?: Date, endDate?: Date): number | null => {
+            // Filter by stage name (exact match)
             const stageData = data.filter((d) => d.stage === stageName);
 
             if (stageData.length === 0) return null;
 
-            let filtered = stageData;
-            if (startDate) {
-                filtered = filtered.filter((d) => d.date >= startDate);
-            }
-            if (endDate) {
-                filtered = filtered.filter((d) => d.date <= endDate);
-            }
+            // Filter by date range
+            const filteredData = stageData.filter((d) => isDateInRange(d.date, startDate, endDate));
 
-            if (filtered.length === 0) return null;
+            if (filteredData.length === 0) return null;
 
-            // Return the most recent value or average depending on use case
-            // For now, return the most recent
-            const sorted = filtered.sort((a, b) => b.date.localeCompare(a.date));
-            return sorted[0]?.value ?? null;
+            // Sum created_count + stage_changed_count for all matching rows
+            const total = filteredData.reduce((sum, d) => {
+                return sum + (d.createdCount || 0) + (d.stageChangedCount || 0);
+            }, 0);
+
+            return total;
         },
-        [data]
+        [data, isDateInRange]
     );
 
-    return { data, isLoading, error, getStageValue, refresh };
+    // Get all unique stages found in the data
+    const getAvailableStages = useCallback((): string[] => {
+        const stages = new Set(data.map(d => d.stage));
+        return Array.from(stages);
+    }, [data]);
+
+    return { data, isLoading, error, getStageValue, getAvailableStages, refresh };
 }
+

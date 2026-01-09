@@ -24,12 +24,14 @@ export interface Funnel {
     sheetsUrl?: string; // Google Sheets URL
 }
 
-// Data from Google Sheets
+// Data from Google Sheets (dashboard_daily tab)
+// Represents flow data: how many people passed through each stage on each day
 export interface FunnelMetricData {
-    funnel: string;
-    stage: string;
-    value: number;
-    date: string;
+    pipeline: string;      // Nome do funil (ex: "Funil Sessão Estratégica")
+    stage: string;         // Nome da etapa (ex: "Novo Lead")
+    date: string;          // Data do evento (DD/MM/YYYY)
+    createdCount: number;  // Quantas oportunidades nasceram nessa etapa nesse dia
+    stageChangedCount: number; // Quantas oportunidades vieram de outra etapa nesse dia
 }
 
 export type PerformanceStatus = "otimo" | "ok" | "ruim" | "sem_dados";

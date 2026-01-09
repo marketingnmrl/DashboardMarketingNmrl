@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useFunnels, useFunnelData } from "@/hooks/useFunnels";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { getPerformanceStatus, PERFORMANCE_CONFIG, SHEETS_FORMAT_HELP, FunnelStageThresholds } from "@/types/funnel";
@@ -294,6 +294,57 @@ export default function FunilDetailPage() {
         funnel?.name || ""
     );
 
+    // Calculate date range based on selected period
+    const getDateRange = useCallback((): { start: Date; end: Date } => {
+        const now = new Date();
+        now.setHours(23, 59, 59, 999);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        switch (selectedPeriod) {
+            case "hoje":
+                return { start: today, end: now };
+            case "ontem": {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayEnd = new Date(yesterday);
+                yesterdayEnd.setHours(23, 59, 59, 999);
+                return { start: yesterday, end: yesterdayEnd };
+            }
+            case "7d": {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 6);
+                return { start, end: now };
+            }
+            case "30d": {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 29);
+                return { start, end: now };
+            }
+            case "mes": {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { start, end: now };
+            }
+            case "custom":
+                return {
+                    start: new Date(customDateRange.start),
+                    end: new Date(customDateRange.end + "T23:59:59")
+                };
+            default:
+                return { start: today, end: now };
+        }
+    }, [selectedPeriod, customDateRange]);
+
+    const dateRange = getDateRange();
+
+    // Helper to get stage value with current date range
+    const getStageValueForPeriod = useCallback(
+        (stageName: string): number | null => {
+            return getStageValue(stageName, dateRange.start, dateRange.end);
+        },
+        [getStageValue, dateRange]
+    );
+
     // Build KPIs object with actual values for AI context
     const funnelKpis = useMemo(() => {
         if (!funnel || isLoading) return {};
@@ -305,13 +356,13 @@ export default function FunilDetailPage() {
         };
 
         funnel.stages.forEach((stage, index) => {
-            const value = getStageValue(stage.name);
+            const value = getStageValueForPeriod(stage.name);
             const key = stage.name.toLowerCase().replace(/ /g, "_");
             kpis[key] = value ?? 0;
 
             // Add conversion rate to next stage
             if (index > 0) {
-                const prevValue = getStageValue(funnel.stages[index - 1]?.name);
+                const prevValue = getStageValueForPeriod(funnel.stages[index - 1]?.name);
                 if (prevValue && value !== null) {
                     kpis[`conversao_${key}`] = `${((value / prevValue) * 100).toFixed(2)}%`;
                 }
@@ -319,8 +370,8 @@ export default function FunilDetailPage() {
         });
 
         // Calculate overall funnel conversion
-        const firstValue = getStageValue(funnel.stages[0]?.name);
-        const lastValue = getStageValue(funnel.stages[funnel.stages.length - 1]?.name);
+        const firstValue = getStageValueForPeriod(funnel.stages[0]?.name);
+        const lastValue = getStageValueForPeriod(funnel.stages[funnel.stages.length - 1]?.name);
         if (firstValue && lastValue) {
             kpis["conversao_total"] = `${((lastValue / firstValue) * 100).toFixed(3)}%`;
         }
@@ -328,7 +379,7 @@ export default function FunilDetailPage() {
         kpis["planilha_conectada"] = funnel.sheetsUrl ? "Sim" : "Não";
 
         return kpis;
-    }, [funnel, isLoading, getStageValue]);
+    }, [funnel, isLoading, getStageValueForPeriod]);
 
     usePageMetrics({
         pagina: funnel?.name || "Funil",
@@ -592,9 +643,9 @@ export default function FunilDetailPage() {
                 ) : (
                     <div className="flex flex-col items-center space-y-2">
                         {funnel.stages.map((stage, index) => {
-                            const value = getStageValue(stage.name);
-                            const firstStageValue = getStageValue(funnel.stages[0]?.name);
-                            const previousValue = index > 0 ? getStageValue(funnel.stages[index - 1]?.name) : null;
+                            const value = getStageValueForPeriod(stage.name);
+                            const firstStageValue = getStageValueForPeriod(funnel.stages[0]?.name);
+                            const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
 
                             // Calculate percentage relative to first stage
                             const percentOfTotal = firstStageValue && value !== null
@@ -674,8 +725,8 @@ export default function FunilDetailPage() {
                             <p className="text-xs text-gray-500 font-medium">Taxa Geral</p>
                             <p className="text-xl font-extrabold text-[#19069E]">
                                 {(() => {
-                                    const first = getStageValue(funnel.stages[0]?.name);
-                                    const last = getStageValue(funnel.stages[funnel.stages.length - 1]?.name);
+                                    const first = getStageValueForPeriod(funnel.stages[0]?.name);
+                                    const last = getStageValueForPeriod(funnel.stages[funnel.stages.length - 1]?.name);
                                     return first && last ? `${((last / first) * 100).toFixed(3)}%` : "—";
                                 })()}
                             </p>
@@ -694,8 +745,8 @@ export default function FunilDetailPage() {
                                 {(() => {
                                     let minRate = Infinity;
                                     for (let i = 1; i < funnel.stages.length; i++) {
-                                        const prev = getStageValue(funnel.stages[i - 1]?.name);
-                                        const curr = getStageValue(funnel.stages[i]?.name);
+                                        const prev = getStageValueForPeriod(funnel.stages[i - 1]?.name);
+                                        const curr = getStageValueForPeriod(funnel.stages[i]?.name);
                                         if (prev && curr) {
                                             minRate = Math.min(minRate, (curr / prev) * 100);
                                         }
@@ -722,7 +773,7 @@ export default function FunilDetailPage() {
             {/* Stages Detail Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {funnel.stages.map((stage) => {
-                    const value = getStageValue(stage.name);
+                    const value = getStageValueForPeriod(stage.name);
                     const status = getPerformanceStatus(value, stage.thresholds);
                     const config = PERFORMANCE_CONFIG[status];
 
@@ -782,7 +833,7 @@ export default function FunilDetailPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {funnel.evaluationStages.map((stage) => {
-                            const value = getStageValue(stage.name);
+                            const value = getStageValueForPeriod(stage.name);
                             const status = getPerformanceStatus(value, stage.thresholds);
                             const config = PERFORMANCE_CONFIG[status];
 
