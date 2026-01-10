@@ -13,6 +13,7 @@ const navigation = [
     section: "Dashboard",
     items: [
       { name: "Visão Geral", href: "/", icon: "dashboard" },
+      { name: "Placar Semanal", href: "/placar-semanal", icon: "scoreboard" },
     ],
   },
   {
