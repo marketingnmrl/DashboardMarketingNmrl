@@ -33,7 +33,11 @@ export interface FunnelMetricData {
     date: string;          // Data do evento (DD/MM/YYYY)
     createdCount: number;  // Quantas oportunidades nasceram nessa etapa nesse dia
     stageChangedCount: number; // Quantas oportunidades vieram de outra etapa nesse dia
+    origem?: string;       // Origem do lead: "trafego" | "organico" (opcional, para filtro)
 }
+
+// Origin/Source types for filtering
+export type FunnelOrigin = "total" | "trafego" | "organico";
 
 export type PerformanceStatus = "otimo" | "ok" | "ruim" | "sem_dados";
 

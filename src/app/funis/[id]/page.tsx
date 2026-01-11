@@ -331,22 +331,29 @@ export default function FunilDetailPage() {
         end: today,
     });
 
+    // Origin filter state
+    const [selectedOrigin, setSelectedOrigin] = useState<"total" | "trafego" | "organico">("total");
+
     const handleDateChange = useCallback((start: Date, end: Date) => {
         setDateRange({ start, end });
     }, []);
 
     const funnel = getFunnel(params.id as string);
-    const { getStageValue, isLoading: isLoadingData, error: dataError, refresh: refreshData } = useFunnelData(
+    const { getStageValue, isLoading: isLoadingData, error: dataError, refresh: refreshData, getAvailableOrigins } = useFunnelData(
         funnel?.sheetsUrl,
         funnel?.name || ""
     );
 
-    // Helper to get stage value with current date range
+    // Check if origin data is available
+    const availableOrigins = getAvailableOrigins();
+    const hasOriginData = availableOrigins.length > 0;
+
+    // Helper to get stage value with current date range and origin filter
     const getStageValueForPeriod = useCallback(
         (stageName: string): number | null => {
-            return getStageValue(stageName, dateRange.start, dateRange.end);
+            return getStageValue(stageName, dateRange.start, dateRange.end, selectedOrigin);
         },
-        [getStageValue, dateRange]
+        [getStageValue, dateRange, selectedOrigin]
     );
 
     // Build KPIs object with actual values for AI context
@@ -462,6 +469,24 @@ export default function FunilDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* Origin Filter Toggle */}
+                    {hasOriginData && (
+                        <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+                            {(["total", "trafego", "organico"] as const).map((origin) => (
+                                <button
+                                    key={origin}
+                                    onClick={() => setSelectedOrigin(origin)}
+                                    className={`px-3 py-2 text-sm font-medium transition-colors ${selectedOrigin === origin
+                                        ? "bg-[#19069E] text-white"
+                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                        }`}
+                                >
+                                    {origin === "total" ? "Total" : origin === "trafego" ? "Tráfego" : "Orgânico"}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Date Range Picker */}
                     <DateRangePicker
                         startDate={dateRange.start}
@@ -595,7 +620,15 @@ export default function FunilDetailPage() {
                             const subTextColor = isLastStage ? "text-[#19069E]/70" : "text-white/70";
 
                             return (
-                                <div key={stage.id} className="relative w-full flex flex-col items-center">
+                                <div
+                                    key={stage.id}
+                                    className="relative w-full flex flex-col items-center animate-cascade-in"
+                                    style={{
+                                        animationDelay: `${index * 100}ms`,
+                                        opacity: 0,
+                                        animation: `cascadeIn 0.4s ease-out ${index * 100}ms forwards`
+                                    }}
+                                >
                                     {/* Conversion Rate Badge */}
                                     {index > 0 && conversionRate !== null && (
                                         <div className="py-2">

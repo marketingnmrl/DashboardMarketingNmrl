@@ -435,14 +435,19 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         return true;
     }, [parseDate]);
 
-    // Get TOTAL value for a specific stage within a date range
+    // Get TOTAL value for a specific stage within a date range and optional origin filter
     // This SUMS created_count + stage_changed_count for all days in the range
     const getStageValue = useCallback(
-        (stageName: string, startDate?: Date, endDate?: Date): number | null => {
+        (stageName: string, startDate?: Date, endDate?: Date, origem?: "total" | "trafego" | "organico"): number | null => {
             // Filter by stage name (exact match)
-            const stageData = data.filter((d) => d.stage === stageName);
+            let stageData = data.filter((d) => d.stage === stageName);
 
             if (stageData.length === 0) return null;
+
+            // Filter by origin if specified (not "total")
+            if (origem && origem !== "total") {
+                stageData = stageData.filter((d) => d.origem === origem);
+            }
 
             // Filter by date range
             const filteredData = stageData.filter((d) => isDateInRange(d.date, startDate, endDate));
@@ -465,6 +470,12 @@ export function useFunnelData(sheetsUrl: string | undefined, funnelName: string)
         return Array.from(stages);
     }, [data]);
 
-    return { data, isLoading, error, getStageValue, getAvailableStages, refresh };
+    // Get all unique origins found in the data
+    const getAvailableOrigins = useCallback((): string[] => {
+        const origins = new Set(data.map(d => d.origem).filter((o): o is string => Boolean(o)));
+        return Array.from(origins);
+    }, [data]);
+
+    return { data, isLoading, error, getStageValue, getAvailableStages, getAvailableOrigins, refresh };
 }
 

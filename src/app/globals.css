@@ -9,31 +9,31 @@
   --color-primary: #19069E;
   --color-primary-dark: #12047A;
   --color-primary-light: #3B28B8;
-  
+
   /* Accent / Action */
   --color-accent: #C2DF0C;
   --color-accent-hover: #B0CC0B;
-  
+
   /* Background */
   --color-background-main: #F4F4F4;
   --color-surface: #FFFFFF;
   --color-surface-dark: #1C2533;
-  
+
   /* Text */
   --color-text-primary: #10171F;
   --color-text-secondary: #64748B;
   --color-text-muted: #94A3B8;
-  
+
   /* Borders & Dividers */
   --color-border: #E5E7EB;
   --color-border-light: #F1F5F9;
   --color-divider: #ACACAC;
-  
+
   /* Status Colors */
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -58,7 +58,7 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
-  
+
   /* Font Family */
   --font-display: "Rubik", system-ui, sans-serif;
 }
@@ -146,4 +146,21 @@ body {
   height: 100px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0 0 0 100%;
+}
+
+/* Cascade Animation for Funnel Stages */
+@keyframes cascadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cascade-in {
+  animation: cascadeIn 0.4s ease-out forwards;
 }

@@ -71,12 +71,13 @@ export async function GET(request: NextRequest) {
         const headers = rows[0].map((h) => h.toLowerCase().trim());
 
         // Find column indices for new format
-        // Expected columns: date, pipeline, stage, created_count, stage_changed_count
+        // Expected columns: date, pipeline, stage, created_count, stage_changed_count, origem (optional)
         const dateIdx = headers.findIndex((h) => h === "date");
         const pipelineIdx = headers.findIndex((h) => h === "pipeline");
         const stageIdx = headers.findIndex((h) => h === "stage");
         const createdCountIdx = headers.findIndex((h) => h === "created_count");
         const stageChangedCountIdx = headers.findIndex((h) => h === "stage_changed_count");
+        const origemIdx = headers.findIndex((h) => h === "origem" || h === "origin" || h === "source");
 
         if (dateIdx === -1 || pipelineIdx === -1 || stageIdx === -1 || createdCountIdx === -1 || stageChangedCountIdx === -1) {
             return NextResponse.json(
@@ -97,6 +98,7 @@ export async function GET(request: NextRequest) {
                 stage: row[stageIdx]?.trim() || "",
                 createdCount: parseInt(row[createdCountIdx]) || 0,
                 stageChangedCount: parseInt(row[stageChangedCountIdx]) || 0,
+                origem: origemIdx >= 0 ? (row[origemIdx]?.trim().toLowerCase() || "") : "",
             }))
             .filter((item) => item.pipeline && item.stage && item.date);
 
