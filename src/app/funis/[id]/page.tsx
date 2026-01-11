@@ -593,7 +593,7 @@ export default function FunilDetailPage() {
                         </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center space-y-2">
+                    <div key={`funnel-${selectedOrigin}`} className="flex flex-col items-center space-y-2">
                         {funnel.stages.map((stage, index) => {
                             const value = getStageValueForPeriod(stage.name);
                             const firstStageValue = getStageValueForPeriod(funnel.stages[0]?.name);
