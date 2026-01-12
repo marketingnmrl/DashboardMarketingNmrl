@@ -14,6 +14,10 @@ export interface StractCampaignRow {
     landingPageViews: number; // Action Landing Page View
     results: number; // Results/Conversions
     roas: number; // Purchase ROAS
+    // E-commerce fields
+    purchases: number; // Action FB Pixel Purchase
+    purchaseValue: number; // Action Value FB Pixel Purchase (receita)
+    checkouts: number; // Action Initiate Checkout FB Pixel
 }
 
 // Aggregated metrics for KPIs
@@ -26,11 +30,23 @@ export interface StractAggregatedMetrics {
     totalLeads: number;
     totalReach: number;
     totalResults: number;
+    // New purchase/checkout metrics
+    totalPurchases: number; // Compras
+    totalPurchaseValue: number; // Valor Gerado (receita)
+    totalCheckouts: number; // Checkouts iniciados
+    // Calculated averages
     avgCpc: number; // Calculated: Spend / LinkClicks
     avgCpm: number; // Calculated: (Spend / Impressions) * 1000
     avgCtr: number; // Calculated: (LinkClicks / Impressions) * 100
     avgCpl: number; // Calculated: Spend / Leads
     avgRoas: number;
+    // New calculated metrics
+    ticketMedio: number; // Calculated: PurchaseValue / Purchases
+    cac: number; // Calculated: Spend / Purchases
+    connectRate: number; // Calculated: (LinkClicks / Impressions) * 100
+    checkoutRate: number; // Calculated: (Checkouts / LinkClicks) * 100
+    purchaseRate: number; // Calculated: (Purchases / Checkouts) * 100
+    conversionRate: number; // Calculated: (Purchases / LinkClicks) * 100
     uniqueCampaigns: number;
     uniqueAds: number;
 }
@@ -97,6 +113,10 @@ export const COLUMN_MAPPINGS: Record<string, string[]> = {
     landingPageViews: ["action landing page view", "landing page views", "lp views", "visualizações da lp"],
     results: ["results", "resultados", "conversions", "conversões"],
     roas: ["purchase roas", "roas", "retorno"],
+    // New e-commerce columns
+    purchases: ["action fb pixel purchase", "purchases", "compras", "purchase", "vendas"],
+    purchaseValue: ["action value fb pixel", "action value fb pixel purchase", "purchase value", "valor", "receita", "valor gerado", "faturamento"],
+    checkouts: ["action initiate checkout fb pixel", "checkouts", "checkout", "initiate checkout"],
 };
 
 // Find column index by matching header name

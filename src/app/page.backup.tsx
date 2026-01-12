@@ -229,132 +229,105 @@ export default function DashboardPage() {
 
       {/* ============ BENTO GRID LAYOUT ============ */}
 
-      {/* ROW 1: Main KPIs - Financial Overview */}
+      {/* ROW 1: Main KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Investimento */}
-        <BentoCard
-          icon="payments"
-          label="Investimento"
-          value={hasData ? formatCurrency(metrics.totalSpend) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="accent"
-        />
+        {/* Investimento Total */}
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+          <BentoCard
+            icon="payments"
+            label="Investimento"
+            value={hasData ? formatCurrency(metrics.totalSpend) : "—"}
+            isLoading={isLoading}
+            size="sm"
+            variant="accent"
+          />
+        </div>
 
-        {/* Valor Gerado */}
+        {/* Impressões */}
         <BentoCard
-          icon="attach_money"
-          label="Valor Gerado"
-          value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"}
+          icon="visibility"
+          label="Impressões"
+          value={hasData ? formatNumber(metrics.totalImpressions) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="primary"
         />
 
-        {/* Ticket Médio */}
+        {/* Alcance */}
         <BentoCard
-          icon="receipt"
-          label="Ticket Médio"
-          value={hasData ? formatCurrency(metrics.ticketMedio) : "—"}
+          icon="group"
+          label="Alcance"
+          value={hasData ? formatNumber(metrics.totalReach) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="primary"
+        />
+
+        {/* Link Clicks */}
+        <BentoCard
+          icon="ads_click"
+          label="Cliques no Link"
+          value={hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="primary"
+        />
+
+        {/* CTR */}
+        <BentoCard
+          icon="percent"
+          label="CTR"
+          value={hasData ? formatPercent(metrics.avgCtr) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="secondary"
         />
 
-        {/* ROAS */}
+        {/* Leads */}
         <BentoCard
-          icon="trending_up"
-          label="ROAS"
-          value={hasData ? metrics.avgRoas.toFixed(2) : "—"}
+          icon="group_add"
+          label="Leads"
+          value={hasData ? formatNumber(metrics.totalLeads) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="primary"
         />
+      </div>
 
-        {/* Compras */}
+      {/* ROW 2: Secondary KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <BentoCard
-          icon="shopping_cart"
-          label="Compras"
-          value={hasData ? formatNumber(metrics.totalPurchases) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="primary"
-        />
-
-        {/* CAC */}
-        <BentoCard
-          icon="person_add"
-          label="CAC"
-          value={hasData ? formatCurrency(metrics.cac) : "—"}
+          icon="price_change"
+          label="CPC Médio"
+          value={hasData ? formatCurrency(metrics.avgCpc) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="light"
         />
-      </div>
-
-      {/* ROW 2: Funnel Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Funnel Numbers Column */}
-        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-bold text-[#19069E] mb-4">📊 Métricas de Funil</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Impressões</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalImpressions) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Cliques no Link</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Checkouts</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalCheckouts) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Compras</p>
-              <p className="text-2xl font-extrabold text-[#C2DF0C]" style={{ WebkitTextStroke: "0.5px #19069E" }}>
-                {hasData ? formatNumber(metrics.totalPurchases) : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Conversion Rates Column */}
-        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-bold text-[#19069E] mb-4">📈 Taxas de Conversão</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">CPM</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatCurrency(metrics.avgCpm) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Connect Rate</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatPercent(metrics.connectRate) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">% Checkout</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatPercent(metrics.checkoutRate) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">% Compras</p>
-              <p className="text-2xl font-extrabold text-[#C2DF0C]" style={{ WebkitTextStroke: "0.5px #19069E" }}>
-                {hasData ? formatPercent(metrics.conversionRate) : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <BentoCard
+          icon="campaign"
+          label="CPM Médio"
+          value={hasData ? formatCurrency(metrics.avgCpm) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
+        <BentoCard
+          icon="person_add"
+          label="CPL Médio"
+          value={hasData ? formatCurrency(metrics.avgCpl) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
+        <BentoCard
+          icon="work"
+          label="Campanhas"
+          value={hasData ? formatNumber(metrics.uniqueCampaigns) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
       </div>
 
       {/* ROW 3: Charts - Original Layout */}

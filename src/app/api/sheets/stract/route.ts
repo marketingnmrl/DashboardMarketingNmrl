@@ -68,6 +68,10 @@ export async function GET(request: NextRequest) {
             landingPageViews: findColumnIndex(headers, "landingPageViews"),
             results: findColumnIndex(headers, "results"),
             roas: findColumnIndex(headers, "roas"),
+            // New e-commerce columns
+            purchases: findColumnIndex(headers, "purchases"),
+            purchaseValue: findColumnIndex(headers, "purchaseValue"),
+            checkouts: findColumnIndex(headers, "checkouts"),
         };
 
         // Validate required columns
@@ -94,6 +98,10 @@ export async function GET(request: NextRequest) {
                 landingPageViews: parseIntSafe(getCell(row, columnIndices.landingPageViews)),
                 results: parseIntSafe(getCell(row, columnIndices.results)),
                 roas: parseBrazilianNumber(getCell(row, columnIndices.roas)),
+                // New e-commerce fields
+                purchases: parseIntSafe(getCell(row, columnIndices.purchases)),
+                purchaseValue: parseBrazilianNumber(getCell(row, columnIndices.purchaseValue)),
+                checkouts: parseIntSafe(getCell(row, columnIndices.checkouts)),
             }))
             .filter(row => row.date && row.date.match(/^\d{4}-\d{2}-\d{2}$/));
 
