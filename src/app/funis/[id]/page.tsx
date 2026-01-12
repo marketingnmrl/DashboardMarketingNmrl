@@ -846,7 +846,8 @@ export default function FunilDetailPage() {
                     return (
                         <div
                             key={stage.id}
-                            className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
+                            onClick={() => setEditingStage(stage.id)}
+                            className={`relative p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-md group`}
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-2">
@@ -862,25 +863,20 @@ export default function FunilDetailPage() {
                                 </div>
                             </div>
 
-                            <p className="text-3xl font-extrabold text-[#19069E] mb-3">
+                            <p className="text-3xl font-extrabold text-[#19069E]">
                                 {value !== null ? value : "—"}
                                 <span className="text-lg font-medium text-gray-500 ml-1">
                                     {stage.unit === "absolute" ? "/dia" : "%"}
                                 </span>
                             </p>
 
-                            <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
-                                <span className="text-gray-500">
-                                    Meta: {stage.thresholds.otimo.min}+
-                                    {stage.unit === "percentage" ? "%" : ""}
-                                </span>
-                                <button
-                                    onClick={() => setEditingStage(stage.id)}
-                                    className="text-[#19069E] hover:underline font-medium"
-                                >
-                                    Editar critérios
-                                </button>
-                            </div>
+                            {/* Threshold Tooltip */}
+                            <ThresholdTooltip
+                                value={value}
+                                thresholds={stage.thresholds}
+                                conversionRate={conversionRate}
+                                dayCount={dayCount}
+                            />
                         </div>
                     );
                 })}
@@ -906,7 +902,8 @@ export default function FunilDetailPage() {
                             return (
                                 <div
                                     key={stage.id}
-                                    className={`p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm`}
+                                    onClick={() => setEditingStage(stage.id)}
+                                    className={`relative p-5 rounded-xl bg-white border-2 ${config.borderColor} shadow-sm cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-md group`}
                                 >
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex items-center gap-2">
@@ -923,25 +920,20 @@ export default function FunilDetailPage() {
                                         </div>
                                     </div>
 
-                                    <p className="text-3xl font-extrabold text-amber-700 mb-3">
+                                    <p className="text-3xl font-extrabold text-amber-700">
                                         {value !== null ? value : "—"}
                                         <span className="text-lg font-medium text-gray-500 ml-1">
                                             {stage.unit === "absolute" ? "/dia" : "%"}
                                         </span>
                                     </p>
 
-                                    <div className="pt-3 border-t border-gray-100 flex justify-between text-xs">
-                                        <span className="text-gray-500">
-                                            Meta: {stage.thresholds.otimo.min}+
-                                            {stage.unit === "percentage" ? "%" : ""}
-                                        </span>
-                                        <button
-                                            onClick={() => setEditingStage(stage.id)}
-                                            className="text-amber-600 hover:underline font-medium"
-                                        >
-                                            Editar critérios
-                                        </button>
-                                    </div>
+                                    {/* Threshold Tooltip */}
+                                    <ThresholdTooltip
+                                        value={value}
+                                        thresholds={stage.thresholds}
+                                        conversionRate={null}
+                                        dayCount={dayCount}
+                                    />
                                 </div>
                             );
                         })}
