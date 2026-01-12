@@ -224,6 +224,33 @@ export default function CampanhasPage() {
         return campaignSummary.filter(c => c.campaignName === selectedCampaign);
     }, [campaignSummary, selectedCampaign]);
 
+    // Calculate filtered metrics based on selected campaign
+    const filteredMetrics = useMemo(() => {
+        if (selectedCampaign === "all") {
+            return metrics;
+        }
+        // Calculate metrics from filtered campaigns
+        const filtered = filteredCampaignSummary;
+        const totalSpend = filtered.reduce((sum, c) => sum + c.spend, 0);
+        const totalImpressions = filtered.reduce((sum, c) => sum + c.impressions, 0);
+        const totalLinkClicks = filtered.reduce((sum, c) => sum + c.linkClicks, 0);
+        const totalLeads = filtered.reduce((sum, c) => sum + c.leads, 0);
+        const totalResults = filtered.reduce((sum, c) => sum + c.results, 0);
+        const avgCtr = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
+        const avgRoas = totalSpend > 0 ? (totalResults * 100) / totalSpend : 0; // Simplified
+
+        return {
+            ...metrics,
+            totalSpend,
+            totalImpressions,
+            totalLinkClicks,
+            totalLeads,
+            totalResults,
+            avgCtr,
+            avgRoas,
+        };
+    }, [metrics, selectedCampaign, filteredCampaignSummary]);
+
     // Sort campaign data
     const sortedCampaigns = useMemo(() => {
         return [...filteredCampaignSummary].sort((a, b) => {
@@ -233,24 +260,26 @@ export default function CampanhasPage() {
         });
     }, [filteredCampaignSummary, sortColumn, sortDirection]);
 
-    // Pie chart data
+    // Pie chart data - use filtered campaigns
     const pieColors = ["#19069E", "#C2DF0C", "#3B28B8", "#7C3AED", "#10B981", "#F59E0B", "#EF4444", "#6366F1"];
 
     const spendByPie = useMemo(() => {
-        return campaignSummary.slice(0, 8).map((c, i) => ({
+        const data = selectedCampaign === "all" ? campaignSummary : filteredCampaignSummary;
+        return data.slice(0, 8).map((c, i) => ({
             label: c.campaignName,
             value: c.spend,
             color: pieColors[i % pieColors.length],
         }));
-    }, [campaignSummary]);
+    }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
 
     const resultsByPie = useMemo(() => {
-        return campaignSummary.slice(0, 8).map((c, i) => ({
+        const data = selectedCampaign === "all" ? campaignSummary : filteredCampaignSummary;
+        return data.slice(0, 8).map((c, i) => ({
             label: c.campaignName,
             value: c.results,
             color: pieColors[i % pieColors.length],
         }));
-    }, [campaignSummary]);
+    }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
 
     const handleSort = (column: string) => {
         if (sortColumn === column) {
@@ -318,12 +347,12 @@ export default function CampanhasPage() {
 
             {/* Row 1: KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(metrics.totalSpend) : "—"} isLoading={isLoading} />
-                <KPICard icon="visibility" label="Impressões" value={hasData ? formatNumber(metrics.totalImpressions) : "—"} isLoading={isLoading} />
-                <KPICard icon="ads_click" label="Cliques" value={hasData ? formatNumber(metrics.totalLinkClicks) : "—"} isLoading={isLoading} />
-                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(metrics.avgCtr) : "—"} isLoading={isLoading} />
-                <KPICard icon="check_circle" label="Conversões" value={hasData ? formatNumber(metrics.totalResults) : "—"} isLoading={isLoading} />
-                <KPICard icon="trending_up" label="ROAS" value={hasData ? metrics.avgRoas.toFixed(2) : "—"} isLoading={isLoading} />
+                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(filteredMetrics.totalSpend) : "—"} isLoading={isLoading} />
+                <KPICard icon="visibility" label="Impressões" value={hasData ? formatNumber(filteredMetrics.totalImpressions) : "—"} isLoading={isLoading} />
+                <KPICard icon="ads_click" label="Cliques" value={hasData ? formatNumber(filteredMetrics.totalLinkClicks) : "—"} isLoading={isLoading} />
+                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(filteredMetrics.avgCtr) : "—"} isLoading={isLoading} />
+                <KPICard icon="check_circle" label="Conversões" value={hasData ? formatNumber(filteredMetrics.totalResults) : "—"} isLoading={isLoading} />
+                <KPICard icon="trending_up" label="ROAS" value={hasData ? filteredMetrics.avgRoas.toFixed(2) : "—"} isLoading={isLoading} />
             </div>
 
             {/* Row 2: Charts */}
