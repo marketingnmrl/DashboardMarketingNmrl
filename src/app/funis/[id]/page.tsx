@@ -171,6 +171,95 @@ function ThresholdEditor({
     );
 }
 
+// Threshold Tooltip - shows scaled thresholds and gap to next level
+function ThresholdTooltip({
+    value,
+    thresholds,
+    conversionRate,
+    dayCount,
+}: {
+    value: number | null;
+    thresholds: FunnelStageThresholds;
+    conversionRate?: number | null;
+    dayCount: number;
+}) {
+    const mode = thresholds.thresholdMode || "absolute";
+    const usePercentage = mode === "percentage" && conversionRate !== null && conversionRate !== undefined;
+
+    // Calculate scaled thresholds
+    const scaledOtimo = usePercentage ? thresholds.otimo.min : thresholds.otimo.min * dayCount;
+    const scaledOk = usePercentage ? thresholds.ok.min : thresholds.ok.min * dayCount;
+
+    // Current value to compare
+    const currentValue = usePercentage ? conversionRate : value;
+    const suffix = usePercentage ? "%" : "";
+
+    // Calculate gap to next level
+    let gapMessage = "";
+    if (currentValue !== null && currentValue !== undefined) {
+        if (currentValue >= scaledOtimo) {
+            gapMessage = "✅ Meta atingida!";
+        } else if (currentValue >= scaledOk) {
+            const gapToOtimo = scaledOtimo - currentValue;
+            gapMessage = `Faltam ${gapToOtimo.toFixed(usePercentage ? 1 : 0)}${suffix} para ÓTIMO`;
+        } else {
+            const gapToOk = scaledOk - currentValue;
+            gapMessage = `Faltam ${gapToOk.toFixed(usePercentage ? 1 : 0)}${suffix} para OK`;
+        }
+    }
+
+    return (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
+            <div className="bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl min-w-[180px]">
+                <p className="font-bold mb-2 text-center border-b border-gray-700 pb-2">
+                    📊 Metas {usePercentage ? "(Conversão)" : `(${dayCount} ${dayCount === 1 ? "dia" : "dias"})`}
+                </p>
+                <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span>ÓTIMO:</span>
+                        </span>
+                        <span className="font-bold">≥ {scaledOtimo.toFixed(usePercentage ? 1 : 0)}{suffix}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                            <span>OK:</span>
+                        </span>
+                        <span className="font-bold">≥ {scaledOk.toFixed(usePercentage ? 1 : 0)}{suffix}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                            <span>RUIM:</span>
+                        </span>
+                        <span className="font-bold">&lt; {scaledOk.toFixed(usePercentage ? 1 : 0)}{suffix}</span>
+                    </div>
+                </div>
+                {currentValue !== null && currentValue !== undefined && (
+                    <div className="mt-2 pt-2 border-t border-gray-700">
+                        <p className="text-center">
+                            <span className="text-gray-400">Atual: </span>
+                            <span className="font-bold text-white">{currentValue.toFixed(usePercentage ? 1 : 0)}{suffix}</span>
+                        </p>
+                        <p className={`text-center mt-1 ${currentValue >= scaledOtimo
+                            ? "text-green-400"
+                            : currentValue >= scaledOk
+                                ? "text-yellow-400"
+                                : "text-red-400"
+                            }`}>
+                            {gapMessage}
+                        </p>
+                    </div>
+                )}
+                {/* Arrow */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+            </div>
+        </div>
+    );
+}
+
 // Rename Modal
 function RenameModal({
     currentName,
@@ -678,6 +767,14 @@ export default function FunilDetailPage() {
                                                         : value.toLocaleString("pt-BR")
                                             ) : "—"}
                                         </p>
+
+                                        {/* Threshold Tooltip */}
+                                        <ThresholdTooltip
+                                            value={value}
+                                            thresholds={stage.thresholds}
+                                            conversionRate={conversionRate}
+                                            dayCount={dayCount}
+                                        />
                                     </div>
                                 </div>
                             );
