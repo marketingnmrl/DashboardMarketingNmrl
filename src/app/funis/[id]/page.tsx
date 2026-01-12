@@ -348,6 +348,13 @@ export default function FunilDetailPage() {
     const availableOrigins = getAvailableOrigins();
     const hasOriginData = availableOrigins.length > 0;
 
+    // Calculate number of days in selected period (for threshold scaling)
+    const dayCount = useMemo(() => {
+        const diffTime = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(1, diffDays + 1); // +1 because both start and end days are inclusive
+    }, [dateRange]);
+
     // Helper to get stage value with current date range and origin filter
     const getStageValueForPeriod = useCallback(
         (stageName: string): number | null => {
@@ -609,7 +616,7 @@ export default function FunilDetailPage() {
                                 ? ((value / previousValue) * 100)
                                 : null;
 
-                            const status = getPerformanceStatus(value, stage.thresholds, conversionRate);
+                            const status = getPerformanceStatus(value, stage.thresholds, conversionRate, dayCount);
                             const config = PERFORMANCE_CONFIG[status];
                             const widthPercent = 100 - (index * (60 / Math.max(funnel.stages.length, 1)));
 
@@ -736,7 +743,7 @@ export default function FunilDetailPage() {
                     const value = getStageValueForPeriod(stage.name);
                     const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
                     const conversionRate = previousValue && value !== null ? (value / previousValue) * 100 : null;
-                    const status = getPerformanceStatus(value, stage.thresholds, conversionRate);
+                    const status = getPerformanceStatus(value, stage.thresholds, conversionRate, dayCount);
                     const config = PERFORMANCE_CONFIG[status];
 
                     return (
@@ -796,7 +803,7 @@ export default function FunilDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {funnel.evaluationStages.map((stage) => {
                             const value = getStageValueForPeriod(stage.name);
-                            const status = getPerformanceStatus(value, stage.thresholds);
+                            const status = getPerformanceStatus(value, stage.thresholds, null, dayCount);
                             const config = PERFORMANCE_CONFIG[status];
 
                             return (

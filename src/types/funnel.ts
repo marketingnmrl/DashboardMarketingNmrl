@@ -43,10 +43,12 @@ export type PerformanceStatus = "otimo" | "ok" | "ruim" | "sem_dados";
 
 // Helper to get performance status from value and thresholds
 // When thresholdMode is "percentage", use conversionRate instead of value
+// When thresholdMode is "absolute", scale thresholds by dayCount (threshold = daily target × days)
 export function getPerformanceStatus(
     value: number | null | undefined,
     thresholds: FunnelStageThresholds,
-    conversionRate?: number | null // Conversion rate from previous stage (0-100)
+    conversionRate?: number | null, // Conversion rate from previous stage (0-100)
+    dayCount: number = 1 // Number of days in the selected period (for scaling absolute thresholds)
 ): PerformanceStatus {
     if (value === null || value === undefined) {
         return "sem_dados";
@@ -54,13 +56,25 @@ export function getPerformanceStatus(
 
     // Determine which value to compare based on threshold mode
     const mode = thresholds.thresholdMode || "absolute";
-    const compareValue = mode === "percentage" && conversionRate !== null && conversionRate !== undefined
-        ? conversionRate
-        : value;
 
-    if (compareValue >= thresholds.otimo.min) {
+    if (mode === "percentage" && conversionRate !== null && conversionRate !== undefined) {
+        // Percentage mode: compare conversion rate directly (no scaling)
+        if (conversionRate >= thresholds.otimo.min) {
+            return "otimo";
+        } else if (conversionRate >= thresholds.ok.min) {
+            return "ok";
+        }
+        return "ruim";
+    }
+
+    // Absolute mode: scale thresholds by number of days
+    // Thresholds are configured as daily targets, so multiply by dayCount
+    const scaledOtimoMin = thresholds.otimo.min * dayCount;
+    const scaledOkMin = thresholds.ok.min * dayCount;
+
+    if (value >= scaledOtimoMin) {
         return "otimo";
-    } else if (compareValue >= thresholds.ok.min) {
+    } else if (value >= scaledOkMin) {
         return "ok";
     }
     return "ruim";
