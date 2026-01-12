@@ -400,9 +400,9 @@ export default function DashboardPage() {
           variant="primary"
         />
         <BentoCard
-          icon="work"
-          label="Campanhas"
-          value={hasData ? formatNumber(metrics.uniqueCampaigns) : "—"}
+          icon="avg_pace"
+          label="Invest. Diário Médio"
+          value={hasData && dailyData.length > 0 ? formatCurrency(metrics.totalSpend / dailyData.length) : "—"}
           isLoading={isLoading}
           size="sm"
           variant="light"

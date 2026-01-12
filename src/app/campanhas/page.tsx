@@ -6,6 +6,7 @@ import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 import { useDateFilter } from "@/contexts/DateFilterContext";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { StractDailyData } from "@/types/stract";
+import DateRangePicker from "@/components/DateRangePicker";
 
 // Format helpers
 function formatCurrency(value: number): string {
@@ -184,7 +185,7 @@ function LineChart({
 
 export default function CampanhasPage() {
     const { settings, isLoading: settingsLoading } = useDashboardSettings();
-    const { dateRange } = useDateFilter();
+    const { dateRange, setCustomRange } = useDateFilter();
     const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
     const [sortColumn, setSortColumn] = useState<string>("spend");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -299,8 +300,19 @@ export default function CampanhasPage() {
                     <p className="text-sm text-gray-500">Análise detalhada de performance por campanha e criativo</p>
                 </div>
 
-                {/* Campaign Filter */}
-                <div className="flex items-center gap-3">
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Date Range Picker */}
+                    <DateRangePicker
+                        startDate={new Date(dateRange.startDate + "T00:00:00")}
+                        endDate={new Date(dateRange.endDate + "T00:00:00")}
+                        onChange={(start, end) => {
+                            const formatDate = (d: Date) => d.toISOString().split("T")[0];
+                            setCustomRange(formatDate(start), formatDate(end));
+                        }}
+                    />
+
+                    {/* Campaign Filter */}
                     <select
                         value={selectedCampaign}
                         onChange={(e) => setSelectedCampaign(e.target.value)}
