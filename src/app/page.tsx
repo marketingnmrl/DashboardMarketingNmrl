@@ -357,7 +357,59 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ROW 3: Charts - Original Layout */}
+      {/* ROW 3: Secondary KPIs - Restored metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <BentoCard
+          icon="percent"
+          label="CTR"
+          value={hasData ? formatPercent(metrics.avgCtr) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="secondary"
+        />
+        <BentoCard
+          icon="price_change"
+          label="CPC Médio"
+          value={hasData ? formatCurrency(metrics.avgCpc) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
+        <BentoCard
+          icon="person_add"
+          label="CPL Médio"
+          value={hasData ? formatCurrency(metrics.avgCpl) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
+        <BentoCard
+          icon="group"
+          label="Alcance"
+          value={hasData ? formatNumber(metrics.totalReach) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="primary"
+        />
+        <BentoCard
+          icon="group_add"
+          label="Leads"
+          value={hasData ? formatNumber(metrics.totalLeads) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="primary"
+        />
+        <BentoCard
+          icon="work"
+          label="Campanhas"
+          value={hasData ? formatNumber(metrics.uniqueCampaigns) : "—"}
+          isLoading={isLoading}
+          size="sm"
+          variant="light"
+        />
+      </div>
+
+      {/* ROW 4: Charts - Original Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Daily Evolution Chart - Wide */}
         <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
