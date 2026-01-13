@@ -21,8 +21,11 @@ export default function LeadDetailsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", company: "" });
+    const [customFields, setCustomFields] = useState<Record<string, string>>({});
     const [showAddInteraction, setShowAddInteraction] = useState(false);
     const [newInteraction, setNewInteraction] = useState({ type: "note" as InteractionType, title: "", content: "" });
+    const [newCustomFieldKey, setNewCustomFieldKey] = useState("");
+    const [newCustomFieldValue, setNewCustomFieldValue] = useState("");
 
     // Load lead data
     const loadData = useCallback(async () => {
@@ -36,6 +39,7 @@ export default function LeadDetailsPage() {
                 phone: leadData.phone || "",
                 company: leadData.company || ""
             });
+            setCustomFields(leadData.custom_fields as Record<string, string> || {});
 
             const [historyData, interactionsData] = await Promise.all([
                 getLeadHistory(leadId),
@@ -54,9 +58,27 @@ export default function LeadDetailsPage() {
     // Save lead edits
     const handleSave = async () => {
         if (!lead) return;
-        await updateLead(lead.id, editForm);
+        await updateLead(lead.id, { ...editForm, custom_fields: customFields });
         setIsEditing(false);
         await loadData();
+    };
+
+    // Add custom field
+    const handleAddCustomField = () => {
+        if (!newCustomFieldKey.trim()) return;
+        setCustomFields({
+            ...customFields,
+            [newCustomFieldKey]: newCustomFieldValue
+        });
+        setNewCustomFieldKey("");
+        setNewCustomFieldValue("");
+    };
+
+    // Remove custom field
+    const handleRemoveCustomField = (key: string) => {
+        const updated = { ...customFields };
+        delete updated[key];
+        setCustomFields(updated);
     };
 
     // Add interaction
@@ -138,7 +160,13 @@ export default function LeadDetailsPage() {
                 <div className="flex-1">
                     <h1 className="text-2xl font-extrabold text-[#19069E]">{lead.name}</h1>
                     <p className="text-sm text-gray-500">
-                        Criado em {new Date(lead.created_at).toLocaleDateString("pt-BR")}
+                        Criado em {new Date(lead.created_at).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        })}
                     </p>
                 </div>
                 <button
@@ -242,6 +270,69 @@ export default function LeadDetailsPage() {
                         )}
                     </div>
 
+                    {/* Custom Fields Card */}
+                    <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-gray-800">🏷️ Campos Personalizados</h3>
+                        </div>
+
+                        {/* Existing custom fields */}
+                        {Object.keys(customFields).length > 0 ? (
+                            <div className="space-y-2 mb-4">
+                                {Object.entries(customFields).map(([key, value]) => (
+                                    <div key={key} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                        <div className="flex-1">
+                                            <span className="text-xs text-gray-500">{key}</span>
+                                            <p className="text-sm font-medium">{value}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveCustomField(key)}
+                                            className="p-1 text-gray-400 hover:text-red-500"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px]">close</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-400 text-sm mb-4">Nenhum campo personalizado</p>
+                        )}
+
+                        {/* Add new custom field */}
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newCustomFieldKey}
+                                onChange={(e) => setNewCustomFieldKey(e.target.value)}
+                                placeholder="Nome do campo"
+                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                value={newCustomFieldValue}
+                                onChange={(e) => setNewCustomFieldValue(e.target.value)}
+                                placeholder="Valor"
+                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg"
+                            />
+                            <button
+                                onClick={handleAddCustomField}
+                                disabled={!newCustomFieldKey.trim()}
+                                className="px-3 py-2 bg-[#19069E] text-white rounded-lg disabled:opacity-50"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                        </div>
+
+                        {Object.keys(customFields).length > 0 && (
+                            <button
+                                onClick={handleSave}
+                                className="mt-3 w-full py-2 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg text-sm"
+                            >
+                                Salvar Campos
+                            </button>
+                        )}
+                    </div>
+
                     {/* Interactions */}
                     <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
@@ -264,8 +355,8 @@ export default function LeadDetailsPage() {
                                             key={type}
                                             onClick={() => setNewInteraction({ ...newInteraction, type })}
                                             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm ${newInteraction.type === type
-                                                    ? "bg-[#19069E] text-white"
-                                                    : "bg-white text-gray-600 border border-gray-200"
+                                                ? "bg-[#19069E] text-white"
+                                                : "bg-white text-gray-600 border border-gray-200"
                                                 }`}
                                         >
                                             <span className="material-symbols-outlined text-[16px]">{interactionIcons[type]}</span>
@@ -356,8 +447,8 @@ export default function LeadDetailsPage() {
                                                 key={stage.id}
                                                 onClick={() => handleMoveStage(stage.id)}
                                                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${lead.current_stage_id === stage.id
-                                                        ? "bg-[#19069E] text-white"
-                                                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                                                    ? "bg-[#19069E] text-white"
+                                                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                                                     }`}
                                             >
                                                 <div
@@ -380,9 +471,9 @@ export default function LeadDetailsPage() {
                             <div>
                                 <span className="text-xs text-gray-500">Origem</span>
                                 <p className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${lead.origin === "paid" ? "bg-blue-100 text-blue-700" :
-                                        lead.origin === "organic" ? "bg-green-100 text-green-700" :
-                                            lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
-                                                "bg-gray-100 text-gray-700"
+                                    lead.origin === "organic" ? "bg-green-100 text-green-700" :
+                                        lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
+                                            "bg-gray-100 text-gray-700"
                                     }`}>
                                     {lead.origin === "paid" ? "Tráfego Pago" :
                                         lead.origin === "organic" ? "Orgânico" :
@@ -405,6 +496,18 @@ export default function LeadDetailsPage() {
                                 <div>
                                     <span className="text-xs text-gray-500">UTM Campaign</span>
                                     <p className="text-sm">{lead.utm_campaign}</p>
+                                </div>
+                            )}
+                            {lead.utm_content && (
+                                <div>
+                                    <span className="text-xs text-gray-500">UTM Content</span>
+                                    <p className="text-sm">{lead.utm_content}</p>
+                                </div>
+                            )}
+                            {lead.utm_term && (
+                                <div>
+                                    <span className="text-xs text-gray-500">UTM Term</span>
+                                    <p className="text-sm">{lead.utm_term}</p>
                                 </div>
                             )}
                         </div>

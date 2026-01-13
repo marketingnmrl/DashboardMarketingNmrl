@@ -172,8 +172,8 @@ export default function PipelinesPage() {
                                         href={`/crm/pipelines/${pipeline.id}`}
                                         className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#19069E] text-white font-medium rounded-xl hover:bg-[#0F0466] transition-colors"
                                     >
-                                        <span className="material-symbols-outlined text-[18px]">view_kanban</span>
-                                        Kanban
+                                        <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                        Acessar Pipeline
                                     </Link>
                                 </div>
 

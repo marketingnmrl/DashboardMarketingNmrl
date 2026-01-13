@@ -1,25 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
-import type { CRMLead, LeadOrigin } from "@/types/crm";
+import type { LeadOrigin } from "@/types/crm";
 
 export default function LeadsPage() {
     const { pipelines } = usePipelines();
     const [filterPipeline, setFilterPipeline] = useState<string>("all");
     const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "all">("all");
+    const [filterUtmSource, setFilterUtmSource] = useState<string>("all");
+    const [filterUtmCampaign, setFilterUtmCampaign] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
+    const [showUtmFilters, setShowUtmFilters] = useState(false);
 
     const { leads, isLoading, error, deleteLead } = useLeads(
         filterPipeline !== "all" ? { pipelineId: filterPipeline } : {}
     );
 
+    // Extract unique UTM values for filter options
+    const utmOptions = useMemo(() => {
+        const sources = new Set<string>();
+        const campaigns = new Set<string>();
+
+        leads.forEach(lead => {
+            if (lead.utm_source) sources.add(lead.utm_source);
+            if (lead.utm_campaign) campaigns.add(lead.utm_campaign);
+        });
+
+        return {
+            sources: Array.from(sources).sort(),
+            campaigns: Array.from(campaigns).sort()
+        };
+    }, [leads]);
+
     // Filter leads
     const filteredLeads = leads.filter(lead => {
         // Origin filter
         if (filterOrigin !== "all" && lead.origin !== filterOrigin) return false;
+
+        // UTM filters
+        if (filterUtmSource !== "all" && lead.utm_source !== filterUtmSource) return false;
+        if (filterUtmCampaign !== "all" && lead.utm_campaign !== filterUtmCampaign) return false;
 
         // Search filter
         if (searchTerm) {
@@ -28,7 +51,9 @@ export default function LeadsPage() {
                 lead.name.toLowerCase().includes(term) ||
                 lead.email?.toLowerCase().includes(term) ||
                 lead.phone?.includes(term) ||
-                lead.company?.toLowerCase().includes(term)
+                lead.company?.toLowerCase().includes(term) ||
+                lead.utm_source?.toLowerCase().includes(term) ||
+                lead.utm_campaign?.toLowerCase().includes(term)
             );
         }
 
@@ -40,6 +65,17 @@ export default function LeadsPage() {
             await deleteLead(id);
         }
     };
+
+    const clearFilters = () => {
+        setFilterPipeline("all");
+        setFilterOrigin("all");
+        setFilterUtmSource("all");
+        setFilterUtmCampaign("all");
+        setSearchTerm("");
+    };
+
+    const hasActiveFilters = filterPipeline !== "all" || filterOrigin !== "all" ||
+        filterUtmSource !== "all" || filterUtmCampaign !== "all" || searchTerm !== "";
 
     const originLabels: Record<LeadOrigin, string> = {
         organic: "Orgânico",
@@ -65,7 +101,7 @@ export default function LeadsPage() {
                 </div>
             </div>
 
-            {/* Filters */}
+            {/* Filters Row 1 */}
             <div className="flex flex-wrap gap-3">
                 {/* Search */}
                 <div className="relative flex-1 min-w-[200px]">
@@ -76,7 +112,7 @@ export default function LeadsPage() {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Buscar por nome, email, telefone..."
+                        placeholder="Buscar por nome, email, telefone, UTM..."
                         className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
                     />
                 </div>
@@ -105,7 +141,67 @@ export default function LeadsPage() {
                     <option value="manual">Manual</option>
                     <option value="webhook">Webhook</option>
                 </select>
+
+                {/* Toggle UTM Filters */}
+                <button
+                    onClick={() => setShowUtmFilters(!showUtmFilters)}
+                    className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl transition-colors ${showUtmFilters || filterUtmSource !== "all" || filterUtmCampaign !== "all"
+                            ? "border-[#19069E] bg-[#19069E]/5 text-[#19069E]"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                >
+                    <span className="material-symbols-outlined text-[18px]">tune</span>
+                    UTMs
+                    {(filterUtmSource !== "all" || filterUtmCampaign !== "all") && (
+                        <span className="w-2 h-2 bg-[#19069E] rounded-full" />
+                    )}
+                </button>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                    <button
+                        onClick={clearFilters}
+                        className="flex items-center gap-1 px-3 py-2.5 text-gray-500 hover:text-red-500 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                        Limpar
+                    </button>
+                )}
             </div>
+
+            {/* UTM Filters Row */}
+            {showUtmFilters && (
+                <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">link</span>
+                        Filtros UTM:
+                    </span>
+
+                    {/* UTM Source */}
+                    <select
+                        value={filterUtmSource}
+                        onChange={(e) => setFilterUtmSource(e.target.value)}
+                        className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                    >
+                        <option value="all">Todos os Sources</option>
+                        {utmOptions.sources.map(source => (
+                            <option key={source} value={source}>{source}</option>
+                        ))}
+                    </select>
+
+                    {/* UTM Campaign */}
+                    <select
+                        value={filterUtmCampaign}
+                        onChange={(e) => setFilterUtmCampaign(e.target.value)}
+                        className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                    >
+                        <option value="all">Todas as Campaigns</option>
+                        {utmOptions.campaigns.map(campaign => (
+                            <option key={campaign} value={campaign}>{campaign}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="flex gap-4 text-sm">
@@ -149,11 +245,11 @@ export default function LeadsPage() {
                                 <tr className="bg-gray-50 border-b border-gray-200">
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Nome</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Email</th>
-                                    <th className="text-left py-4 px-4 font-bold text-gray-700">Telefone</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Pipeline</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Etapa</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Origem</th>
-                                    <th className="text-left py-4 px-4 font-bold text-gray-700">Data</th>
+                                    <th className="text-left py-4 px-4 font-bold text-gray-700">UTM</th>
+                                    <th className="text-left py-4 px-4 font-bold text-gray-700">Criado em</th>
                                     <th className="text-center py-4 px-4 font-bold text-gray-700">Ações</th>
                                 </tr>
                             </thead>
@@ -174,14 +270,14 @@ export default function LeadsPage() {
                                             {lead.company && (
                                                 <p className="text-xs text-gray-500">{lead.company}</p>
                                             )}
+                                            {lead.phone && (
+                                                <p className="text-xs text-gray-400">{lead.phone}</p>
+                                            )}
                                         </td>
-                                        <td className="py-3 px-4 text-gray-600">
+                                        <td className="py-3 px-4 text-gray-600 text-sm">
                                             {lead.email || "—"}
                                         </td>
-                                        <td className="py-3 px-4 text-gray-600">
-                                            {lead.phone || "—"}
-                                        </td>
-                                        <td className="py-3 px-4 text-gray-600">
+                                        <td className="py-3 px-4 text-gray-600 text-sm">
                                             {lead.pipeline?.name || "—"}
                                         </td>
                                         <td className="py-3 px-4">
@@ -206,8 +302,23 @@ export default function LeadsPage() {
                                                 {originLabels[lead.origin]}
                                             </span>
                                         </td>
+                                        <td className="py-3 px-4 text-xs text-gray-500">
+                                            {lead.utm_source && (
+                                                <div><strong>source:</strong> {lead.utm_source}</div>
+                                            )}
+                                            {lead.utm_campaign && (
+                                                <div><strong>campaign:</strong> {lead.utm_campaign}</div>
+                                            )}
+                                            {!lead.utm_source && !lead.utm_campaign && "—"}
+                                        </td>
                                         <td className="py-3 px-4 text-gray-500 text-sm">
-                                            {new Date(lead.created_at).toLocaleDateString("pt-BR")}
+                                            {new Date(lead.created_at).toLocaleDateString("pt-BR", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            })}
                                         </td>
                                         <td className="py-3 px-4 text-center">
                                             <div className="flex items-center justify-center gap-1">
