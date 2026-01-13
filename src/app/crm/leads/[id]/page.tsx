@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
+import { useCustomFields } from "@/hooks/useCustomFields";
 import type { CRMLead, CRMLeadStageHistory, CRMLeadInteraction, InteractionType } from "@/types/crm";
 
 export default function LeadDetailsPage() {
@@ -14,6 +15,7 @@ export default function LeadDetailsPage() {
 
     const { getLead, getLeadHistory, getLeadInteractions, updateLead, moveLead, addInteraction, deleteLead } = useLeads();
     const { pipelines } = usePipelines();
+    const { customFields: globalCustomFields } = useCustomFields();
 
     const [lead, setLead] = useState<CRMLead | null>(null);
     const [history, setHistory] = useState<CRMLeadStageHistory[]>([]);
@@ -24,8 +26,7 @@ export default function LeadDetailsPage() {
     const [customFields, setCustomFields] = useState<Record<string, string>>({});
     const [showAddInteraction, setShowAddInteraction] = useState(false);
     const [newInteraction, setNewInteraction] = useState({ type: "note" as InteractionType, title: "", content: "" });
-    const [newCustomFieldKey, setNewCustomFieldKey] = useState("");
-    const [newCustomFieldValue, setNewCustomFieldValue] = useState("");
+    const [isSavingCustom, setIsSavingCustom] = useState(false);
 
     // Load lead data
     const loadData = useCallback(async () => {
@@ -63,22 +64,17 @@ export default function LeadDetailsPage() {
         await loadData();
     };
 
-    // Add custom field
-    const handleAddCustomField = () => {
-        if (!newCustomFieldKey.trim()) return;
-        setCustomFields({
-            ...customFields,
-            [newCustomFieldKey]: newCustomFieldValue
-        });
-        setNewCustomFieldKey("");
-        setNewCustomFieldValue("");
+    // Save custom fields
+    const handleSaveCustomFields = async () => {
+        if (!lead) return;
+        setIsSavingCustom(true);
+        await updateLead(lead.id, { custom_fields: customFields });
+        setIsSavingCustom(false);
     };
 
-    // Remove custom field
-    const handleRemoveCustomField = (key: string) => {
-        const updated = { ...customFields };
-        delete updated[key];
-        setCustomFields(updated);
+    // Update single custom field
+    const updateCustomFieldValue = (key: string, value: string) => {
+        setCustomFields(prev => ({ ...prev, [key]: value }));
     };
 
     // Add interaction
@@ -274,62 +270,94 @@ export default function LeadDetailsPage() {
                     <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-gray-800">🏷️ Campos Personalizados</h3>
+                            <button
+                                onClick={handleSaveCustomFields}
+                                disabled={isSavingCustom}
+                                className="text-sm px-3 py-1 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg disabled:opacity-50"
+                            >
+                                {isSavingCustom ? "Salvando..." : "Salvar"}
+                            </button>
                         </div>
 
-                        {/* Existing custom fields */}
-                        {Object.keys(customFields).length > 0 ? (
-                            <div className="space-y-2 mb-4">
-                                {Object.entries(customFields).map(([key, value]) => (
-                                    <div key={key} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                        {globalCustomFields.length === 0 ? (
+                            <div className="text-center py-6">
+                                <p className="text-gray-400 text-sm">Nenhum campo personalizado definido</p>
+                                <Link href="/crm/configuracoes" className="text-xs text-[#19069E] hover:underline mt-1 inline-block">
+                                    Criar campos em Configurações
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {globalCustomFields.map(field => (
+                                    <div key={field.id} className="flex items-center gap-3">
+                                        <label className="w-1/3 text-sm text-gray-600 truncate">
+                                            {field.name}
+                                        </label>
                                         <div className="flex-1">
-                                            <span className="text-xs text-gray-500">{key}</span>
-                                            <p className="text-sm font-medium">{value}</p>
+                                            {field.field_type === "text" && (
+                                                <input
+                                                    type="text"
+                                                    value={customFields[field.field_key] || ""}
+                                                    onChange={(e) => updateCustomFieldValue(field.field_key, e.target.value)}
+                                                    placeholder="Digite..."
+                                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg"
+                                                />
+                                            )}
+                                            {field.field_type === "number" && (
+                                                <input
+                                                    type="number"
+                                                    value={customFields[field.field_key] || ""}
+                                                    onChange={(e) => updateCustomFieldValue(field.field_key, e.target.value)}
+                                                    placeholder="0"
+                                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg"
+                                                />
+                                            )}
+                                            {field.field_type === "date" && (
+                                                <input
+                                                    type="date"
+                                                    value={customFields[field.field_key] || ""}
+                                                    onChange={(e) => updateCustomFieldValue(field.field_key, e.target.value)}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg"
+                                                />
+                                            )}
+                                            {field.field_type === "select" && (
+                                                <select
+                                                    value={customFields[field.field_key] || ""}
+                                                    onChange={(e) => updateCustomFieldValue(field.field_key, e.target.value)}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white"
+                                                >
+                                                    <option value="">Selecione...</option>
+                                                    {(field.options as string[] || []).map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {field.field_type === "boolean" && (
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        onClick={() => updateCustomFieldValue(field.field_key, "true")}
+                                                        className={`px-3 py-1.5 text-sm rounded-lg ${customFields[field.field_key] === "true"
+                                                                ? "bg-green-500 text-white"
+                                                                : "bg-gray-100 text-gray-600"
+                                                            }`}
+                                                    >
+                                                        Sim
+                                                    </button>
+                                                    <button
+                                                        onClick={() => updateCustomFieldValue(field.field_key, "false")}
+                                                        className={`px-3 py-1.5 text-sm rounded-lg ${customFields[field.field_key] === "false"
+                                                                ? "bg-red-500 text-white"
+                                                                : "bg-gray-100 text-gray-600"
+                                                            }`}
+                                                    >
+                                                        Não
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={() => handleRemoveCustomField(key)}
-                                            className="p-1 text-gray-400 hover:text-red-500"
-                                        >
-                                            <span className="material-symbols-outlined text-[16px]">close</span>
-                                        </button>
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <p className="text-gray-400 text-sm mb-4">Nenhum campo personalizado</p>
-                        )}
-
-                        {/* Add new custom field */}
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newCustomFieldKey}
-                                onChange={(e) => setNewCustomFieldKey(e.target.value)}
-                                placeholder="Nome do campo"
-                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg"
-                            />
-                            <input
-                                type="text"
-                                value={newCustomFieldValue}
-                                onChange={(e) => setNewCustomFieldValue(e.target.value)}
-                                placeholder="Valor"
-                                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg"
-                            />
-                            <button
-                                onClick={handleAddCustomField}
-                                disabled={!newCustomFieldKey.trim()}
-                                className="px-3 py-2 bg-[#19069E] text-white rounded-lg disabled:opacity-50"
-                            >
-                                <span className="material-symbols-outlined text-[18px]">add</span>
-                            </button>
-                        </div>
-
-                        {Object.keys(customFields).length > 0 && (
-                            <button
-                                onClick={handleSave}
-                                className="mt-3 w-full py-2 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg text-sm"
-                            >
-                                Salvar Campos
-                            </button>
                         )}
                     </div>
 

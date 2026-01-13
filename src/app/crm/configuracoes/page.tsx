@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import crypto from "crypto";
+import { useCustomFields } from "@/hooks/useCustomFields";
+import type { CustomFieldType } from "@/types/crm";
 
 interface ApiKey {
     id: string;
@@ -13,14 +14,39 @@ interface ApiKey {
     created_at: string;
 }
 
+const fieldTypeLabels: Record<CustomFieldType, string> = {
+    text: "Texto",
+    number: "Número",
+    date: "Data",
+    select: "Lista de Opções",
+    boolean: "Sim/Não"
+};
+
+const fieldTypeIcons: Record<CustomFieldType, string> = {
+    text: "text_fields",
+    number: "123",
+    date: "calendar_month",
+    select: "list",
+    boolean: "toggle_on"
+};
+
 export default function CRMConfiguracoesPage() {
     const { user } = useAuth();
+    const { customFields, isLoading: isLoadingFields, createCustomField, deleteCustomField } = useCustomFields();
+
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreate, setShowCreate] = useState(false);
     const [newKeyName, setNewKeyName] = useState("");
     const [createdKey, setCreatedKey] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Custom field creation state
+    const [showCreateField, setShowCreateField] = useState(false);
+    const [newFieldName, setNewFieldName] = useState("");
+    const [newFieldType, setNewFieldType] = useState<CustomFieldType>("text");
+    const [newFieldOptions, setNewFieldOptions] = useState("");
+    const [isCreatingField, setIsCreatingField] = useState(false);
 
     // Fetch API keys
     const fetchApiKeys = useCallback(async () => {
@@ -89,7 +115,7 @@ export default function CRMConfiguracoesPage() {
     };
 
     // Delete API key
-    const handleDelete = async (id: string) => {
+    const handleDeleteKey = async (id: string) => {
         if (!confirm("Excluir esta chave de API?")) return;
 
         await supabase
@@ -98,6 +124,30 @@ export default function CRMConfiguracoesPage() {
             .eq("id", id);
 
         await fetchApiKeys();
+    };
+
+    // Create custom field
+    const handleCreateField = async () => {
+        if (!newFieldName.trim()) return;
+
+        setIsCreatingField(true);
+        const options = newFieldType === "select"
+            ? newFieldOptions.split(",").map(o => o.trim()).filter(o => o)
+            : undefined;
+
+        await createCustomField(newFieldName, newFieldType, options);
+
+        setNewFieldName("");
+        setNewFieldType("text");
+        setNewFieldOptions("");
+        setShowCreateField(false);
+        setIsCreatingField(false);
+    };
+
+    // Delete custom field
+    const handleDeleteField = async (id: string) => {
+        if (!confirm("Excluir este campo? Os dados existentes serão mantidos nos leads.")) return;
+        await deleteCustomField(id);
     };
 
     // Copy to clipboard
@@ -115,7 +165,133 @@ export default function CRMConfiguracoesPage() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-extrabold text-[#19069E]">⚙️ Configurações do CRM</h1>
-                <p className="text-sm text-gray-500">Gerencie chaves de API e integrações</p>
+                <p className="text-sm text-gray-500">Gerencie campos personalizados, chaves de API e integrações</p>
+            </div>
+
+            {/* Custom Fields */}
+            <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="font-bold text-gray-800">🏷️ Campos Personalizados</h2>
+                        <p className="text-xs text-gray-500">Campos disponíveis para todos os leads</p>
+                    </div>
+                    <button
+                        onClick={() => setShowCreateField(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#C2DF0C] text-[#19069E] font-bold rounded-xl hover:bg-[#B0CC0B]"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        Novo Campo
+                    </button>
+                </div>
+
+                {/* Create Field Form */}
+                {showCreateField && (
+                    <div className="mb-4 p-4 bg-gray-50 rounded-xl space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Nome do Campo</label>
+                                <input
+                                    type="text"
+                                    value={newFieldName}
+                                    onChange={(e) => setNewFieldName(e.target.value)}
+                                    placeholder="Ex: Cargo, Interesse, Orçamento..."
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                                <select
+                                    value={newFieldType}
+                                    onChange={(e) => setNewFieldType(e.target.value as CustomFieldType)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                                >
+                                    <option value="text">Texto</option>
+                                    <option value="number">Número</option>
+                                    <option value="date">Data</option>
+                                    <option value="select">Lista de Opções</option>
+                                    <option value="boolean">Sim/Não</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {newFieldType === "select" && (
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Opções (separadas por vírgula)</label>
+                                <input
+                                    type="text"
+                                    value={newFieldOptions}
+                                    onChange={(e) => setNewFieldOptions(e.target.value)}
+                                    placeholder="Ex: Plano A, Plano B, Plano Pro"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleCreateField}
+                                disabled={!newFieldName.trim() || isCreatingField}
+                                className="px-4 py-2 bg-[#19069E] text-white font-medium rounded-lg disabled:opacity-50"
+                            >
+                                {isCreatingField ? "Criando..." : "Criar Campo"}
+                            </button>
+                            <button
+                                onClick={() => setShowCreateField(false)}
+                                className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Fields List */}
+                {isLoadingFields ? (
+                    <div className="text-center py-8">
+                        <span className="material-symbols-outlined text-3xl text-gray-300 animate-pulse">hourglass_empty</span>
+                    </div>
+                ) : customFields.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                        <span className="material-symbols-outlined text-4xl mb-2">label_off</span>
+                        <p>Nenhum campo personalizado criado</p>
+                        <p className="text-xs mt-1">Crie campos para adicionar informações extras aos leads</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {customFields.map(field => (
+                            <div
+                                key={field.id}
+                                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-[#19069E]/10 rounded-lg flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-[#19069E] text-[20px]">
+                                            {fieldTypeIcons[field.field_type]}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-gray-800">{field.name}</p>
+                                        <p className="text-xs text-gray-500">
+                                            {fieldTypeLabels[field.field_type]}
+                                            {field.options && field.options.length > 0 && (
+                                                <span> • {(field.options as string[]).join(", ")}</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <code className="text-xs bg-gray-200 px-2 py-1 rounded">{field.field_key}</code>
+                                    <button
+                                        onClick={() => handleDeleteField(field.id)}
+                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Webhook Info */}
@@ -149,24 +325,15 @@ export default function CRMConfiguracoesPage() {
                     </div>
 
                     <div>
-                        <label className="text-xs text-gray-500 block mb-1">Headers</label>
-                        <pre className="p-3 bg-gray-100 rounded-lg text-sm font-mono overflow-x-auto">
-                            {`Content-Type: application/json
-X-API-Key: sua_chave_api`}
-                        </pre>
-                    </div>
-
-                    <div>
-                        <label className="text-xs text-gray-500 block mb-1">Exemplo de Body</label>
+                        <label className="text-xs text-gray-500 block mb-1">Exemplo com Campos Personalizados</label>
                         <pre className="p-3 bg-gray-100 rounded-lg text-sm font-mono overflow-x-auto">
                             {`{
   "pipeline_id": "uuid-do-pipeline",
   "name": "Nome do Lead",
   "email": "email@exemplo.com",
-  "phone": "+5511999999999",
-  "origin": "paid",
-  "utm_source": "facebook",
-  "utm_campaign": "campanha_x"
+  "custom_fields": {
+    ${customFields.slice(0, 3).map(f => `"${f.field_key}": "valor"`).join(",\n    ") || '"campo": "valor"'}
+  }
 }`}
                         </pre>
                     </div>
@@ -278,7 +445,7 @@ X-API-Key: sua_chave_api`}
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => handleDelete(key.id)}
+                                    onClick={() => handleDeleteKey(key.id)}
                                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">delete</span>
