@@ -405,13 +405,159 @@ function SheetsConfigModal({
     );
 }
 
+// Stages Editor Modal - for managing traffic stages in hybrid funnels
+function StagesEditorModal({
+    funnel,
+    onAddStage,
+    onRemoveStage,
+    onClose,
+}: {
+    funnel: { id: string; sourceType?: string; stages: Array<{ id: string; name: string; dataSource?: string }> };
+    onAddStage: (funnelId: string, name: string, position: number) => Promise<void>;
+    onRemoveStage: (funnelId: string, stageId: string) => Promise<void>;
+    onClose: () => void;
+}) {
+    const [newStageName, setNewStageName] = useState("");
+    const [isAdding, setIsAdding] = useState(false);
+    const [removingId, setRemovingId] = useState<string | null>(null);
+
+    const isHybrid = funnel.sourceType === "pipeline";
+    const trafficStages = funnel.stages.filter(s => s.dataSource === "sheet" || s.dataSource === undefined);
+    const crmStages = funnel.stages.filter(s => s.dataSource === "crm");
+
+    const handleAddStage = async () => {
+        if (!newStageName.trim()) return;
+        setIsAdding(true);
+        try {
+            // Add traffic stage at position 0 (top of funnel)
+            await onAddStage(funnel.id, newStageName.trim(), 0);
+            setNewStageName("");
+        } finally {
+            setIsAdding(false);
+        }
+    };
+
+    const handleRemoveStage = async (stageId: string) => {
+        setRemovingId(stageId);
+        try {
+            await onRemoveStage(funnel.id, stageId);
+        } finally {
+            setRemovingId(null);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 max-h-[80vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E]">Editar Etapas</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                {/* Add Traffic Stage */}
+                <div className="mb-6">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Adicionar Etapa de Tráfego
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">
+                        Etapas de tráfego aparecem no topo do funil e buscam dados da planilha
+                    </p>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={newStageName}
+                            onChange={(e) => setNewStageName(e.target.value)}
+                            placeholder="Ex: Visitantes na Página"
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                            onKeyDown={(e) => e.key === "Enter" && handleAddStage()}
+                        />
+                        <button
+                            onClick={handleAddStage}
+                            disabled={!newStageName.trim() || isAdding}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                        >
+                            {isAdding ? (
+                                <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                            ) : (
+                                <span className="material-symbols-outlined text-lg">add</span>
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Traffic Stages List */}
+                {trafficStages.length > 0 && (
+                    <div className="mb-6">
+                        <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-blue-500 text-[18px]">table_chart</span>
+                            Etapas de Tráfego (Planilha)
+                        </h4>
+                        <div className="space-y-2">
+                            {trafficStages.map((stage) => (
+                                <div key={stage.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                    <span className="flex-1 text-sm font-medium">{stage.name}</span>
+                                    <button
+                                        onClick={() => handleRemoveStage(stage.id)}
+                                        disabled={removingId === stage.id}
+                                        className="p-1.5 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-500 disabled:opacity-50"
+                                    >
+                                        {removingId === stage.id ? (
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                        ) : (
+                                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                                        )}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* CRM Stages (read-only for hybrid) */}
+                {isHybrid && crmStages.length > 0 && (
+                    <div>
+                        <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-500 text-[18px]">account_tree</span>
+                            Etapas do CRM
+                            <span className="text-xs text-gray-400 font-normal">(somente leitura)</span>
+                        </h4>
+                        <div className="space-y-2">
+                            {crmStages.map((stage) => (
+                                <div key={stage.id} className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100 opacity-75">
+                                    <span className="flex-1 text-sm font-medium text-gray-600">{stage.name}</span>
+                                    <span className="material-symbols-outlined text-gray-300 text-[18px]">lock</span>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Para editar etapas do CRM, acesse <a href="/crm/pipelines" className="text-[#19069E] hover:underline">Pipelines</a>
+                        </p>
+                    </div>
+                )}
+
+                <div className="flex gap-3 mt-6">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2.5 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg hover:bg-[#B0CC0B]"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function FunilDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { getFunnel, updateFunnel, updateThresholds, setSheetsUrl, deleteFunnel, isLoading } = useFunnels();
+    const { getFunnel, updateFunnel, updateThresholds, setSheetsUrl, deleteFunnel, addStage, removeStage, refresh, isLoading } = useFunnels();
     const [editingStage, setEditingStage] = useState<string | null>(null);
     const [showSheetsConfig, setShowSheetsConfig] = useState(false);
     const [showRenameModal, setShowRenameModal] = useState(false);
+    const [showStagesEditor, setShowStagesEditor] = useState(false);
 
     // Date range state - defaults to today
     const today = new Date();
@@ -639,6 +785,15 @@ export default function FunilDetailPage() {
                         title="Configurar planilha"
                     >
                         <span className="material-symbols-outlined text-[20px]">table</span>
+                    </button>
+
+                    {/* Edit Stages Button */}
+                    <button
+                        onClick={() => setShowStagesEditor(true)}
+                        className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition-colors"
+                        title="Editar etapas"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">edit_note</span>
                     </button>
 
                     {/* Delete */}
@@ -1023,6 +1178,25 @@ export default function FunilDetailPage() {
                         currentName={funnel.name}
                         onSave={(newName) => updateFunnel(funnel.id, { name: newName })}
                         onClose={() => setShowRenameModal(false)}
+                    />
+                )
+            }
+
+            {
+                showStagesEditor && (
+                    <StagesEditorModal
+                        funnel={funnel}
+                        onAddStage={async (funnelId, name, position) => {
+                            const { createNewStage } = await import("@/hooks/useFunnels");
+                            const stageObj = createNewStage(name, "", "absolute", "sheet");
+                            await addStage(funnelId, stageObj, position, false);
+                            refresh();
+                        }}
+                        onRemoveStage={async (funnelId, stageId) => {
+                            await removeStage(funnelId, stageId);
+                            refresh();
+                        }}
+                        onClose={() => setShowStagesEditor(false)}
                     />
                 )
             }
