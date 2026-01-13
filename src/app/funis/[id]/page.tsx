@@ -434,7 +434,8 @@ export default function FunilDetailPage() {
         funnel?.name || ""
     );
 
-    // CRM data for hybrid funnels
+    // CRM data for hybrid funnels (COHORT MODEL)
+    // Filters leads by creation date within selected period
     const crmOptions = useMemo(() => {
         if (!funnel || funnel.sourceType !== "pipeline" || !funnel.sourcePipelineId) {
             return null;
@@ -444,9 +445,10 @@ export default function FunilDetailPage() {
             .map(s => s.crmStageId!);
         return crmStageIds.length > 0 ? {
             pipelineId: funnel.sourcePipelineId,
-            stageIds: crmStageIds
+            stageIds: crmStageIds,
+            dateRange: dateRange  // Pass date range for cohort filtering
         } : null;
-    }, [funnel]);
+    }, [funnel, dateRange]);
 
     const { getCRMStageValue, isLoading: isLoadingCRM } = useCRMFunnelData(crmOptions);
 

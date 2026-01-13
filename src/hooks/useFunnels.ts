@@ -74,7 +74,9 @@ function dbToFunnel(dbFunnel: DBFunnel, stages: DBFunnelStage[]): Funnel {
 export function createNewStage(
     name: string,
     emoji: string,
-    unit: "absolute" | "percentage"
+    unit: "absolute" | "percentage",
+    dataSource: "sheet" | "crm" = "sheet",
+    crmStageId?: string
 ): FunnelStage {
     const defaultThresholds: FunnelStageThresholds = unit === "absolute"
         ? {
@@ -94,6 +96,8 @@ export function createNewStage(
         emoji,
         unit,
         thresholds: defaultThresholds,
+        dataSource,
+        crmStageId,
     };
 }
 

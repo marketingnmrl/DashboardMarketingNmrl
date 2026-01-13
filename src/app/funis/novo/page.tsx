@@ -20,7 +20,7 @@ type SourceType = FunnelSourceType | null;
 
 export default function NovoFunilPage() {
     const router = useRouter();
-    const { addFunnel, addFunnelFromPipeline, addStage } = useFunnels();
+    const { addFunnel, addFunnelFromPipeline, addStage, refresh } = useFunnels();
     const { pipelines, isLoading: isLoadingPipelines } = usePipelines();
 
     // Source selection step
@@ -143,7 +143,7 @@ export default function NovoFunilPage() {
                 // Add additional sheet stages
                 for (let i = 0; i < additionalSheetStages.length; i++) {
                     const stage = additionalSheetStages[i];
-                    const stageObj = createNewStage(stage.name, "", stage.unit);
+                    const stageObj = createNewStage(stage.name, "", stage.unit, "sheet");
                     await addStage(newFunnel.id, stageObj, pipelineStages.length + i, false);
                 }
 
@@ -154,6 +154,8 @@ export default function NovoFunilPage() {
                     await addStage(newFunnel.id, stageObj, i, true);
                 }
 
+                // Reload funnels data from database before navigating
+                refresh();
                 router.push(`/funis/${newFunnel.id}`);
             } else {
                 // Create from sheet (existing flow)
@@ -173,6 +175,8 @@ export default function NovoFunilPage() {
                     await addStage(newFunnel.id, stageObj, i, true);
                 }
 
+                // Reload funnels data from database before navigating
+                refresh();
                 router.push(`/funis/${newFunnel.id}`);
             }
         } catch (error) {
