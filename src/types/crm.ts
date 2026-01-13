@@ -1,0 +1,136 @@
+// CRM Types for Supabase
+
+export interface CRMPipeline {
+    id: string;
+    user_id: string;
+    name: string;
+    description: string | null;
+    created_at: string;
+    updated_at: string;
+    stages?: CRMPipelineStage[];
+}
+
+export interface CRMPipelineStage {
+    id: string;
+    pipeline_id: string;
+    name: string;
+    order_index: number;
+    color: string;
+    created_at: string;
+    lead_count?: number; // Computed field
+}
+
+export interface CRMLead {
+    id: string;
+    user_id: string;
+    pipeline_id: string | null;
+    current_stage_id: string | null;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    company: string | null;
+    origin: LeadOrigin;
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    utm_content: string | null;
+    utm_term: string | null;
+    custom_fields: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+    // Joined fields
+    current_stage?: CRMPipelineStage;
+    pipeline?: CRMPipeline;
+}
+
+export type LeadOrigin = 'organic' | 'paid' | 'manual' | 'webhook';
+
+export interface CRMLeadStageHistory {
+    id: string;
+    lead_id: string;
+    from_stage_id: string | null;
+    to_stage_id: string | null;
+    moved_at: string;
+    moved_by: string;
+    // Joined fields
+    from_stage?: CRMPipelineStage;
+    to_stage?: CRMPipelineStage;
+}
+
+export interface CRMLeadInteraction {
+    id: string;
+    lead_id: string;
+    type: InteractionType;
+    title: string | null;
+    content: string | null;
+    created_by: string | null;
+    created_at: string;
+}
+
+export type InteractionType = 'note' | 'call' | 'email' | 'meeting' | 'task';
+
+export interface CRMCustomField {
+    id: string;
+    user_id: string;
+    name: string;
+    field_key: string;
+    field_type: CustomFieldType;
+    options: string[] | null;
+    required: boolean;
+    created_at: string;
+}
+
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select' | 'boolean';
+
+export interface CRMApiKey {
+    id: string;
+    user_id: string;
+    name: string;
+    key_prefix: string;
+    last_used_at: string | null;
+    created_at: string;
+}
+
+// Input types for creating/updating
+export interface CreatePipelineInput {
+    name: string;
+    description?: string;
+    stages: { name: string; color?: string }[];
+}
+
+export interface UpdatePipelineInput {
+    name?: string;
+    description?: string;
+}
+
+export interface CreateLeadInput {
+    pipeline_id: string;
+    stage_id?: string; // Uses first stage if not provided
+    name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+    origin?: LeadOrigin;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_content?: string;
+    utm_term?: string;
+    custom_fields?: Record<string, unknown>;
+}
+
+export interface UpdateLeadInput {
+    name?: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+    custom_fields?: Record<string, unknown>;
+}
+
+export interface CreateInteractionInput {
+    lead_id: string;
+    type: InteractionType;
+    title?: string;
+    content?: string;
+    created_by?: string;
+}
