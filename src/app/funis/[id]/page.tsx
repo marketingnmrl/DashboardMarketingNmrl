@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo, useCallback } from "react";
 import { useFunnels, useFunnelData } from "@/hooks/useFunnels";
+import { useCRMFunnelData } from "@/hooks/useCRMFunnelData";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { getPerformanceStatus, PERFORMANCE_CONFIG, SHEETS_FORMAT_HELP, FunnelStageThresholds } from "@/types/funnel";
 import DateRangePicker from "@/components/DateRangePicker";
@@ -433,9 +434,25 @@ export default function FunilDetailPage() {
         funnel?.name || ""
     );
 
+    // CRM data for hybrid funnels
+    const crmOptions = useMemo(() => {
+        if (!funnel || funnel.sourceType !== "pipeline" || !funnel.sourcePipelineId) {
+            return null;
+        }
+        const crmStageIds = funnel.stages
+            .filter(s => s.dataSource === "crm" && s.crmStageId)
+            .map(s => s.crmStageId!);
+        return crmStageIds.length > 0 ? {
+            pipelineId: funnel.sourcePipelineId,
+            stageIds: crmStageIds
+        } : null;
+    }, [funnel]);
+
+    const { getCRMStageValue, isLoading: isLoadingCRM } = useCRMFunnelData(crmOptions);
+
     // Check if origin data is available
     const availableOrigins = getAvailableOrigins();
-    const hasOriginData = availableOrigins.length > 0;
+    const hasOriginData = availableOrigins.length > 0 || funnel?.sourceType === "pipeline";
 
     // Calculate number of days in selected period (for threshold scaling)
     const dayCount = useMemo(() => {
@@ -445,11 +462,17 @@ export default function FunilDetailPage() {
     }, [dateRange]);
 
     // Helper to get stage value with current date range and origin filter
+    // Supports hybrid funnels: CRM stages use lead count, sheet stages use sheets data
     const getStageValueForPeriod = useCallback(
-        (stageName: string): number | null => {
+        (stageName: string, stageId?: string, dataSource?: "sheet" | "crm", crmStageId?: string): number | null => {
+            // If this is a CRM stage, get count from CRM
+            if (dataSource === "crm" && crmStageId) {
+                return getCRMStageValue(crmStageId, selectedOrigin);
+            }
+            // Otherwise use sheets data
             return getStageValue(stageName, dateRange.start, dateRange.end, selectedOrigin);
         },
-        [getStageValue, dateRange, selectedOrigin]
+        [getStageValue, getCRMStageValue, dateRange, selectedOrigin]
     );
 
     // Build KPIs object with actual values for AI context
@@ -694,9 +717,11 @@ export default function FunilDetailPage() {
                         className="flex flex-col items-center space-y-2 animate-blur-focus"
                     >
                         {funnel.stages.map((stage, index) => {
-                            const value = getStageValueForPeriod(stage.name);
-                            const firstStageValue = getStageValueForPeriod(funnel.stages[0]?.name);
-                            const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
+                            const value = getStageValueForPeriod(stage.name, stage.id, stage.dataSource, stage.crmStageId);
+                            const firstStage = funnel.stages[0];
+                            const firstStageValue = getStageValueForPeriod(firstStage?.name, firstStage?.id, firstStage?.dataSource, firstStage?.crmStageId);
+                            const prevStage = index > 0 ? funnel.stages[index - 1] : null;
+                            const previousValue = prevStage ? getStageValueForPeriod(prevStage.name, prevStage.id, prevStage.dataSource, prevStage.crmStageId) : null;
 
                             // Calculate percentage relative to first stage
                             const percentOfTotal = firstStageValue && value !== null
@@ -840,8 +865,9 @@ export default function FunilDetailPage() {
             {/* Stages Detail Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {funnel.stages.map((stage, index) => {
-                    const value = getStageValueForPeriod(stage.name);
-                    const previousValue = index > 0 ? getStageValueForPeriod(funnel.stages[index - 1]?.name) : null;
+                    const value = getStageValueForPeriod(stage.name, stage.id, stage.dataSource, stage.crmStageId);
+                    const prevStage = index > 0 ? funnel.stages[index - 1] : null;
+                    const previousValue = prevStage ? getStageValueForPeriod(prevStage.name, prevStage.id, prevStage.dataSource, prevStage.crmStageId) : null;
                     const conversionRate = previousValue && value !== null ? (value / previousValue) * 100 : null;
                     const status = getPerformanceStatus(value, stage.thresholds, conversionRate, dayCount);
                     const config = PERFORMANCE_CONFIG[status];

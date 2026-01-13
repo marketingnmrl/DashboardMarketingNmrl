@@ -13,7 +13,11 @@ export interface FunnelStage {
     emoji: string;
     unit: "absolute" | "percentage"; // absolute = leads/dia, percentage = %
     thresholds: FunnelStageThresholds;
+    dataSource?: "sheet" | "crm"; // Where this stage gets its data
+    crmStageId?: string; // If dataSource = "crm", link to CRM stage
 }
+
+export type FunnelSourceType = "sheet" | "pipeline";
 
 export interface Funnel {
     id: string;
@@ -23,6 +27,8 @@ export interface Funnel {
     stages: FunnelStage[];
     evaluationStages?: FunnelStage[]; // Etapas de avaliação (não fazem parte do funil principal)
     sheetsUrl?: string; // Google Sheets URL
+    sourceType?: FunnelSourceType; // 'sheet' = all from sheets, 'pipeline' = hybrid
+    sourcePipelineId?: string; // If sourceType = 'pipeline', the linked CRM pipeline
 }
 
 // Data from Google Sheets (dashboard_daily tab)

@@ -9,6 +9,8 @@ interface DBFunnel {
     id: string;
     name: string;
     sheets_url: string | null;
+    source_type: "sheet" | "pipeline" | null;
+    source_pipeline_id: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -22,6 +24,8 @@ interface DBFunnelStage {
     thresholds: FunnelStageThresholds;
     position: number;
     is_evaluation?: boolean; // true = etapa de avaliação
+    data_source?: "sheet" | "crm";
+    crm_stage_id?: string;
     created_at: string;
 }
 
@@ -37,6 +41,8 @@ function dbToFunnel(dbFunnel: DBFunnel, stages: DBFunnelStage[]): Funnel {
             emoji: s.emoji || "",
             unit: s.unit,
             thresholds: s.thresholds,
+            dataSource: s.data_source || "sheet",
+            crmStageId: s.crm_stage_id,
         }));
     const evaluationStages = funnelStages
         .filter(s => s.is_evaluation)
@@ -47,12 +53,16 @@ function dbToFunnel(dbFunnel: DBFunnel, stages: DBFunnelStage[]): Funnel {
             emoji: s.emoji || "",
             unit: s.unit,
             thresholds: s.thresholds,
+            dataSource: s.data_source || "sheet",
+            crmStageId: s.crm_stage_id,
         }));
 
     return {
         id: dbFunnel.id,
         name: dbFunnel.name,
         sheetsUrl: dbFunnel.sheets_url || undefined,
+        sourceType: dbFunnel.source_type || "sheet",
+        sourcePipelineId: dbFunnel.source_pipeline_id || undefined,
         createdAt: dbFunnel.created_at,
         updatedAt: dbFunnel.updated_at,
         stages: regularStages,
@@ -227,6 +237,8 @@ export function useFunnels() {
                     thresholds: stage.thresholds,
                     position: stagePosition,
                     is_evaluation: isEvaluation,
+                    data_source: stage.dataSource || "sheet",
+                    crm_stage_id: stage.crmStageId || null,
                 });
 
             if (error) {
@@ -344,11 +356,88 @@ export function useFunnels() {
         loadFunnels();
     }, [loadFunnels]);
 
+    // Add funnel from CRM pipeline (hybrid source)
+    const addFunnelFromPipeline = useCallback(async (
+        name: string,
+        pipelineId: string,
+        crmStages: Array<{ id: string; name: string; color: string }>,
+        sheetsUrl?: string
+    ): Promise<Funnel> => {
+        const supabase = getSupabase();
+        const now = new Date().toISOString();
+
+        // Create funnel with pipeline source
+        const { data, error } = await supabase
+            .from('funnels')
+            .insert({
+                name,
+                created_at: now,
+                updated_at: now,
+                source_type: 'pipeline',
+                source_pipeline_id: pipelineId,
+                sheets_url: sheetsUrl || null
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Add CRM stages
+        for (let i = 0; i < crmStages.length; i++) {
+            const crmStage = crmStages[i];
+            await supabase
+                .from('funnel_stages')
+                .insert({
+                    id: crypto.randomUUID(),
+                    funnel_id: data.id,
+                    name: crmStage.name,
+                    emoji: "",
+                    unit: "absolute",
+                    thresholds: {
+                        otimo: { min: 80, max: 120 },
+                        ok: { min: 50, max: 79 },
+                        ruim: { max: 49 },
+                    },
+                    position: i,
+                    is_evaluation: false,
+                    data_source: 'crm',
+                    crm_stage_id: crmStage.id,
+                });
+        }
+
+        const newFunnel: Funnel = {
+            id: data.id,
+            name: data.name,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            sourceType: 'pipeline',
+            sourcePipelineId: pipelineId,
+            sheetsUrl: sheetsUrl,
+            stages: crmStages.map((s, i) => ({
+                id: crypto.randomUUID(),
+                name: s.name,
+                emoji: "",
+                unit: "absolute" as const,
+                thresholds: {
+                    otimo: { min: 80, max: 120 },
+                    ok: { min: 50, max: 79 },
+                    ruim: { max: 49 },
+                },
+                dataSource: 'crm' as const,
+                crmStageId: s.id,
+            })),
+        };
+
+        setFunnels(prev => [...prev, newFunnel]);
+        return newFunnel;
+    }, []);
+
     return {
         funnels,
         isLoading,
         error,
         addFunnel,
+        addFunnelFromPipeline,
         getFunnel,
         updateFunnel,
         addStage,
