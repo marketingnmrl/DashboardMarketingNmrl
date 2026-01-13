@@ -28,16 +28,18 @@ interface UseCRMFunnelDataReturn {
 }
 
 /**
- * Hook to fetch lead counts from CRM stages for hybrid funnels (COHORT MODEL)
+ * Hook to fetch lead counts from CRM stages for hybrid funnels
  * 
- * IMPORTANTE: Filtra leads por DATA DE CRIAÇÃO (created_at) dentro do período
- * Isso garante que a visualização mostra apenas leads que NASCERAM no período,
- * evitando contaminação de leads de dias anteriores.
+ * MODELO: Fluxo por etapa (quantos PASSARAM)
+ * 
+ * Usa a tabela crm_lead_stage_history para contar quantos leads distintos
+ * ENTRARAM em cada etapa durante o período selecionado.
+ * 
+ * Filtro de coorte: Só conta leads que foram CRIADOS no período selecionado.
  * 
  * Exemplo:
- * - Lead criado 12/01, movido pra "Em Negociação" em 13/01
- * - Na visualização de 13/01, esse lead NÃO aparece (foi criado em 12/01)
- * - Na visualização de 12/01 a 13/01, esse lead aparece em "Em Negociação"
+ * - Lead criado 13/01, passou por: Novo → Qualificado → Em Negociação
+ * - Visualização 13/01: Todas as 3 etapas mostram "1"
  */
 export function useCRMFunnelData(options: UseCRMFunnelDataOptions | null): UseCRMFunnelDataReturn {
     const { user } = useAuth();
@@ -68,43 +70,70 @@ export function useCRMFunnelData(options: UseCRMFunnelDataOptions | null): UseCR
             const endDate = new Date(options.dateRange.end);
             endDate.setHours(23, 59, 59, 999);
 
-            // Fetch leads CREATED in the period, grouped by current stage and origin
-            // This is the COHORT model: leads born in period → where are they now
-            const { data, error: fetchError } = await supabase
+            // Step 1: Get leads CREATED in the period (cohort filter)
+            const { data: cohortLeads, error: cohortError } = await supabase
                 .from("crm_leads")
-                .select("current_stage_id, origin, created_at")
+                .select("id, origin")
                 .eq("pipeline_id", options.pipelineId)
-                .in("current_stage_id", options.stageIds)
                 .gte("created_at", startDate.toISOString())
                 .lte("created_at", endDate.toISOString());
 
-            if (fetchError) throw fetchError;
+            if (cohortError) throw cohortError;
 
-            // Count leads by stage and origin
-            const countMap = new Map<string, { total: number; paid: number; organic: number }>();
+            if (!cohortLeads || cohortLeads.length === 0) {
+                // No leads in cohort, set all counts to 0
+                setCounts(options.stageIds.flatMap(stageId => [
+                    { stageId, count: 0, origin: undefined },
+                    { stageId, count: 0, origin: "paid" as LeadOrigin },
+                    { stageId, count: 0, origin: "organic" as LeadOrigin },
+                ]));
+                setIsLoading(false);
+                return;
+            }
+
+            const cohortLeadIds = cohortLeads.map(l => l.id);
+            const leadOriginMap = new Map(cohortLeads.map(l => [l.id, l.origin as LeadOrigin]));
+
+            // Step 2: Get stage history for cohort leads - entries into each stage
+            const { data: historyData, error: historyError } = await supabase
+                .from("crm_lead_stage_history")
+                .select("lead_id, to_stage_id, moved_at")
+                .in("lead_id", cohortLeadIds)
+                .in("to_stage_id", options.stageIds)
+                .gte("moved_at", startDate.toISOString())
+                .lte("moved_at", endDate.toISOString());
+
+            if (historyError) throw historyError;
+
+            // Count distinct leads that entered each stage
+            const countMap = new Map<string, { total: Set<string>; paid: Set<string>; organic: Set<string> }>();
 
             options.stageIds.forEach(id => {
-                countMap.set(id, { total: 0, paid: 0, organic: 0 });
+                countMap.set(id, { total: new Set(), paid: new Set(), organic: new Set() });
             });
 
-            (data || []).forEach(lead => {
-                const stageId = lead.current_stage_id;
+            (historyData || []).forEach(entry => {
+                const stageId = entry.to_stage_id;
+                const leadId = entry.lead_id;
+
                 if (stageId && countMap.has(stageId)) {
                     const stageCounts = countMap.get(stageId)!;
-                    stageCounts.total++;
-                    if (lead.origin === "paid") {
-                        stageCounts.paid++;
-                    } else if (lead.origin === "organic") {
-                        stageCounts.organic++;
+                    stageCounts.total.add(leadId);
+
+                    const origin = leadOriginMap.get(leadId);
+                    if (origin === "paid") {
+                        stageCounts.paid.add(leadId);
+                    } else if (origin === "organic") {
+                        stageCounts.organic.add(leadId);
                     }
                 }
             });
 
-            // Store the full counts for later filtering
-            setCounts(Array.from(countMap.entries()).flatMap(([stageId, c]) => [
-                { stageId, count: c.total, origin: undefined },
-                { stageId, count: c.paid, origin: "paid" as LeadOrigin },
-                { stageId, count: c.organic, origin: "organic" as LeadOrigin },
+            // Convert to array format with counts
+            setCounts(Array.from(countMap.entries()).flatMap(([stageId, sets]) => [
+                { stageId, count: sets.total.size, origin: undefined },
+                { stageId, count: sets.paid.size, origin: "paid" as LeadOrigin },
+                { stageId, count: sets.organic.size, origin: "organic" as LeadOrigin },
             ]));
 
         } catch (err) {
