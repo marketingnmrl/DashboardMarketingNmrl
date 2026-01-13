@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-// Initialize Supabase with service role for API access
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build errors when env is not set
+function getSupabaseAdmin(): SupabaseClient | null {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+        return null;
+    }
+
+    return createClient(url, key);
+}
 
 export async function POST(request: NextRequest) {
     try {
+        const supabase = getSupabaseAdmin();
+
+        if (!supabase) {
+            return NextResponse.json(
+                { error: "Server configuration error: Missing Supabase credentials" },
+                { status: 500 }
+            );
+        }
+
         // Get API key from header
         const apiKey = request.headers.get("X-API-Key");
 
