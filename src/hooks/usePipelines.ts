@@ -31,7 +31,7 @@ export function usePipelines(): UsePipelinesReturn {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch all pipelines with stages
+    // Fetch all pipelines with stages and lead counts
     const fetchPipelines = useCallback(async () => {
         if (!user) {
             setPipelines([]);
@@ -54,12 +54,30 @@ export function usePipelines(): UsePipelinesReturn {
 
             if (fetchError) throw fetchError;
 
-            // Sort stages by order_index
+            // Get all leads to count per stage
+            const { data: leads } = await supabase
+                .from("crm_leads")
+                .select("current_stage_id")
+                .eq("user_id", user.id);
+
+            const leadCountMap: Record<string, number> = {};
+            (leads || []).forEach(lead => {
+                if (lead.current_stage_id) {
+                    leadCountMap[lead.current_stage_id] = (leadCountMap[lead.current_stage_id] || 0) + 1;
+                }
+            });
+
+            // Sort stages by order_index and add lead_count
             const pipelinesWithSortedStages = (data || []).map(pipeline => ({
                 ...pipeline,
-                stages: (pipeline.stages || []).sort((a: CRMPipelineStage, b: CRMPipelineStage) =>
-                    a.order_index - b.order_index
-                )
+                stages: (pipeline.stages || [])
+                    .sort((a: CRMPipelineStage, b: CRMPipelineStage) =>
+                        a.order_index - b.order_index
+                    )
+                    .map((stage: CRMPipelineStage) => ({
+                        ...stage,
+                        lead_count: leadCountMap[stage.id] || 0
+                    }))
             }));
 
             setPipelines(pipelinesWithSortedStages);

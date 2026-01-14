@@ -14,8 +14,9 @@ export default function LeadsPage() {
     const [filterUtmCampaign, setFilterUtmCampaign] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [showUtmFilters, setShowUtmFilters] = useState(false);
+    const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
-    const { leads, isLoading, error, deleteLead } = useLeads(
+    const { leads, isLoading, error, deleteLead, createLead, fetchLeads } = useLeads(
         filterPipeline !== "all" ? { pipelineId: filterPipeline } : {}
     );
 
@@ -99,6 +100,13 @@ export default function LeadsPage() {
                     <h1 className="text-2xl font-extrabold text-[#19069E]">👥 Leads</h1>
                     <p className="text-sm text-gray-500">Todos os leads cadastrados</p>
                 </div>
+                <button
+                    onClick={() => setShowNewLeadModal(true)}
+                    className="px-4 py-2.5 bg-[#C2DF0C] hover:bg-[#B0CC0B] text-[#19069E] font-bold rounded-xl flex items-center gap-2 transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[20px]">add</span>
+                    Novo Lead
+                </button>
             </div>
 
             {/* Filters Row 1 */}
@@ -146,8 +154,8 @@ export default function LeadsPage() {
                 <button
                     onClick={() => setShowUtmFilters(!showUtmFilters)}
                     className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl transition-colors ${showUtmFilters || filterUtmSource !== "all" || filterUtmCampaign !== "all"
-                            ? "border-[#19069E] bg-[#19069E]/5 text-[#19069E]"
-                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        ? "border-[#19069E] bg-[#19069E]/5 text-[#19069E]"
+                        : "border-gray-200 text-gray-600 hover:border-gray-300"
                         }`}
                 >
                     <span className="material-symbols-outlined text-[18px]">tune</span>
@@ -343,6 +351,205 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
+
+            {/* New Lead Modal */}
+            {showNewLeadModal && (
+                <NewLeadModal
+                    pipelines={pipelines}
+                    onClose={() => setShowNewLeadModal(false)}
+                    onSave={async (data) => {
+                        const lead = await createLead(data);
+                        if (lead) {
+                            fetchLeads();
+                            setShowNewLeadModal(false);
+                        }
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+// New Lead Modal Component
+function NewLeadModal({
+    pipelines,
+    onClose,
+    onSave,
+}: {
+    pipelines: Array<{ id: string; name: string; stages?: Array<{ id: string; name: string }> }>;
+    onClose: () => void;
+    onSave: (data: {
+        pipeline_id: string;
+        stage_id?: string;
+        name: string;
+        email?: string;
+        phone?: string;
+        company?: string;
+        origin: "organic" | "paid" | "manual";
+    }) => Promise<void>;
+}) {
+    const [selectedPipeline, setSelectedPipeline] = useState(pipelines[0]?.id || "");
+    const [selectedStage, setSelectedStage] = useState("");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [company, setCompany] = useState("");
+    const [origin, setOrigin] = useState<"organic" | "paid" | "manual">("manual");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const currentPipeline = pipelines.find(p => p.id === selectedPipeline);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name.trim() || !selectedPipeline) return;
+
+        setIsSaving(true);
+        try {
+            await onSave({
+                pipeline_id: selectedPipeline,
+                stage_id: selectedStage || undefined,
+                name: name.trim(),
+                email: email.trim() || undefined,
+                phone: phone.trim() || undefined,
+                company: company.trim() || undefined,
+                origin,
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-[#19069E]">Novo Lead</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Pipeline */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Pipeline *</label>
+                        <select
+                            value={selectedPipeline}
+                            onChange={(e) => {
+                                setSelectedPipeline(e.target.value);
+                                setSelectedStage("");
+                            }}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            required
+                        >
+                            {pipelines.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Stage */}
+                    {currentPipeline && currentPipeline.stages && currentPipeline.stages.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Etapa Inicial</label>
+                            <select
+                                value={selectedStage}
+                                onChange={(e) => setSelectedStage(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            >
+                                <option value="">Primeira etapa</option>
+                                {currentPipeline.stages.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Name */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            required
+                        />
+                    </div>
+
+                    {/* Email & Phone */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Telefone</label>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Company */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Empresa</label>
+                        <input
+                            type="text"
+                            value={company}
+                            onChange={(e) => setCompany(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                        />
+                    </div>
+
+                    {/* Origin */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Origem</label>
+                        <select
+                            value={origin}
+                            onChange={(e) => setOrigin(e.target.value as "organic" | "paid" | "manual")}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                        >
+                            <option value="manual">Manual</option>
+                            <option value="organic">Orgânico</option>
+                            <option value="paid">Tráfego Pago</option>
+                        </select>
+                    </div>
+
+                    {/* Buttons */}
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!name.trim() || !selectedPipeline || isSaving}
+                            className="flex-1 py-2.5 bg-[#C2DF0C] text-[#19069E] font-bold rounded-lg hover:bg-[#B0CC0B] disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                                    Salvando...
+                                </>
+                            ) : (
+                                "Criar Lead"
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }
