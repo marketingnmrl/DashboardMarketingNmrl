@@ -456,11 +456,10 @@ function NewLeadModal({
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Etapa Inicial</label>
                             <select
-                                value={selectedStage}
+                                value={selectedStage || currentPipeline.stages[0]?.id}
                                 onChange={(e) => setSelectedStage(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                             >
-                                <option value="">Primeira etapa</option>
                                 {currentPipeline.stages.map(s => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
