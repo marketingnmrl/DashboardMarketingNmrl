@@ -117,6 +117,7 @@ export interface CreateLeadInput {
     utm_content?: string;
     utm_term?: string;
     custom_fields?: Record<string, unknown>;
+    created_at?: string; // ISO date string for backfilling historical leads
 }
 
 export interface UpdateLeadInput {

@@ -170,6 +170,9 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                 }
             }
 
+            // Use custom created_at or current time
+            const createdAt = input.created_at || new Date().toISOString();
+
             const { data: lead, error: createError } = await supabase
                 .from("crm_leads")
                 .insert({
@@ -186,14 +189,15 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     utm_campaign: input.utm_campaign || null,
                     utm_content: input.utm_content || null,
                     utm_term: input.utm_term || null,
-                    custom_fields: input.custom_fields || {}
+                    custom_fields: input.custom_fields || {},
+                    created_at: createdAt
                 })
                 .select()
                 .single();
 
             if (createError) throw createError;
 
-            // Record initial stage in history
+            // Record initial stage in history (use same date for consistency)
             if (stageId) {
                 await supabase
                     .from("crm_lead_stage_history")
@@ -201,7 +205,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                         lead_id: lead.id,
                         from_stage_id: null,
                         to_stage_id: stageId,
-                        moved_by: "system"
+                        moved_by: "system",
+                        moved_at: createdAt
                     });
             }
 
