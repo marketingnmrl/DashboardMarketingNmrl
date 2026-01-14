@@ -149,6 +149,11 @@ CREATE POLICY "Users can create history for own leads" ON crm_lead_stage_history
     EXISTS (SELECT 1 FROM crm_leads WHERE id = lead_id AND user_id = auth.uid())
   );
 
+CREATE POLICY "Users can delete history of own leads" ON crm_lead_stage_history
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM crm_leads WHERE id = lead_id AND user_id = auth.uid())
+  );
+
 -- Index for history queries
 CREATE INDEX idx_crm_history_lead ON crm_lead_stage_history(lead_id, moved_at DESC);
 

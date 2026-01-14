@@ -974,9 +974,11 @@ export default function FunilDetailPage() {
                             <p className="text-xs text-gray-500 font-medium">Taxa Geral</p>
                             <p className="text-xl font-extrabold text-[#19069E]">
                                 {(() => {
-                                    const first = getStageValueForPeriod(funnel.stages[0]?.name);
-                                    const last = getStageValueForPeriod(funnel.stages[funnel.stages.length - 1]?.name);
-                                    return first && last ? `${((last / first) * 100).toFixed(3)}%` : "—";
+                                    const firstStage = funnel.stages[0];
+                                    const lastStage = funnel.stages[funnel.stages.length - 1];
+                                    const first = getStageValueForPeriod(firstStage?.name, firstStage?.id, firstStage?.dataSource, firstStage?.crmStageId);
+                                    const last = getStageValueForPeriod(lastStage?.name, lastStage?.id, lastStage?.dataSource, lastStage?.crmStageId);
+                                    return first && last ? `${((last / first) * 100).toFixed(2)}%` : "—";
                                 })()}
                             </p>
                             <p className="text-xs text-gray-400">
@@ -993,11 +995,18 @@ export default function FunilDetailPage() {
                             <p className="text-xl font-extrabold text-red-500">
                                 {(() => {
                                     let minRate = Infinity;
+                                    let minStageName = "";
                                     for (let i = 1; i < funnel.stages.length; i++) {
-                                        const prev = getStageValueForPeriod(funnel.stages[i - 1]?.name);
-                                        const curr = getStageValueForPeriod(funnel.stages[i]?.name);
+                                        const prevStage = funnel.stages[i - 1];
+                                        const currStage = funnel.stages[i];
+                                        const prev = getStageValueForPeriod(prevStage?.name, prevStage?.id, prevStage?.dataSource, prevStage?.crmStageId);
+                                        const curr = getStageValueForPeriod(currStage?.name, currStage?.id, currStage?.dataSource, currStage?.crmStageId);
                                         if (prev && curr) {
-                                            minRate = Math.min(minRate, (curr / prev) * 100);
+                                            const rate = (curr / prev) * 100;
+                                            if (rate < minRate) {
+                                                minRate = rate;
+                                                minStageName = currStage?.name || "";
+                                            }
                                         }
                                     }
                                     return minRate !== Infinity ? `${minRate.toFixed(2)}%` : "—";
