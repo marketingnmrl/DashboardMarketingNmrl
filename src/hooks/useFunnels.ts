@@ -365,7 +365,8 @@ export function useFunnels() {
         name: string,
         pipelineId: string,
         crmStages: Array<{ id: string; name: string; color: string; isEvaluation?: boolean }>,
-        sheetsUrl?: string
+        sheetsUrl?: string,
+        positionOffset: number = 0 // Offset for CRM stages (sheet stages come before)
     ): Promise<Funnel> => {
         const supabase = getSupabase();
         const now = new Date().toISOString();
@@ -390,7 +391,7 @@ export function useFunnels() {
         const normalStages = crmStages.filter(s => !s.isEvaluation);
         const evalStages = crmStages.filter(s => s.isEvaluation);
 
-        // Add normal CRM stages first
+        // Add normal CRM stages (offset by sheet stages count so sheet stages come first)
         for (let i = 0; i < normalStages.length; i++) {
             const crmStage = normalStages[i];
             await supabase
@@ -406,7 +407,7 @@ export function useFunnels() {
                         ok: { min: 50, max: 79 },
                         ruim: { max: 49 },
                     },
-                    position: i,
+                    position: positionOffset + i, // Offset by sheet stages
                     is_evaluation: false,
                     data_source: 'crm',
                     crm_stage_id: crmStage.id,

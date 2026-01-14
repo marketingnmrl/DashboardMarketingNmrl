@@ -141,14 +141,16 @@ export default function NovoFunilPage() {
                 const newFunnel = await addFunnelFromPipeline(
                     funnelName.trim(),
                     selectedPipelineId,
-                    crmStages
+                    crmStages,
+                    undefined, // sheetsUrl
+                    additionalSheetStages.length // offset for CRM stages
                 );
 
-                // Add additional sheet stages
+                // Add sheet stages FIRST (at the top of funnel)
                 for (let i = 0; i < additionalSheetStages.length; i++) {
                     const stage = additionalSheetStages[i];
                     const stageObj = createNewStage(stage.name, "", stage.unit, "sheet");
-                    await addStage(newFunnel.id, stageObj, pipelineStages.length + i, false);
+                    await addStage(newFunnel.id, stageObj, i, false);
                 }
 
                 // Add evaluation stages
