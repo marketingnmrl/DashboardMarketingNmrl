@@ -45,6 +45,9 @@ export default function NovoFunilPage() {
     const [newEvalStageName, setNewEvalStageName] = useState("");
     const [newEvalStageUnit, setNewEvalStageUnit] = useState<"absolute" | "percentage">("absolute");
 
+    // Track which CRM stages are marked as evaluation
+    const [crmEvaluationStageIds, setCrmEvaluationStageIds] = useState<Set<string>>(new Set());
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     usePageMetrics({
@@ -133,6 +136,7 @@ export default function NovoFunilPage() {
                     id: s.crmStageId!,
                     name: s.name,
                     color: s.crmStageColor || "#19069E",
+                    isEvaluation: crmEvaluationStageIds.has(s.crmStageId!),
                 }));
                 const newFunnel = await addFunnelFromPipeline(
                     funnelName.trim(),
@@ -385,6 +389,23 @@ export default function NovoFunilPage() {
                                         style={{ backgroundColor: stage.crmStageColor }}
                                     />
                                     <span className="flex-1 font-medium text-sm">{stage.name}</span>
+                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={crmEvaluationStageIds.has(stage.crmStageId!)}
+                                            onChange={(e) => {
+                                                const newSet = new Set(crmEvaluationStageIds);
+                                                if (e.target.checked) {
+                                                    newSet.add(stage.crmStageId!);
+                                                } else {
+                                                    newSet.delete(stage.crmStageId!);
+                                                }
+                                                setCrmEvaluationStageIds(newSet);
+                                            }}
+                                            className="w-4 h-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                                        />
+                                        <span className="text-xs text-amber-600">Avaliacao</span>
+                                    </label>
                                     <span className="text-xs text-gray-500 bg-white px-2 py-0.5 rounded">CRM</span>
                                 </div>
                             ))}

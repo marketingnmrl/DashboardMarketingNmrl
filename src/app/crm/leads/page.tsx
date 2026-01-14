@@ -386,6 +386,7 @@ function NewLeadModal({
         phone?: string;
         company?: string;
         origin: "organic" | "paid" | "manual";
+        created_at?: string;
     }) => Promise<void>;
 }) {
     const [selectedPipeline, setSelectedPipeline] = useState(pipelines[0]?.id || "");
@@ -395,6 +396,7 @@ function NewLeadModal({
     const [phone, setPhone] = useState("");
     const [company, setCompany] = useState("");
     const [origin, setOrigin] = useState<"organic" | "paid" | "manual">("manual");
+    const [createdAt, setCreatedAt] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     const currentPipeline = pipelines.find(p => p.id === selectedPipeline);
@@ -413,6 +415,7 @@ function NewLeadModal({
                 phone: phone.trim() || undefined,
                 company: company.trim() || undefined,
                 origin,
+                created_at: createdAt ? new Date(createdAt).toISOString() : undefined,
             });
         } finally {
             setIsSaving(false);
@@ -522,6 +525,21 @@ function NewLeadModal({
                             <option value="organic">Orgânico</option>
                             <option value="paid">Tráfego Pago</option>
                         </select>
+                    </div>
+
+                    {/* Created At */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                            Data de Criação
+                            <span className="font-normal text-gray-400 ml-1">(opcional)</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={createdAt}
+                            onChange={(e) => setCreatedAt(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Deixe vazio para usar a data atual</p>
                     </div>
 
                     {/* Buttons */}

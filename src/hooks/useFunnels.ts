@@ -364,7 +364,7 @@ export function useFunnels() {
     const addFunnelFromPipeline = useCallback(async (
         name: string,
         pipelineId: string,
-        crmStages: Array<{ id: string; name: string; color: string }>,
+        crmStages: Array<{ id: string; name: string; color: string; isEvaluation?: boolean }>,
         sheetsUrl?: string
     ): Promise<Funnel> => {
         const supabase = getSupabase();
@@ -386,9 +386,13 @@ export function useFunnels() {
 
         if (error) throw error;
 
-        // Add CRM stages
-        for (let i = 0; i < crmStages.length; i++) {
-            const crmStage = crmStages[i];
+        // Separate normal stages from evaluation stages
+        const normalStages = crmStages.filter(s => !s.isEvaluation);
+        const evalStages = crmStages.filter(s => s.isEvaluation);
+
+        // Add normal CRM stages first
+        for (let i = 0; i < normalStages.length; i++) {
+            const crmStage = normalStages[i];
             await supabase
                 .from('funnel_stages')
                 .insert({
@@ -404,6 +408,29 @@ export function useFunnels() {
                     },
                     position: i,
                     is_evaluation: false,
+                    data_source: 'crm',
+                    crm_stage_id: crmStage.id,
+                });
+        }
+
+        // Add evaluation CRM stages
+        for (let i = 0; i < evalStages.length; i++) {
+            const crmStage = evalStages[i];
+            await supabase
+                .from('funnel_stages')
+                .insert({
+                    id: crypto.randomUUID(),
+                    funnel_id: data.id,
+                    name: crmStage.name,
+                    emoji: "",
+                    unit: "absolute",
+                    thresholds: {
+                        otimo: { min: 80, max: 120 },
+                        ok: { min: 50, max: 79 },
+                        ruim: { max: 49 },
+                    },
+                    position: i,
+                    is_evaluation: true,
                     data_source: 'crm',
                     crm_stage_id: crmStage.id,
                 });
