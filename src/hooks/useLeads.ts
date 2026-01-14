@@ -31,6 +31,7 @@ interface UseLeadsReturn {
     moveLead: (leadId: string, toStageId: string, movedBy?: string) => Promise<boolean>;
     addInteraction: (input: CreateInteractionInput) => Promise<CRMLeadInteraction | null>;
     getLeadCountByStage: (pipelineId: string) => Promise<Record<string, number>>;
+    deleteStageHistory: (historyId: string) => Promise<boolean>;
 }
 
 export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
@@ -352,6 +353,23 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         }
     }, []);
 
+    // Delete stage history entry (to remove incorrect movements)
+    const deleteStageHistory = useCallback(async (historyId: string): Promise<boolean> => {
+        try {
+            const { error: deleteError } = await supabase
+                .from("crm_lead_stage_history")
+                .delete()
+                .eq("id", historyId);
+
+            if (deleteError) throw deleteError;
+
+            return true;
+        } catch (err) {
+            console.error("Error deleting stage history:", err);
+            return false;
+        }
+    }, []);
+
     // Initial fetch
     useEffect(() => {
         fetchLeads();
@@ -370,6 +388,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         deleteLead,
         moveLead,
         addInteraction,
-        getLeadCountByStage
+        getLeadCountByStage,
+        deleteStageHistory
     };
 }

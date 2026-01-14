@@ -13,7 +13,7 @@ export default function LeadDetailsPage() {
     const router = useRouter();
     const leadId = params.id as string;
 
-    const { getLead, getLeadHistory, getLeadInteractions, updateLead, moveLead, addInteraction, deleteLead } = useLeads();
+    const { getLead, getLeadHistory, getLeadInteractions, updateLead, moveLead, addInteraction, deleteLead, deleteStageHistory } = useLeads();
     const { pipelines } = usePipelines();
     const { customFields: globalCustomFields } = useCustomFields();
 
@@ -104,6 +104,16 @@ export default function LeadDetailsPage() {
     const handleMoveStage = async (stageId: string) => {
         await moveLead(leadId, stageId, "user");
         await loadData();
+    };
+
+    // Delete history entry
+    const handleDeleteHistory = async (historyId: string) => {
+        if (confirm("Excluir esta movimentação do histórico? Isso afetará as métricas do funil.")) {
+            const success = await deleteStageHistory(historyId);
+            if (success) {
+                setHistory(prev => prev.filter(h => h.id !== historyId));
+            }
+        }
     };
 
     const currentPipeline = pipelines.find(p => p.id === lead?.pipeline_id);
@@ -337,8 +347,8 @@ export default function LeadDetailsPage() {
                                                     <button
                                                         onClick={() => updateCustomFieldValue(field.field_key, "true")}
                                                         className={`px-3 py-1.5 text-sm rounded-lg ${customFields[field.field_key] === "true"
-                                                                ? "bg-green-500 text-white"
-                                                                : "bg-gray-100 text-gray-600"
+                                                            ? "bg-green-500 text-white"
+                                                            : "bg-gray-100 text-gray-600"
                                                             }`}
                                                     >
                                                         Sim
@@ -346,8 +356,8 @@ export default function LeadDetailsPage() {
                                                     <button
                                                         onClick={() => updateCustomFieldValue(field.field_key, "false")}
                                                         className={`px-3 py-1.5 text-sm rounded-lg ${customFields[field.field_key] === "false"
-                                                                ? "bg-red-500 text-white"
-                                                                : "bg-gray-100 text-gray-600"
+                                                            ? "bg-red-500 text-white"
+                                                            : "bg-gray-100 text-gray-600"
                                                             }`}
                                                     >
                                                         Não
@@ -548,17 +558,24 @@ export default function LeadDetailsPage() {
                             <p className="text-gray-400 text-sm text-center">Sem movimentações</p>
                         ) : (
                             <div className="space-y-3">
-                                {history.slice(0, 5).map(h => (
-                                    <div key={h.id} className="flex items-start gap-2">
+                                {history.slice(0, 10).map(h => (
+                                    <div key={h.id} className="flex items-start gap-2 group">
                                         <div className="w-2 h-2 bg-[#19069E] rounded-full mt-2" />
-                                        <div>
+                                        <div className="flex-1">
                                             <p className="text-sm text-gray-600">
                                                 {h.from_stage?.name || "Entrada"} → {h.to_stage?.name}
                                             </p>
                                             <p className="text-xs text-gray-400">
-                                                {new Date(h.moved_at).toLocaleDateString("pt-BR")}
+                                                {new Date(h.moved_at).toLocaleDateString("pt-BR")} às {new Date(h.moved_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                                             </p>
                                         </div>
+                                        <button
+                                            onClick={() => handleDeleteHistory(h.id)}
+                                            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded text-gray-400 hover:text-red-500 transition-all"
+                                            title="Excluir movimentação"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                                        </button>
                                     </div>
                                 ))}
                             </div>
