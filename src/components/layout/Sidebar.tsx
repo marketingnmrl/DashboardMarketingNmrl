@@ -63,6 +63,7 @@ const navigation = [
 
 const bottomNavigation = [
   { name: "Configurações", href: "/configuracoes", icon: "settings" },
+  { name: "Documentação API", href: "/crm/docs", icon: "api" },
 ];
 
 export default function Sidebar() {
