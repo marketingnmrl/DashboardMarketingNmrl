@@ -93,19 +93,20 @@ function DailyChart({
   const maxLeads = Math.max(...dailyData.map((d) => d.leads), 1);
   const maxPurchases = Math.max(...dailyData.map((d) => d.purchases), 1);
 
-  // Build SVG path for line charts
-  const buildPath = (
-    data: number[],
-    max: number,
-    height: number = 180
-  ) => {
-    if (data.length === 0) return "";
+  // SVG chart dimensions
+  const chartHeight = 180;
+  const chartPadding = 10;
+
+  // Build SVG path for line charts using viewBox coordinates
+  const buildPath = (data: number[], max: number) => {
+    if (data.length === 0 || max === 0) return "";
+    const effectiveHeight = chartHeight - chartPadding * 2;
     const width = 100 / data.length;
     return data
       .map((value, i) => {
-        const x = i * width + width / 2;
-        const y = height - (value / max) * (height - 20);
-        return `${i === 0 ? "M" : "L"} ${x}% ${y}`;
+        const x = (i * width + width / 2);
+        const y = chartPadding + effectiveHeight - (value / max) * effectiveHeight;
+        return `${i === 0 ? "M" : "L"} ${x} ${y}`;
       })
       .join(" ");
   };
@@ -139,7 +140,7 @@ function DailyChart({
           {/* Bar Chart - Faturamento (purchaseValue) */}
           <div className="absolute inset-0 flex items-end justify-between gap-1 px-2">
             {dailyData.map((day, i) => {
-              const barHeight = (day.purchaseValue / maxFaturamento) * 100;
+              const barHeight = maxFaturamento > 0 ? (day.purchaseValue / maxFaturamento) * 100 : 2;
               return (
                 <div
                   key={i}
@@ -152,26 +153,36 @@ function DailyChart({
           </div>
 
           {/* Line Charts */}
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox={`0 0 100 ${chartHeight}`}
+            preserveAspectRatio="none"
+          >
             {/* Leads Line (green) */}
-            <path
-              d={leadsPath}
-              fill="none"
-              stroke="#C2DF0C"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {maxLeads > 0 && (
+              <path
+                d={leadsPath}
+                fill="none"
+                stroke="#C2DF0C"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
             {/* Vendas/Purchases Line (light blue dashed) */}
-            <path
-              d={purchasesPath}
-              fill="none"
-              stroke="#93C5FD"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {maxPurchases > 0 && (
+              <path
+                d={purchasesPath}
+                fill="none"
+                stroke="#93C5FD"
+                strokeWidth="1.5"
+                strokeDasharray="4 2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
           </svg>
         </div>
       )}
