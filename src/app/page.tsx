@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 import { useStractData } from "@/hooks/useStractData";
@@ -18,123 +18,168 @@ function formatNumber(value: number): string {
 
 // Format percentage
 function formatPercent(value: number): string {
-  return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+  return `${value.toFixed(2)}%`;
 }
 
-// Bento KPI Card Component - supports different sizes
-function BentoCard({
-  icon,
+// KPI Card with variation indicator
+function KPICard({
   label,
   value,
-  subtitle,
+  variation,
+  icon,
   isLoading,
-  size = "sm",
-  variant = "primary",
 }: {
-  icon: string;
   label: string;
   value: string;
-  subtitle?: string;
+  variation?: { value: number; isPositive: boolean };
+  icon: string;
   isLoading?: boolean;
-  size?: "sm" | "md" | "lg" | "wide";
-  variant?: "primary" | "secondary" | "accent" | "light";
 }) {
-  const sizeClasses = {
-    sm: "p-5",
-    md: "p-6",
-    lg: "p-8",
-    wide: "p-6",
-  };
-
-  const valueClasses = {
-    sm: "text-2xl",
-    md: "text-3xl",
-    lg: "text-4xl",
-    wide: "text-3xl",
-  };
-
-  const iconBgClasses = {
-    sm: "text-[60px]",
-    md: "text-[80px]",
-    lg: "text-[120px]",
-    wide: "text-[80px]",
-  };
-
-  const variantClasses = {
-    primary: "bg-[#19069E] text-white",
-    secondary: "bg-gradient-to-br from-[#19069E] to-[#2B1BB8] text-white",
-    accent: "bg-gradient-to-br from-[#C2DF0C] to-[#A8C20A] text-[#19069E]",
-    light: "bg-white border border-gray-200 text-gray-900",
-  };
-
-  const labelClasses = {
-    primary: "text-blue-200",
-    secondary: "text-blue-200",
-    accent: "text-[#19069E]/70",
-    light: "text-gray-500",
-  };
-
-  const subtitleClasses = {
-    primary: "text-blue-200",
-    secondary: "text-blue-200",
-    accent: "text-[#19069E]/60",
-    light: "text-gray-400",
-  };
-
-  const iconColorClasses = {
-    primary: "text-white",
-    secondary: "text-white",
-    accent: "text-[#19069E]/20",
-    light: "text-gray-100",
-  };
-
-  const badgeClasses = {
-    primary: "bg-white/10 text-[#C2DF0C]",
-    secondary: "bg-white/10 text-[#C2DF0C]",
-    accent: "bg-[#19069E]/10 text-[#19069E]",
-    light: "bg-gray-100 text-[#19069E]",
-  };
-
   return (
-    <div className={`rounded-2xl shadow-lg hover:shadow-xl transition-all relative overflow-hidden group ${sizeClasses[size]} ${variantClasses[variant]}`}>
-      {/* Background Icon */}
-      <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:opacity-20 transition-opacity">
-        <span className={`material-symbols-outlined ${iconBgClasses[size]} ${iconColorClasses[variant]}`}>{icon}</span>
-      </div>
-
-      {/* Header Badge */}
-      <div className="flex justify-between items-start mb-3 relative z-10">
-        <div className={`p-2.5 rounded-xl backdrop-blur-sm ${badgeClasses[variant]}`}>
-          <span className="material-symbols-outlined text-[22px]">{icon}</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 relative z-10 ${labelClasses[variant]}`}>
+    <div className="p-5 rounded-xl bg-white border border-gray-200 shadow-sm">
+      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">
         {label}
       </p>
-      {isLoading ? (
-        <div className={`h-9 w-24 rounded animate-pulse ${variant === "light" ? "bg-gray-100" : "bg-white/20"}`} />
-      ) : (
-        <p className={`font-extrabold relative z-10 ${valueClasses[size]}`}>{value}</p>
-      )}
-      {subtitle && (
-        <p className={`text-xs mt-2 font-medium relative z-10 ${subtitleClasses[variant]}`}>{subtitle}</p>
-      )}
+      <div className="flex items-center gap-2">
+        {isLoading ? (
+          <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
+        ) : (
+          <>
+            <span className="text-2xl font-extrabold text-[#19069E]">{value}</span>
+            {variation && (
+              <span
+                className={`text-xs font-bold px-1.5 py-0.5 rounded ${variation.isPositive
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+                  }`}
+              >
+                {variation.isPositive ? "▲" : "▼"} {Math.abs(variation.value).toFixed(1)}%
+              </span>
+            )}
+          </>
+        )}
+        <span className="material-symbols-outlined text-[#C2DF0C] text-xl ml-auto">
+          {icon}
+        </span>
+      </div>
     </div>
   );
 }
 
-// Mini stat for compact display
-function MiniStat({ label, value, icon }: { label: string; value: string; icon: string }) {
+// Daily Chart Component
+function DailyChart({
+  dailyData,
+  isLoading,
+}: {
+  dailyData: Array<{
+    date: string;
+    spend: number;
+    leads: number;
+    impressions: number;
+  }>;
+  isLoading: boolean;
+}) {
+  // Find max values for scaling
+  const maxSpend = Math.max(...dailyData.map((d) => d.spend), 1);
+  const maxLeads = Math.max(...dailyData.map((d) => d.leads), 1);
+  const maxImpressions = Math.max(...dailyData.map((d) => d.impressions), 1);
+
+  // Build SVG path for line charts
+  const buildPath = (
+    data: number[],
+    max: number,
+    height: number = 180
+  ) => {
+    const width = 100 / data.length;
+    return data
+      .map((value, i) => {
+        const x = i * width + width / 2;
+        const y = height - (value / max) * (height - 20);
+        return `${i === 0 ? "M" : "L"} ${x}% ${y}`;
+      })
+      .join(" ");
+  };
+
+  const spendPath = buildPath(
+    dailyData.map((d) => d.spend),
+    maxSpend
+  );
+
+  const leadsPath = buildPath(
+    dailyData.map((d) => d.leads),
+    maxLeads
+  );
+
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-      <div className="p-2 rounded-lg bg-[#19069E]/10">
-        <span className="material-symbols-outlined text-[18px] text-[#19069E]">{icon}</span>
+    <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="material-symbols-outlined text-[#19069E]">bar_chart</span>
+        <h3 className="font-bold text-[#19069E]">Dados Diários</h3>
       </div>
-      <div>
-        <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-xs text-gray-500 mb-4">Performance diária de vendas e investimentos</p>
+
+      {isLoading ? (
+        <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+      ) : dailyData.length === 0 ? (
+        <div className="h-48 flex items-center justify-center text-gray-400">
+          Sem dados para o período
+        </div>
+      ) : (
+        <div className="relative h-48">
+          {/* Bar Chart - Impressions (as proxy for volume) */}
+          <div className="absolute inset-0 flex items-end justify-between gap-1 px-2">
+            {dailyData.map((day, i) => {
+              const barHeight = (day.impressions / maxImpressions) * 100;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 bg-[#19069E] rounded-t-sm opacity-30"
+                  style={{ height: `${Math.max(barHeight, 2)}%` }}
+                  title={`${day.date}: ${day.impressions.toLocaleString("pt-BR")} impressões`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Line Charts */}
+          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+            {/* Spend Line (green) */}
+            <path
+              d={spendPath}
+              fill="none"
+              stroke="#C2DF0C"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Leads Line (light blue dashed) */}
+            <path
+              d={leadsPath}
+              fill="none"
+              stroke="#93C5FD"
+              strokeWidth="2"
+              strokeDasharray="6 4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 mt-4 text-xs">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#19069E] opacity-50" />
+          <span className="text-gray-600">Impressões</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#C2DF0C]" />
+          <span className="text-gray-600">Investimento</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#93C5FD]" />
+          <span className="text-gray-600">Leads</span>
+        </div>
       </div>
     </div>
   );
@@ -148,10 +193,8 @@ export default function DashboardPage() {
   const {
     metrics,
     dailyData,
-    campaignSummary,
     isLoading: dataLoading,
     error,
-    dateRange: availableDateRange,
   } = useStractData(settings?.visaoGeralSheetUrl, {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
@@ -160,7 +203,7 @@ export default function DashboardPage() {
   // Update available dates in context when data loads
   useEffect(() => {
     if (dailyData.length > 0) {
-      const dates = dailyData.map(d => d.date);
+      const dates = dailyData.map((d) => d.date);
       setAvailableDates(dates);
     }
   }, [dailyData, setAvailableDates]);
@@ -168,31 +211,47 @@ export default function DashboardPage() {
   const isLoading = settingsLoading || dataLoading;
   const hasData = !error && metrics.totalImpressions > 0;
 
+  // Calculate derived metrics for KPIs
+  const kpiData = useMemo(() => {
+    const faturamento = metrics.totalPurchaseValue || 0;
+    const investimento = metrics.totalSpend || 0;
+    const vendas = metrics.totalPurchases || 0;
+    const leads = metrics.totalLeads || 0;
+    const leadsTotal = leads;
+    const taxaConversao = leads > 0 ? (vendas / leads) * 100 : 0;
+
+    return {
+      faturamentoInvestimento: faturamento - investimento,
+      vendasLeads: vendas,
+      leadsTotal,
+      taxaConversao,
+    };
+  }, [metrics]);
+
   // Provide metrics for AI Assistant
   usePageMetrics({
-    pagina: "Visão Geral do Desempenho",
-    descricao: "Dashboard principal com métricas consolidadas de todas as campanhas",
+    pagina: "Visão Geral do Projeto",
+    descricao: "Dashboard principal com métricas consolidadas do projeto",
     periodo: `${dateRange.startDate} a ${dateRange.endDate}`,
     filtros: {
       campanha: "Todas",
       plataforma: "Todas",
     },
     kpis: {
-      investimento_total: metrics.totalSpend,
-      impressoes: metrics.totalImpressions,
-      cliques: metrics.totalClicks,
-      leads: metrics.totalLeads,
-      cpc_medio: metrics.avgCpc,
-      cpm_medio: metrics.avgCpm,
-      ctr_medio: metrics.avgCtr,
-    },
-    dados_adicionais: {
-      campanhas_ativas: metrics.uniqueCampaigns,
+      faturamento_investimento: kpiData.faturamentoInvestimento,
+      vendas_leads: kpiData.vendasLeads,
+      leads_total: kpiData.leadsTotal,
+      taxa_conversao: kpiData.taxaConversao,
     },
   });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-[#19069E]">Visão Geral do Projeto</h1>
+        <p className="text-sm text-gray-500">Acompanhamento em tempo real dos principais ativos</p>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -218,7 +277,10 @@ export default function DashboardPage() {
             <div>
               <p className="font-bold">Planilha não configurada</p>
               <p className="text-sm">Configure a URL do Google Sheets para visualizar os dados reais.</p>
-              <a href="/configuracoes" className="inline-flex items-center gap-1 mt-2 text-sm font-bold text-[#19069E] hover:underline">
+              <a
+                href="/configuracoes"
+                className="inline-flex items-center gap-1 mt-2 text-sm font-bold text-[#19069E] hover:underline"
+              >
                 <span className="material-symbols-outlined text-[16px]">settings</span>
                 Ir para Configurações
               </a>
@@ -227,375 +289,43 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ============ BENTO GRID LAYOUT ============ */}
-
-      {/* ROW 1: Main KPIs - Financial Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Investimento */}
-        <BentoCard
-          icon="payments"
-          label="Investimento"
-          value={hasData ? formatCurrency(metrics.totalSpend) : "—"}
+      {/* ============ 4 KPI CARDS ============ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Faturamento / Investimento */}
+        <KPICard
+          label="Faturamento / Investimento"
+          value={hasData ? formatCurrency(kpiData.faturamentoInvestimento) : "—"}
+          icon="monitoring"
           isLoading={isLoading}
-          size="sm"
-          variant="accent"
         />
 
-        {/* Valor Gerado */}
-        <BentoCard
-          icon="attach_money"
-          label="Valor Gerado"
-          value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="primary"
-        />
-
-        {/* Ticket Médio */}
-        <BentoCard
-          icon="receipt"
-          label="Ticket Médio"
-          value={hasData ? formatCurrency(metrics.ticketMedio) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="secondary"
-        />
-
-        {/* ROAS */}
-        <BentoCard
-          icon="trending_up"
-          label="ROAS"
-          value={hasData ? metrics.avgRoas.toFixed(2) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="primary"
-        />
-
-        {/* Compras */}
-        <BentoCard
+        {/* Vendas / Leads */}
+        <KPICard
+          label="Vendas / Leads"
+          value={hasData ? formatNumber(kpiData.vendasLeads) : "—"}
           icon="shopping_cart"
-          label="Compras"
-          value={hasData ? formatNumber(metrics.totalPurchases) : "—"}
           isLoading={isLoading}
-          size="sm"
-          variant="primary"
         />
 
-        {/* CAC */}
-        <BentoCard
-          icon="person_add"
-          label="CAC"
-          value={hasData ? formatCurrency(metrics.cac) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="light"
-        />
-      </div>
-
-      {/* ROW 2: Funnel Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Funnel Numbers Column */}
-        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-bold text-[#19069E] mb-4">📊 Métricas de Funil</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Impressões</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalImpressions) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Cliques no Link</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Checkouts</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatNumber(metrics.totalCheckouts) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Compras</p>
-              <p className="text-2xl font-extrabold text-[#C2DF0C]" style={{ WebkitTextStroke: "0.5px #19069E" }}>
-                {hasData ? formatNumber(metrics.totalPurchases) : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Conversion Rates Column */}
-        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-bold text-[#19069E] mb-4">📈 Taxas de Conversão</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">CPM</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatCurrency(metrics.avgCpm) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">Connect Rate</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatPercent(metrics.connectRate) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">% Checkout</p>
-              <p className="text-2xl font-extrabold text-[#19069E]">
-                {hasData ? formatPercent(metrics.checkoutRate) : "—"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-gray-50">
-              <p className="text-xs text-gray-500 font-medium">% Compras</p>
-              <p className="text-2xl font-extrabold text-[#C2DF0C]" style={{ WebkitTextStroke: "0.5px #19069E" }}>
-                {hasData ? formatPercent(metrics.conversionRate) : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ROW 3: Secondary KPIs - Restored metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <BentoCard
-          icon="percent"
-          label="CTR"
-          value={hasData ? formatPercent(metrics.avgCtr) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="secondary"
-        />
-        <BentoCard
-          icon="price_change"
-          label="CPC Médio"
-          value={hasData ? formatCurrency(metrics.avgCpc) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="light"
-        />
-        <BentoCard
-          icon="person_add"
-          label="CPL Médio"
-          value={hasData ? formatCurrency(metrics.avgCpl) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="light"
-        />
-        <BentoCard
+        {/* Leads Totais */}
+        <KPICard
+          label="Leads Totais"
+          value={hasData ? formatNumber(kpiData.leadsTotal) : "—"}
           icon="group"
-          label="Alcance"
-          value={hasData ? formatNumber(metrics.totalReach) : "—"}
           isLoading={isLoading}
-          size="sm"
-          variant="primary"
         />
-        <BentoCard
-          icon="group_add"
-          label="Leads"
-          value={hasData ? formatNumber(metrics.totalLeads) : "—"}
+
+        {/* Taxa de Conversão */}
+        <KPICard
+          label="Taxa de Conversão"
+          value={hasData ? formatPercent(kpiData.taxaConversao) : "—"}
+          icon="percent"
           isLoading={isLoading}
-          size="sm"
-          variant="primary"
-        />
-        <BentoCard
-          icon="avg_pace"
-          label="Invest. Diário Médio"
-          value={hasData && dailyData.length > 0 ? formatCurrency(metrics.totalSpend / dailyData.length) : "—"}
-          isLoading={isLoading}
-          size="sm"
-          variant="light"
         />
       </div>
 
-      {/* ROW 4: Charts - Original Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Daily Evolution Chart - Wide */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-[#19069E]">📈 Evolução Diária</h3>
-              <p className="text-sm text-gray-500">Investimento e cliques por dia</p>
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="h-[200px] flex items-center justify-center">
-              <span className="material-symbols-outlined text-4xl text-gray-300 animate-pulse">hourglass_empty</span>
-            </div>
-          ) : dailyData.length > 0 ? (
-            <div className="space-y-2">
-              {dailyData.slice(-7).map((day) => {
-                const maxSpend = Math.max(...dailyData.map((d) => d.spend));
-                const barWidth = maxSpend > 0 ? (day.spend / maxSpend) * 100 : 0;
-                return (
-                  <div key={day.date} className="flex items-center gap-3 group">
-                    <span className="text-xs text-gray-500 w-12 font-mono">{day.date.slice(5)}</span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-8 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-[#19069E] to-[#C2DF0C] h-full rounded-full flex items-center justify-end pr-3 group-hover:shadow-md transition-shadow"
-                        style={{ width: `${Math.max(barWidth, 8)}%` }}
-                      >
-                        <span className="text-xs text-white font-bold drop-shadow-sm">
-                          {formatCurrency(day.spend)}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500 w-20 text-right font-medium">{day.clicks} cliques</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <span className="material-symbols-outlined text-4xl">show_chart</span>
-                <p className="text-sm mt-2">Sem dados para o período</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Stats Panel */}
-        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm h-full">
-          <h3 className="text-lg font-bold text-[#19069E] mb-4">⚡ Resumo Rápido</h3>
-
-          <div className="space-y-3">
-            <MiniStat
-              icon="trending_up"
-              label="Maior gasto/dia"
-              value={dailyData.length > 0 ? formatCurrency(Math.max(...dailyData.map(d => d.spend))) : "—"}
-            />
-            <MiniStat
-              icon="trending_down"
-              label="Menor gasto/dia"
-              value={dailyData.length > 0 ? formatCurrency(Math.min(...dailyData.map(d => d.spend))) : "—"}
-            />
-            <MiniStat
-              icon="calculate"
-              label="Média diária"
-              value={dailyData.length > 0 ? formatCurrency(metrics.totalSpend / dailyData.length) : "—"}
-            />
-            <MiniStat
-              icon="calendar_today"
-              label="Dias ativos"
-              value={dailyData.length.toString()}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ROW 4: Campaign Distribution */}
-      <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-bold text-[#19069E] mb-1">🎯 Performance por Campanha</h3>
-        <p className="text-sm text-gray-500 mb-4">Distribuição de investimento e resultados</p>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : campaignSummary.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {campaignSummary.map((campaign, idx) => {
-              const shortName = campaign.campaignName.match(/\[([^\]]+)\]/g)?.[1]?.replace(/[\[\]]/g, "") || campaign.campaignName.slice(0, 25);
-              const maxSpend = Math.max(...campaignSummary.map(c => c.spend));
-              const percentage = maxSpend > 0 ? (campaign.spend / maxSpend) * 100 : 0;
-
-              return (
-                <div
-                  key={campaign.campaignName}
-                  className={`p-4 rounded-xl border-2 transition-all hover:shadow-md ${idx === 0 ? "border-[#C2DF0C] bg-[#C2DF0C]/5" : "border-gray-100 bg-gray-50"
-                    }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-bold text-gray-900 truncate max-w-[180px]" title={campaign.campaignName}>
-                      {idx === 0 && "🏆 "}{shortName}
-                    </span>
-                    <span className="text-sm font-extrabold text-[#19069E]">
-                      {formatCurrency(campaign.spend)}
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#19069E] to-[#C2DF0C] rounded-full"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-
-                  <div className="flex gap-4 text-xs text-gray-500">
-                    <span><strong className="text-gray-700">{formatNumber(campaign.impressions)}</strong> imp</span>
-                    <span><strong className="text-gray-700">{formatNumber(campaign.clicks)}</strong> cliques</span>
-                    <span><strong className="text-gray-700">{formatPercent(campaign.ctr)}</strong> CTR</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="h-[120px] flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <span className="material-symbols-outlined text-4xl">pie_chart</span>
-              <p className="text-sm mt-2">Sem dados de campanhas</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Campaign Detail Table */}
-      {
-        campaignSummary.length > 0 && (
-          <div className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-[#19069E] to-[#2B1BB8]">
-              <h3 className="text-lg font-bold text-white">📊 Detalhamento Completo</h3>
-              <p className="text-sm text-blue-200">Todas as métricas por campanha</p>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 text-xs uppercase font-bold text-[#19069E]">
-                  <tr>
-                    <th className="px-6 py-4">Campanha</th>
-                    <th className="px-6 py-4 text-right">Investimento</th>
-                    <th className="px-6 py-4 text-right">Impressões</th>
-                    <th className="px-6 py-4 text-right">Cliques</th>
-                    <th className="px-6 py-4 text-right">CTR</th>
-                    <th className="px-6 py-4 text-right">CPC</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {campaignSummary.map((campaign) => (
-                    <tr key={campaign.campaignName} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-900 max-w-[300px] truncate" title={campaign.campaignName}>
-                        {campaign.campaignName}
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-[#19069E]">{formatCurrency(campaign.spend)}</td>
-                      <td className="px-6 py-4 text-right">{formatNumber(campaign.impressions)}</td>
-                      <td className="px-6 py-4 text-right">{formatNumber(campaign.clicks)}</td>
-                      <td className="px-6 py-4 text-right">{formatPercent(campaign.ctr)}</td>
-                      <td className="px-6 py-4 text-right">{formatCurrency(campaign.cpc)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-[#19069E]/5 font-bold">
-                  <tr>
-                    <td className="px-6 py-4 text-[#19069E]">Total</td>
-                    <td className="px-6 py-4 text-right text-[#19069E]">{formatCurrency(metrics.totalSpend)}</td>
-                    <td className="px-6 py-4 text-right text-[#19069E]">{formatNumber(metrics.totalImpressions)}</td>
-                    <td className="px-6 py-4 text-right text-[#19069E]">{formatNumber(metrics.totalClicks)}</td>
-                    <td className="px-6 py-4 text-right text-[#19069E]">{formatPercent(metrics.avgCtr)}</td>
-                    <td className="px-6 py-4 text-right text-[#19069E]">{formatCurrency(metrics.avgCpc)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        )
-      }
-    </div >
+      {/* ============ DAILY CHART ============ */}
+      <DailyChart dailyData={dailyData} isLoading={isLoading} />
+    </div>
   );
 }
