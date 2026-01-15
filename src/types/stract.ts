@@ -60,6 +60,8 @@ export interface StractDailyData {
     linkClicks: number;
     leads: number;
     reach: number;
+    purchases: number;
+    purchaseValue: number; // Faturamento
 }
 
 // Data grouped by campaign

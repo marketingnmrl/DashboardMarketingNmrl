@@ -21,22 +21,24 @@ function formatPercent(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
-// KPI Card with variation indicator
+// KPI Card with tooltip support
 function KPICard({
   label,
   value,
   variation,
   icon,
   isLoading,
+  tooltip,
 }: {
   label: string;
   value: string;
   variation?: { value: number; isPositive: boolean };
   icon: string;
   isLoading?: boolean;
+  tooltip?: string;
 }) {
   return (
-    <div className="p-5 rounded-xl bg-white border border-gray-200 shadow-sm">
+    <div className="p-5 rounded-xl bg-white border border-gray-200 shadow-sm relative group" title={tooltip}>
       <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">
         {label}
       </p>
@@ -62,6 +64,13 @@ function KPICard({
           {icon}
         </span>
       </div>
+      {/* Tooltip on hover */}
+      {tooltip && (
+        <div className="absolute left-1/2 -translate-x-1/2 -top-10 bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+          {tooltip}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800" />
+        </div>
+      )}
     </div>
   );
 }
@@ -73,16 +82,16 @@ function DailyChart({
 }: {
   dailyData: Array<{
     date: string;
-    spend: number;
     leads: number;
-    impressions: number;
+    purchases: number;
+    purchaseValue: number;
   }>;
   isLoading: boolean;
 }) {
   // Find max values for scaling
-  const maxSpend = Math.max(...dailyData.map((d) => d.spend), 1);
+  const maxFaturamento = Math.max(...dailyData.map((d) => d.purchaseValue), 1);
   const maxLeads = Math.max(...dailyData.map((d) => d.leads), 1);
-  const maxImpressions = Math.max(...dailyData.map((d) => d.impressions), 1);
+  const maxPurchases = Math.max(...dailyData.map((d) => d.purchases), 1);
 
   // Build SVG path for line charts
   const buildPath = (
@@ -90,6 +99,7 @@ function DailyChart({
     max: number,
     height: number = 180
   ) => {
+    if (data.length === 0) return "";
     const width = 100 / data.length;
     return data
       .map((value, i) => {
@@ -100,14 +110,14 @@ function DailyChart({
       .join(" ");
   };
 
-  const spendPath = buildPath(
-    dailyData.map((d) => d.spend),
-    maxSpend
-  );
-
   const leadsPath = buildPath(
     dailyData.map((d) => d.leads),
     maxLeads
+  );
+
+  const purchasesPath = buildPath(
+    dailyData.map((d) => d.purchases),
+    maxPurchases
   );
 
   return (
@@ -126,16 +136,16 @@ function DailyChart({
         </div>
       ) : (
         <div className="relative h-48">
-          {/* Bar Chart - Impressions (as proxy for volume) */}
+          {/* Bar Chart - Faturamento (purchaseValue) */}
           <div className="absolute inset-0 flex items-end justify-between gap-1 px-2">
             {dailyData.map((day, i) => {
-              const barHeight = (day.impressions / maxImpressions) * 100;
+              const barHeight = (day.purchaseValue / maxFaturamento) * 100;
               return (
                 <div
                   key={i}
-                  className="flex-1 bg-[#19069E] rounded-t-sm opacity-30"
+                  className="flex-1 bg-[#19069E] rounded-t-sm"
                   style={{ height: `${Math.max(barHeight, 2)}%` }}
-                  title={`${day.date}: ${day.impressions.toLocaleString("pt-BR")} impressões`}
+                  title={`${day.date}: ${day.purchaseValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
                 />
               );
             })}
@@ -143,18 +153,18 @@ function DailyChart({
 
           {/* Line Charts */}
           <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            {/* Spend Line (green) */}
+            {/* Leads Line (green) */}
             <path
-              d={spendPath}
+              d={leadsPath}
               fill="none"
               stroke="#C2DF0C"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            {/* Leads Line (light blue dashed) */}
+            {/* Vendas/Purchases Line (light blue dashed) */}
             <path
-              d={leadsPath}
+              d={purchasesPath}
               fill="none"
               stroke="#93C5FD"
               strokeWidth="2"
@@ -169,16 +179,16 @@ function DailyChart({
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-4 text-xs">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#19069E] opacity-50" />
-          <span className="text-gray-600">Impressões</span>
+          <div className="w-3 h-3 rounded-full bg-[#19069E]" />
+          <span className="text-gray-600">Faturamento</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#C2DF0C]" />
-          <span className="text-gray-600">Investimento</span>
+          <span className="text-gray-600">Leads</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#93C5FD]" />
-          <span className="text-gray-600">Leads</span>
+          <span className="text-gray-600">Vendas</span>
         </div>
       </div>
     </div>
@@ -291,12 +301,13 @@ export default function DashboardPage() {
 
       {/* ============ 4 KPI CARDS ============ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Faturamento / Investimento */}
+        {/* Investimento */}
         <KPICard
-          label="Faturamento / Investimento"
-          value={hasData ? formatCurrency(kpiData.faturamentoInvestimento) : "—"}
-          icon="monitoring"
+          label="Investimento"
+          value={hasData ? formatCurrency(metrics.totalSpend) : "—"}
+          icon="payments"
           isLoading={isLoading}
+          tooltip={hasData ? `Faturamento: ${formatCurrency(metrics.totalPurchaseValue)}` : undefined}
         />
 
         {/* Vendas / Leads */}

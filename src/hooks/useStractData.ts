@@ -199,6 +199,8 @@ export function useStractData(
                 existing.linkClicks += row.linkClicks;
                 existing.leads += row.leads;
                 existing.reach += row.reach;
+                existing.purchases += row.purchases;
+                existing.purchaseValue += row.purchaseValue;
             } else {
                 byDate.set(row.date, {
                     date: row.date,
@@ -208,6 +210,8 @@ export function useStractData(
                     linkClicks: row.linkClicks,
                     leads: row.leads,
                     reach: row.reach,
+                    purchases: row.purchases,
+                    purchaseValue: row.purchaseValue,
                 });
             }
         });
