@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 import { useStractData } from "@/hooks/useStractData";
@@ -75,7 +75,7 @@ function KPICard({
   );
 }
 
-// Daily Chart Component
+// Daily Chart Component with Interactive Tooltip
 function DailyChart({
   dailyData,
   isLoading,
@@ -88,6 +88,8 @@ function DailyChart({
   }>;
   isLoading: boolean;
 }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   // Find max values for scaling
   const maxFaturamento = Math.max(...dailyData.map((d) => d.purchaseValue), 1);
   const maxLeads = Math.max(...dailyData.map((d) => d.leads), 1);
@@ -95,31 +97,39 @@ function DailyChart({
 
   // SVG chart dimensions
   const chartHeight = 180;
-  const chartPadding = 10;
+  const chartPadding = 20;
 
-  // Build SVG path for line charts using viewBox coordinates
-  const buildPath = (data: number[], max: number) => {
-    if (data.length === 0 || max === 0) return "";
+  // Calculate data points for lines
+  const getPoints = (data: number[], max: number) => {
+    if (data.length === 0 || max === 0) return [];
     const effectiveHeight = chartHeight - chartPadding * 2;
     const width = 100 / data.length;
-    return data
-      .map((value, i) => {
-        const x = (i * width + width / 2);
-        const y = chartPadding + effectiveHeight - (value / max) * effectiveHeight;
-        return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-      })
-      .join(" ");
+    return data.map((value, i) => ({
+      x: i * width + width / 2,
+      y: chartPadding + effectiveHeight - (value / max) * effectiveHeight,
+      value,
+    }));
   };
 
-  const leadsPath = buildPath(
-    dailyData.map((d) => d.leads),
-    maxLeads
-  );
+  const leadsPoints = getPoints(dailyData.map((d) => d.leads), maxLeads);
+  const purchasesPoints = getPoints(dailyData.map((d) => d.purchases), maxPurchases);
 
-  const purchasesPath = buildPath(
-    dailyData.map((d) => d.purchases),
-    maxPurchases
-  );
+  // Build SVG path from points
+  const buildPath = (points: { x: number; y: number }[]) => {
+    if (points.length === 0) return "";
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  };
+
+  const leadsPath = buildPath(leadsPoints);
+  const purchasesPath = buildPath(purchasesPoints);
+
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    const [, month, day] = dateStr.split("-");
+    return `${day}/${month}`;
+  };
+
+  const hoveredDay = hoveredIndex !== null ? dailyData[hoveredIndex] : null;
 
   return (
     <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
@@ -141,18 +151,19 @@ function DailyChart({
           <div className="absolute inset-0 flex items-end justify-between gap-1 px-2">
             {dailyData.map((day, i) => {
               const barHeight = maxFaturamento > 0 ? (day.purchaseValue / maxFaturamento) * 100 : 2;
+              const isHovered = hoveredIndex === i;
               return (
                 <div
                   key={i}
-                  className="flex-1 bg-[#19069E] rounded-t-sm"
+                  className={`flex-1 rounded-t-sm transition-opacity duration-150 ${isHovered ? "bg-[#19069E]" : "bg-[#19069E] opacity-60"
+                    }`}
                   style={{ height: `${Math.max(barHeight, 2)}%` }}
-                  title={`${day.date}: ${day.purchaseValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
                 />
               );
             })}
           </div>
 
-          {/* Line Charts */}
+          {/* Line Charts with Points */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox={`0 0 100 ${chartHeight}`}
@@ -160,30 +171,105 @@ function DailyChart({
           >
             {/* Leads Line (green) */}
             {maxLeads > 0 && (
-              <path
-                d={leadsPath}
-                fill="none"
-                stroke="#C2DF0C"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
+              <>
+                <path
+                  d={leadsPath}
+                  fill="none"
+                  stroke="#C2DF0C"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {leadsPoints.map((point, i) => (
+                  <circle
+                    key={`lead-${i}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r={hoveredIndex === i ? 4 : 2}
+                    fill="#C2DF0C"
+                    stroke="#fff"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+              </>
             )}
             {/* Vendas/Purchases Line (light blue dashed) */}
             {maxPurchases > 0 && (
-              <path
-                d={purchasesPath}
-                fill="none"
-                stroke="#93C5FD"
-                strokeWidth="1.5"
-                strokeDasharray="4 2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
+              <>
+                <path
+                  d={purchasesPath}
+                  fill="none"
+                  stroke="#93C5FD"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {purchasesPoints.map((point, i) => (
+                  <circle
+                    key={`purchase-${i}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r={hoveredIndex === i ? 4 : 2}
+                    fill="#93C5FD"
+                    stroke="#fff"
+                    strokeWidth="1"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+              </>
             )}
           </svg>
+
+          {/* Hover zones */}
+          <div className="absolute inset-0 flex">
+            {dailyData.map((_, i) => (
+              <div
+                key={`zone-${i}`}
+                className="flex-1 cursor-crosshair"
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              />
+            ))}
+          </div>
+
+          {/* Tooltip */}
+          {hoveredDay && hoveredIndex !== null && (
+            <div
+              className="absolute z-20 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none"
+              style={{
+                left: `${((hoveredIndex + 0.5) / dailyData.length) * 100}%`,
+                top: "10px",
+                transform: "translateX(-50%)",
+              }}
+            >
+              <div className="font-bold mb-1 text-center border-b border-gray-700 pb-1">
+                {formatDate(hoveredDay.date)}
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#19069E]" />
+                  <span>Faturamento:</span>
+                  <span className="font-bold ml-auto">
+                    {hoveredDay.purchaseValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#C2DF0C]" />
+                  <span>Leads:</span>
+                  <span className="font-bold ml-auto">{hoveredDay.leads}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#93C5FD]" />
+                  <span>Vendas:</span>
+                  <span className="font-bold ml-auto">{hoveredDay.purchases}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
