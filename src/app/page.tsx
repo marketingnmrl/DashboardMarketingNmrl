@@ -75,11 +75,21 @@ function KPICard({
   );
 }
 
-// Daily Chart Component with Interactive Tooltip
-function DailyChart({
-  dailyData,
-  isLoading,
-}: {
+// Daily Chart Component using Recharts
+import {
+  ComposedChart,
+  Area,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+
+interface DailyChartProps {
   dailyData: Array<{
     date: string;
     leads: number;
@@ -87,73 +97,58 @@ function DailyChart({
     purchaseValue: number;
   }>;
   isLoading: boolean;
-}) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+}
 
-  // Find max values for scaling
-  const maxFaturamento = Math.max(...dailyData.map((d) => d.purchaseValue), 1);
-  const maxLeads = Math.max(...dailyData.map((d) => d.leads), 1);
-  const maxPurchases = Math.max(...dailyData.map((d) => d.purchases), 1);
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
+  if (!active || !payload || !payload.length) return null;
 
-  // SVG chart dimensions
-  const chartHeight = 180;
-  const chartPadding = 20;
-
-  // Calculate data points for lines
-  const getPoints = (data: number[], max: number) => {
-    if (data.length === 0 || max === 0) return [];
-    const effectiveHeight = chartHeight - chartPadding * 2;
-    const width = 100 / data.length;
-    return data.map((value, i) => ({
-      x: i * width + width / 2,
-      y: chartPadding + effectiveHeight - (value / max) * effectiveHeight,
-      value,
-    }));
-  };
-
-  const leadsPoints = getPoints(dailyData.map((d) => d.leads), maxLeads);
-  const purchasesPoints = getPoints(dailyData.map((d) => d.purchases), maxPurchases);
-
-  // Build smooth curved SVG path using Catmull-Rom spline converted to Bezier
-  const buildSmoothPath = (points: { x: number; y: number }[]) => {
-    if (points.length === 0) return "";
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-    if (points.length === 2) {
-      return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-    }
-
-    // Catmull-Rom to Bezier conversion for smooth curves
-    const tension = 0.3; // Lower = smoother curves
-    let path = `M ${points[0].x} ${points[0].y}`;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[Math.max(0, i - 1)];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[Math.min(points.length - 1, i + 2)];
-
-      // Calculate control points
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-
-    return path;
-  };
-
-  const leadsPath = buildSmoothPath(leadsPoints);
-  const purchasesPath = buildSmoothPath(purchasesPoints);
-
-  // Format date for display
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
     const [, month, day] = dateStr.split("-");
     return `${day}/${month}`;
   };
 
-  const hoveredDay = hoveredIndex !== null ? dailyData[hoveredIndex] : null;
+  return (
+    <div className="bg-gray-900 text-white text-xs rounded-xl px-4 py-3 shadow-2xl border border-gray-700">
+      <div className="font-bold mb-2 text-center text-sm">{formatDate(label || "")}</div>
+      <div className="space-y-1.5">
+        {payload.map((entry, index) => {
+          const labels: Record<string, string> = {
+            purchaseValue: "Faturamento",
+            leads: "Leads",
+            purchases: "Vendas",
+          };
+          const formatValue = (key: string, val: number) => {
+            if (key === "purchaseValue") {
+              return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+            }
+            return val.toLocaleString("pt-BR");
+          };
+          return (
+            <div key={index} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-gray-300">{labels[entry.dataKey] || entry.dataKey}</span>
+              </div>
+              <span className="font-bold">{formatValue(entry.dataKey, entry.value)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+function DailyChart({ dailyData, isLoading }: DailyChartProps) {
+  // Format data with short date for XAxis
+  const chartData = dailyData.map((d) => ({
+    ...d,
+    shortDate: d.date.split("-").slice(1).reverse().join("/"),
+  }));
 
   return (
     <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
@@ -164,154 +159,111 @@ function DailyChart({
       <p className="text-xs text-gray-500 mb-4">Performance diária de vendas e investimentos</p>
 
       {isLoading ? (
-        <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+        <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
       ) : dailyData.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-gray-400">
+        <div className="h-64 flex items-center justify-center text-gray-400">
           Sem dados para o período
         </div>
       ) : (
-        <div className="relative h-48">
-          {/* Bar Chart - Faturamento (purchaseValue) */}
-          <div className="absolute inset-0 flex items-end justify-between gap-1 px-2">
-            {dailyData.map((day, i) => {
-              const barHeight = maxFaturamento > 0 ? (day.purchaseValue / maxFaturamento) * 100 : 2;
-              const isHovered = hoveredIndex === i;
-              return (
-                <div
-                  key={i}
-                  className={`flex-1 rounded-t-sm transition-opacity duration-150 ${isHovered ? "bg-[#19069E]" : "bg-[#19069E] opacity-60"
-                    }`}
-                  style={{ height: `${Math.max(barHeight, 2)}%` }}
-                />
-              );
-            })}
-          </div>
-
-          {/* Line Charts with Points */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            viewBox={`0 0 100 ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            {/* Leads Line (green) */}
-            {maxLeads > 0 && (
-              <>
-                <path
-                  d={leadsPath}
-                  fill="none"
-                  stroke="#C2DF0C"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-                {leadsPoints.map((point, i) => (
-                  <circle
-                    key={`lead-${i}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r={hoveredIndex === i ? 4 : 2}
-                    fill="#C2DF0C"
-                    stroke="#fff"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ))}
-              </>
-            )}
-            {/* Vendas/Purchases Line (light blue dashed) */}
-            {maxPurchases > 0 && (
-              <>
-                <path
-                  d={purchasesPath}
-                  fill="none"
-                  stroke="#93C5FD"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-                {purchasesPoints.map((point, i) => (
-                  <circle
-                    key={`purchase-${i}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r={hoveredIndex === i ? 4 : 2}
-                    fill="#93C5FD"
-                    stroke="#fff"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ))}
-              </>
-            )}
-          </svg>
-
-          {/* Hover zones */}
-          <div className="absolute inset-0 flex">
-            {dailyData.map((_, i) => (
-              <div
-                key={`zone-${i}`}
-                className="flex-1 cursor-crosshair"
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
-              />
-            ))}
-          </div>
-
-          {/* Tooltip */}
-          {hoveredDay && hoveredIndex !== null && (
-            <div
-              className="absolute z-20 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none"
-              style={{
-                left: `${((hoveredIndex + 0.5) / dailyData.length) * 100}%`,
-                top: "10px",
-                transform: "translateX(-50%)",
-              }}
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
             >
-              <div className="font-bold mb-1 text-center border-b border-gray-700 pb-1">
-                {formatDate(hoveredDay.date)}
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#19069E]" />
-                  <span>Faturamento:</span>
-                  <span className="font-bold ml-auto">
-                    {hoveredDay.purchaseValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#C2DF0C]" />
-                  <span>Leads:</span>
-                  <span className="font-bold ml-auto">{hoveredDay.leads}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#93C5FD]" />
-                  <span>Vendas:</span>
-                  <span className="font-bold ml-auto">{hoveredDay.purchases}</span>
-                </div>
-              </div>
-            </div>
-          )}
+              <defs>
+                {/* Gradient for Faturamento bars */}
+                <linearGradient id="faturamentoGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#19069E" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#3B28B8" stopOpacity={0.8} />
+                </linearGradient>
+                {/* Gradient for Leads area */}
+                <linearGradient id="leadsGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#C2DF0C" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#C2DF0C" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+
+              <XAxis
+                dataKey="shortDate"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                dy={10}
+              />
+
+              <YAxis
+                yAxisId="left"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                tickFormatter={(value) =>
+                  value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()
+                }
+              />
+
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#9CA3AF", fontSize: 11 }}
+              />
+
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f3f4f6" }} />
+
+              {/* Faturamento as Bars */}
+              <Bar
+                yAxisId="left"
+                dataKey="purchaseValue"
+                fill="url(#faturamentoGradient)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+              />
+
+              {/* Leads as smooth Area */}
+              <Area
+                yAxisId="right"
+                type="monotone"
+                dataKey="leads"
+                stroke="#C2DF0C"
+                strokeWidth={3}
+                fill="url(#leadsGradient)"
+                dot={{ fill: "#C2DF0C", strokeWidth: 2, r: 4, stroke: "#fff" }}
+                activeDot={{ fill: "#C2DF0C", strokeWidth: 2, r: 6, stroke: "#fff" }}
+              />
+
+              {/* Vendas as smooth Line */}
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="purchases"
+                stroke="#93C5FD"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: "#93C5FD", strokeWidth: 2, r: 3, stroke: "#fff" }}
+                activeDot={{ fill: "#93C5FD", strokeWidth: 2, r: 5, stroke: "#fff" }}
+              />
+
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                iconType="circle"
+                formatter={(value) => {
+                  const labels: Record<string, string> = {
+                    purchaseValue: "Faturamento",
+                    leads: "Leads",
+                    purchases: "Vendas",
+                  };
+                  return <span className="text-gray-600 text-xs">{labels[value] || value}</span>;
+                }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
       )}
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#19069E]" />
-          <span className="text-gray-600">Faturamento</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#C2DF0C]" />
-          <span className="text-gray-600">Leads</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#93C5FD]" />
-          <span className="text-gray-600">Vendas</span>
-        </div>
-      </div>
     </div>
   );
 }
