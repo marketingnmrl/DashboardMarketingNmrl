@@ -56,22 +56,69 @@ export async function GET(request: NextRequest) {
         // Get headers from first row and find column indices dynamically
         const headers = rows[0];
         const columnIndices = {
+            // Identification
             date: findColumnIndex(headers, "date"),
+            accountName: findColumnIndex(headers, "accountName"),
             campaignName: findColumnIndex(headers, "campaignName"),
+            adsetName: findColumnIndex(headers, "adsetName"),
             adName: findColumnIndex(headers, "adName"),
+
+            // Core metrics
             spend: findColumnIndex(headers, "spend"),
             impressions: findColumnIndex(headers, "impressions"),
             clicks: findColumnIndex(headers, "clicks"),
-            linkClicks: findColumnIndex(headers, "linkClicks"),
-            leads: findColumnIndex(headers, "leads"),
+            cpm: findColumnIndex(headers, "cpm"),
+            cpc: findColumnIndex(headers, "cpc"),
+
+            // Reach & Frequency
             reach: findColumnIndex(headers, "reach"),
+            frequency: findColumnIndex(headers, "frequency"),
+
+            // Click metrics
+            linkClicks: findColumnIndex(headers, "linkClicks"),
             landingPageViews: findColumnIndex(headers, "landingPageViews"),
-            results: findColumnIndex(headers, "results"),
-            roas: findColumnIndex(headers, "roas"),
-            // New e-commerce columns
+            landingPageViewPerLinkClick: findColumnIndex(headers, "landingPageViewPerLinkClick"),
+            ctr: findColumnIndex(headers, "ctr"),
+
+            // Conversion metrics
             purchases: findColumnIndex(headers, "purchases"),
             purchaseValue: findColumnIndex(headers, "purchaseValue"),
+            fbPixelLeads: findColumnIndex(headers, "fbPixelLeads"),
+            leads: findColumnIndex(headers, "leads"),
+            leadValue: findColumnIndex(headers, "leadValue"),
             checkouts: findColumnIndex(headers, "checkouts"),
+            purchasePerLandingPageView: findColumnIndex(headers, "purchasePerLandingPageView"),
+            roas: findColumnIndex(headers, "roas"),
+
+            // Engagement metrics
+            pageLikes: findColumnIndex(headers, "pageLikes"),
+            pageLikesValue: findColumnIndex(headers, "pageLikesValue"),
+            pageEngagement: findColumnIndex(headers, "pageEngagement"),
+            postEngagement: findColumnIndex(headers, "postEngagement"),
+            postComments: findColumnIndex(headers, "postComments"),
+            postReactions: findColumnIndex(headers, "postReactions"),
+            postShares: findColumnIndex(headers, "postShares"),
+            conversationsStarted: findColumnIndex(headers, "conversationsStarted"),
+            engagementRateRanking: findColumnIndex(headers, "engagementRateRanking"),
+
+            // Video metrics
+            videoViews3s: findColumnIndex(headers, "videoViews3s"),
+            videoViews3sValue: findColumnIndex(headers, "videoViews3sValue"),
+            costPerVideoView3s: findColumnIndex(headers, "costPerVideoView3s"),
+            videoPlayActions: findColumnIndex(headers, "videoPlayActions"),
+            videoThruplayWatched: findColumnIndex(headers, "videoThruplayWatched"),
+
+            // Quality rankings
+            qualityRanking: findColumnIndex(headers, "qualityRanking"),
+            conversionRateRanking: findColumnIndex(headers, "conversionRateRanking"),
+
+            // Creative info
+            adcreativeName: findColumnIndex(headers, "adcreativeName"),
+            thumbnailUrl: findColumnIndex(headers, "thumbnailUrl"),
+            thumbnailId: findColumnIndex(headers, "thumbnailId"),
+            videoId: findColumnIndex(headers, "videoId"),
+            videoThumbnailUrl: findColumnIndex(headers, "videoThumbnailUrl"),
+            videoUrl: findColumnIndex(headers, "videoUrl"),
         };
 
         // Validate required columns
@@ -86,22 +133,69 @@ export async function GET(request: NextRequest) {
         const data: StractCampaignRow[] = rows.slice(1)
             .filter(row => row.length > 1 && getCell(row, columnIndices.date))
             .map(row => ({
+                // Identification
                 date: getCell(row, columnIndices.date),
+                accountName: getCell(row, columnIndices.accountName),
                 campaignName: getCell(row, columnIndices.campaignName),
+                adsetName: getCell(row, columnIndices.adsetName),
                 adName: getCell(row, columnIndices.adName),
+
+                // Core metrics
                 spend: parseBrazilianNumber(getCell(row, columnIndices.spend)),
                 impressions: parseIntSafe(getCell(row, columnIndices.impressions)),
                 clicks: parseIntSafe(getCell(row, columnIndices.clicks)),
-                linkClicks: parseIntSafe(getCell(row, columnIndices.linkClicks)),
-                leads: parseIntSafe(getCell(row, columnIndices.leads)),
+                cpm: parseBrazilianNumber(getCell(row, columnIndices.cpm)),
+                cpc: parseBrazilianNumber(getCell(row, columnIndices.cpc)),
+
+                // Reach & Frequency
                 reach: parseIntSafe(getCell(row, columnIndices.reach)),
+                frequency: parseBrazilianNumber(getCell(row, columnIndices.frequency)),
+
+                // Click metrics
+                linkClicks: parseIntSafe(getCell(row, columnIndices.linkClicks)),
                 landingPageViews: parseIntSafe(getCell(row, columnIndices.landingPageViews)),
-                results: parseIntSafe(getCell(row, columnIndices.results)),
-                roas: parseBrazilianNumber(getCell(row, columnIndices.roas)),
-                // New e-commerce fields
+                landingPageViewPerLinkClick: parseBrazilianNumber(getCell(row, columnIndices.landingPageViewPerLinkClick)),
+                ctr: parseBrazilianNumber(getCell(row, columnIndices.ctr)),
+
+                // Conversion metrics
                 purchases: parseIntSafe(getCell(row, columnIndices.purchases)),
                 purchaseValue: parseBrazilianNumber(getCell(row, columnIndices.purchaseValue)),
+                fbPixelLeads: parseIntSafe(getCell(row, columnIndices.fbPixelLeads)),
+                leads: parseIntSafe(getCell(row, columnIndices.leads)),
+                leadValue: parseBrazilianNumber(getCell(row, columnIndices.leadValue)),
                 checkouts: parseIntSafe(getCell(row, columnIndices.checkouts)),
+                purchasePerLandingPageView: parseBrazilianNumber(getCell(row, columnIndices.purchasePerLandingPageView)),
+                roas: parseBrazilianNumber(getCell(row, columnIndices.roas)),
+
+                // Engagement metrics
+                pageLikes: parseIntSafe(getCell(row, columnIndices.pageLikes)),
+                pageLikesValue: parseBrazilianNumber(getCell(row, columnIndices.pageLikesValue)),
+                pageEngagement: parseIntSafe(getCell(row, columnIndices.pageEngagement)),
+                postEngagement: parseIntSafe(getCell(row, columnIndices.postEngagement)),
+                postComments: parseIntSafe(getCell(row, columnIndices.postComments)),
+                postReactions: parseIntSafe(getCell(row, columnIndices.postReactions)),
+                postShares: parseIntSafe(getCell(row, columnIndices.postShares)),
+                conversationsStarted: parseIntSafe(getCell(row, columnIndices.conversationsStarted)),
+                engagementRateRanking: getCell(row, columnIndices.engagementRateRanking),
+
+                // Video metrics
+                videoViews3s: parseIntSafe(getCell(row, columnIndices.videoViews3s)),
+                videoViews3sValue: parseBrazilianNumber(getCell(row, columnIndices.videoViews3sValue)),
+                costPerVideoView3s: parseBrazilianNumber(getCell(row, columnIndices.costPerVideoView3s)),
+                videoPlayActions: parseIntSafe(getCell(row, columnIndices.videoPlayActions)),
+                videoThruplayWatched: parseIntSafe(getCell(row, columnIndices.videoThruplayWatched)),
+
+                // Quality rankings
+                qualityRanking: getCell(row, columnIndices.qualityRanking),
+                conversionRateRanking: getCell(row, columnIndices.conversionRateRanking),
+
+                // Creative info
+                adcreativeName: getCell(row, columnIndices.adcreativeName),
+                thumbnailUrl: getCell(row, columnIndices.thumbnailUrl),
+                thumbnailId: getCell(row, columnIndices.thumbnailId),
+                videoId: getCell(row, columnIndices.videoId),
+                videoThumbnailUrl: getCell(row, columnIndices.videoThumbnailUrl),
+                videoUrl: getCell(row, columnIndices.videoUrl),
             }))
             .filter(row => row.date && row.date.match(/^\d{4}-\d{2}-\d{2}$/));
 
@@ -175,7 +269,7 @@ function parseCSV(csvText: string): string[][] {
             }
         }
         // Push last field
-        row.push(current.trim().replace(/^\"|\"$/g, ""));
+        row.push(current.trim().replace(/^"|"$/g, ""));
         rows.push(row);
     }
 

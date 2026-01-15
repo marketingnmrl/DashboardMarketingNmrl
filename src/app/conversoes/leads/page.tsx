@@ -290,7 +290,7 @@ export default function LeadsPage() {
                                             </td>
                                             <td className="px-6 py-4 text-right">{formatNumber(campaign.linkClicks)}</td>
                                             <td className="px-6 py-4 text-right font-bold text-[#19069E]">{formatNumber(campaign.leads)}</td>
-                                            <td className="px-6 py-4 text-right">{formatNumber(campaign.results)}</td>
+                                            <td className="px-6 py-4 text-right">{formatNumber(campaign.purchases)}</td>
                                             <td className="px-6 py-4 text-right">{formatCurrency(campaign.cpl)}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <span className={`font-bold ${campConvRate >= 5 ? "text-green-600" : campConvRate >= 2 ? "text-yellow-600" : "text-gray-500"}`}>

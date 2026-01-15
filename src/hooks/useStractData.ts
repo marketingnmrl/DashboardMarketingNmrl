@@ -100,63 +100,96 @@ export function useStractData(
                 totalClicks: 0,
                 totalLinkClicks: 0,
                 totalLandingPageViews: 0,
-                totalLeads: 0,
                 totalReach: 0,
-                totalResults: 0,
+                totalLeads: 0,
+                totalFbPixelLeads: 0,
                 totalPurchases: 0,
                 totalPurchaseValue: 0,
+                totalLeadValue: 0,
                 totalCheckouts: 0,
+                totalPageLikes: 0,
+                totalPageEngagement: 0,
+                totalPostEngagement: 0,
+                totalPostComments: 0,
+                totalPostReactions: 0,
+                totalPostShares: 0,
+                totalConversationsStarted: 0,
+                totalVideoViews3s: 0,
+                totalVideoThruplayWatched: 0,
+                totalVideoPlayActions: 0,
                 avgCpc: 0,
                 avgCpm: 0,
                 avgCtr: 0,
                 avgCpl: 0,
                 avgRoas: 0,
+                avgFrequency: 0,
                 ticketMedio: 0,
                 cac: 0,
                 connectRate: 0,
                 checkoutRate: 0,
                 purchaseRate: 0,
                 conversionRate: 0,
+                leadConversionRate: 0,
                 uniqueCampaigns: 0,
+                uniqueAdsets: 0,
                 uniqueAds: 0,
+                uniqueAccounts: 0,
+                totalResults: 0,
             };
         }
 
-        const totalSpend = filteredData.reduce((sum, r) => sum + r.spend, 0);
-        const totalImpressions = filteredData.reduce((sum, r) => sum + r.impressions, 0);
-        const totalClicks = filteredData.reduce((sum, r) => sum + r.clicks, 0);
-        const totalLinkClicks = filteredData.reduce((sum, r) => sum + r.linkClicks, 0);
-        const totalLandingPageViews = filteredData.reduce((sum, r) => sum + r.landingPageViews, 0);
-        const totalLeads = filteredData.reduce((sum, r) => sum + r.leads, 0);
-        const totalReach = filteredData.reduce((sum, r) => sum + r.reach, 0);
-        const totalResults = filteredData.reduce((sum, r) => sum + r.results, 0);
+        // Core totals
+        const totalSpend = filteredData.reduce((sum, r) => sum + (r.spend || 0), 0);
+        const totalImpressions = filteredData.reduce((sum, r) => sum + (r.impressions || 0), 0);
+        const totalClicks = filteredData.reduce((sum, r) => sum + (r.clicks || 0), 0);
+        const totalLinkClicks = filteredData.reduce((sum, r) => sum + (r.linkClicks || 0), 0);
+        const totalLandingPageViews = filteredData.reduce((sum, r) => sum + (r.landingPageViews || 0), 0);
+        const totalReach = filteredData.reduce((sum, r) => sum + (r.reach || 0), 0);
 
-        // New e-commerce totals
+        // Conversion totals
+        const totalLeads = filteredData.reduce((sum, r) => sum + (r.leads || 0), 0);
+        const totalFbPixelLeads = filteredData.reduce((sum, r) => sum + (r.fbPixelLeads || 0), 0);
         const totalPurchases = filteredData.reduce((sum, r) => sum + (r.purchases || 0), 0);
         const totalPurchaseValue = filteredData.reduce((sum, r) => sum + (r.purchaseValue || 0), 0);
+        const totalLeadValue = filteredData.reduce((sum, r) => sum + (r.leadValue || 0), 0);
         const totalCheckouts = filteredData.reduce((sum, r) => sum + (r.checkouts || 0), 0);
 
-        // Calculate averages based on totals (use LinkClicks for CPC/CTR as it's more relevant)
+        // Engagement totals
+        const totalPageLikes = filteredData.reduce((sum, r) => sum + (r.pageLikes || 0), 0);
+        const totalPageEngagement = filteredData.reduce((sum, r) => sum + (r.pageEngagement || 0), 0);
+        const totalPostEngagement = filteredData.reduce((sum, r) => sum + (r.postEngagement || 0), 0);
+        const totalPostComments = filteredData.reduce((sum, r) => sum + (r.postComments || 0), 0);
+        const totalPostReactions = filteredData.reduce((sum, r) => sum + (r.postReactions || 0), 0);
+        const totalPostShares = filteredData.reduce((sum, r) => sum + (r.postShares || 0), 0);
+        const totalConversationsStarted = filteredData.reduce((sum, r) => sum + (r.conversationsStarted || 0), 0);
+
+        // Video totals
+        const totalVideoViews3s = filteredData.reduce((sum, r) => sum + (r.videoViews3s || 0), 0);
+        const totalVideoThruplayWatched = filteredData.reduce((sum, r) => sum + (r.videoThruplayWatched || 0), 0);
+        const totalVideoPlayActions = filteredData.reduce((sum, r) => sum + (r.videoPlayActions || 0), 0);
+
+        // Calculated averages
         const avgCpc = totalLinkClicks > 0 ? totalSpend / totalLinkClicks : 0;
         const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
         const avgCtr = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
         const avgCpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
+        const avgRoas = totalSpend > 0 && totalPurchaseValue > 0 ? totalPurchaseValue / totalSpend : 0;
+        const avgFrequency = totalReach > 0 ? totalImpressions / totalReach : 0;
 
-        // ROAS: Calculate from purchaseValue if available, otherwise use average from rows
-        const avgRoas = totalSpend > 0 && totalPurchaseValue > 0
-            ? totalPurchaseValue / totalSpend
-            : 0;
-
-        // New calculated metrics
+        // Calculated rates
         const ticketMedio = totalPurchases > 0 ? totalPurchaseValue / totalPurchases : 0;
         const cac = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
-        const connectRate = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
-        const checkoutRate = totalLinkClicks > 0 ? (totalCheckouts / totalLinkClicks) * 100 : 0;
+        const connectRate = totalLinkClicks > 0 ? (totalLandingPageViews / totalLinkClicks) * 100 : 0;
+        const checkoutRate = totalLandingPageViews > 0 ? (totalCheckouts / totalLandingPageViews) * 100 : 0;
         const purchaseRate = totalCheckouts > 0 ? (totalPurchases / totalCheckouts) * 100 : 0;
         const conversionRate = totalLinkClicks > 0 ? (totalPurchases / totalLinkClicks) * 100 : 0;
+        const leadConversionRate = totalLinkClicks > 0 ? (totalLeads / totalLinkClicks) * 100 : 0;
 
+        // Counts
         const uniqueCampaigns = new Set(filteredData.map(r => r.campaignName)).size;
+        const uniqueAdsets = new Set(filteredData.map(r => r.adsetName)).size;
         const uniqueAds = new Set(filteredData.map(r => r.adName)).size;
+        const uniqueAccounts = new Set(filteredData.map(r => r.accountName)).size;
 
         return {
             totalSpend,
@@ -164,25 +197,41 @@ export function useStractData(
             totalClicks,
             totalLinkClicks,
             totalLandingPageViews,
-            totalLeads,
             totalReach,
-            totalResults,
+            totalLeads,
+            totalFbPixelLeads,
             totalPurchases,
             totalPurchaseValue,
+            totalLeadValue,
             totalCheckouts,
+            totalPageLikes,
+            totalPageEngagement,
+            totalPostEngagement,
+            totalPostComments,
+            totalPostReactions,
+            totalPostShares,
+            totalConversationsStarted,
+            totalVideoViews3s,
+            totalVideoThruplayWatched,
+            totalVideoPlayActions,
             avgCpc,
             avgCpm,
             avgCtr,
             avgCpl,
             avgRoas,
+            avgFrequency,
             ticketMedio,
             cac,
             connectRate,
             checkoutRate,
             purchaseRate,
             conversionRate,
+            leadConversionRate,
             uniqueCampaigns,
+            uniqueAdsets,
             uniqueAds,
+            uniqueAccounts,
+            totalResults: totalPurchases, // Legacy compatibility
         };
     }, [filteredData]);
 
@@ -193,25 +242,33 @@ export function useStractData(
         filteredData.forEach(row => {
             const existing = byDate.get(row.date);
             if (existing) {
-                existing.spend += row.spend;
-                existing.impressions += row.impressions;
-                existing.clicks += row.clicks;
-                existing.linkClicks += row.linkClicks;
-                existing.leads += row.leads;
-                existing.reach += row.reach;
-                existing.purchases += row.purchases;
-                existing.purchaseValue += row.purchaseValue;
+                existing.spend += row.spend || 0;
+                existing.impressions += row.impressions || 0;
+                existing.clicks += row.clicks || 0;
+                existing.linkClicks += row.linkClicks || 0;
+                existing.leads += row.leads || 0;
+                existing.reach += row.reach || 0;
+                existing.purchases += row.purchases || 0;
+                existing.purchaseValue += row.purchaseValue || 0;
+                existing.checkouts += row.checkouts || 0;
+                existing.landingPageViews += row.landingPageViews || 0;
+                existing.postEngagement += row.postEngagement || 0;
+                existing.videoViews3s += row.videoViews3s || 0;
             } else {
                 byDate.set(row.date, {
                     date: row.date,
-                    spend: row.spend,
-                    impressions: row.impressions,
-                    clicks: row.clicks,
-                    linkClicks: row.linkClicks,
-                    leads: row.leads,
-                    reach: row.reach,
-                    purchases: row.purchases,
-                    purchaseValue: row.purchaseValue,
+                    spend: row.spend || 0,
+                    impressions: row.impressions || 0,
+                    clicks: row.clicks || 0,
+                    linkClicks: row.linkClicks || 0,
+                    leads: row.leads || 0,
+                    reach: row.reach || 0,
+                    purchases: row.purchases || 0,
+                    purchaseValue: row.purchaseValue || 0,
+                    checkouts: row.checkouts || 0,
+                    landingPageViews: row.landingPageViews || 0,
+                    postEngagement: row.postEngagement || 0,
+                    videoViews3s: row.videoViews3s || 0,
                 });
             }
         });
@@ -226,37 +283,45 @@ export function useStractData(
         filteredData.forEach(row => {
             const existing = byCampaign.get(row.campaignName);
             if (existing) {
-                existing.spend += row.spend;
-                existing.impressions += row.impressions;
-                existing.clicks += row.clicks;
-                existing.linkClicks += row.linkClicks;
-                existing.leads += row.leads;
-                existing.reach += row.reach;
-                existing.results += row.results;
+                existing.spend += row.spend || 0;
+                existing.impressions += row.impressions || 0;
+                existing.clicks += row.clicks || 0;
+                existing.linkClicks += row.linkClicks || 0;
+                existing.leads += row.leads || 0;
+                existing.reach += row.reach || 0;
+                existing.purchases += row.purchases || 0;
+                existing.purchaseValue += row.purchaseValue || 0;
+                existing.checkouts += row.checkouts || 0;
             } else {
                 byCampaign.set(row.campaignName, {
                     campaignName: row.campaignName,
-                    spend: row.spend,
-                    impressions: row.impressions,
-                    clicks: row.clicks,
-                    linkClicks: row.linkClicks,
-                    leads: row.leads,
-                    reach: row.reach,
-                    results: row.results,
+                    spend: row.spend || 0,
+                    impressions: row.impressions || 0,
+                    clicks: row.clicks || 0,
+                    linkClicks: row.linkClicks || 0,
+                    leads: row.leads || 0,
+                    reach: row.reach || 0,
+                    purchases: row.purchases || 0,
+                    purchaseValue: row.purchaseValue || 0,
+                    checkouts: row.checkouts || 0,
                     ctr: 0,
                     cpc: 0,
                     cpl: 0,
+                    roas: 0,
+                    conversionRate: 0,
                 });
             }
         });
 
-        // Calculate CTR, CPC, CPL for each campaign
+        // Calculate metrics for each campaign
         return Array.from(byCampaign.values())
             .map(c => ({
                 ...c,
                 ctr: c.impressions > 0 ? (c.linkClicks / c.impressions) * 100 : 0,
                 cpc: c.linkClicks > 0 ? c.spend / c.linkClicks : 0,
                 cpl: c.leads > 0 ? c.spend / c.leads : 0,
+                roas: c.spend > 0 ? c.purchaseValue / c.spend : 0,
+                conversionRate: c.linkClicks > 0 ? (c.purchases / c.linkClicks) * 100 : 0,
             }))
             .sort((a, b) => b.spend - a.spend);
     }, [filteredData]);

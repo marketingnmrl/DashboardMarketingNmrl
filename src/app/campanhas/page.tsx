@@ -236,9 +236,9 @@ export default function CampanhasPage() {
         const totalImpressions = filtered.reduce((sum, c) => sum + c.impressions, 0);
         const totalLinkClicks = filtered.reduce((sum, c) => sum + c.linkClicks, 0);
         const totalLeads = filtered.reduce((sum, c) => sum + c.leads, 0);
-        const totalResults = filtered.reduce((sum, c) => sum + c.results, 0);
+        const totalPurchases = filtered.reduce((sum, c) => sum + c.purchases, 0);
         const avgCtr = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
-        const avgRoas = totalSpend > 0 ? (totalResults * 100) / totalSpend : 0; // Simplified
+        const avgRoas = totalSpend > 0 ? (totalPurchases * 100) / totalSpend : 0; // Simplified
 
         return {
             ...metrics,
@@ -246,7 +246,7 @@ export default function CampanhasPage() {
             totalImpressions,
             totalLinkClicks,
             totalLeads,
-            totalResults,
+            totalPurchases,
             avgCtr,
             avgRoas,
         };
@@ -273,11 +273,11 @@ export default function CampanhasPage() {
         }));
     }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
 
-    const resultsByPie = useMemo(() => {
+    const purchasesByPie = useMemo(() => {
         const data = selectedCampaign === "all" ? campaignSummary : filteredCampaignSummary;
         return data.slice(0, 8).map((c, i) => ({
             label: c.campaignName,
-            value: c.results,
+            value: c.purchases,
             color: pieColors[i % pieColors.length],
         }));
     }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
@@ -398,7 +398,7 @@ export default function CampanhasPage() {
                     valueFormatter={formatCurrency}
                 />
                 <PieChart
-                    data={resultsByPie}
+                    data={purchasesByPie}
                     title="🎯 Conversões por Campanha"
                     valueFormatter={formatNumber}
                 />
