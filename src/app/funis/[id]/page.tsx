@@ -586,7 +586,12 @@ export default function FunilDetailPage() {
         if (!funnel || funnel.sourceType !== "pipeline" || !funnel.sourcePipelineId) {
             return null;
         }
-        const crmStageIds = funnel.stages
+        // Include BOTH regular stages AND evaluation stages
+        const allStages = [
+            ...funnel.stages,
+            ...(funnel.evaluationStages || [])
+        ];
+        const crmStageIds = allStages
             .filter(s => s.dataSource === "crm" && s.crmStageId)
             .map(s => s.crmStageId!);
         return crmStageIds.length > 0 ? {
