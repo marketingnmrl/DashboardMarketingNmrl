@@ -80,6 +80,11 @@ export function useCRMFunnelData(options: UseCRMFunnelDataOptions | null): UseCR
 
             if (cohortError) throw cohortError;
 
+            console.log("[useCRMFunnelData] Pipeline:", options.pipelineId);
+            console.log("[useCRMFunnelData] Stage IDs:", options.stageIds);
+            console.log("[useCRMFunnelData] Date range:", startDate.toISOString(), "to", endDate.toISOString());
+            console.log("[useCRMFunnelData] Cohort leads found:", cohortLeads?.length);
+
             if (!cohortLeads || cohortLeads.length === 0) {
                 // No leads in cohort, set all counts to 0
                 setCounts(options.stageIds.flatMap(stageId => [
@@ -103,6 +108,9 @@ export function useCRMFunnelData(options: UseCRMFunnelDataOptions | null): UseCR
                 .in("to_stage_id", options.stageIds);
 
             if (historyError) throw historyError;
+
+            console.log("[useCRMFunnelData] History records found:", historyData?.length);
+            console.log("[useCRMFunnelData] History data:", historyData);
 
             // Count distinct leads that entered each stage
             const countMap = new Map<string, { total: Set<string>; paid: Set<string>; organic: Set<string> }>();
