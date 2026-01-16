@@ -7,21 +7,87 @@ import { useDateFilter } from "@/contexts/DateFilterContext";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { StractDailyData } from "@/types/stract";
 import DateRangePicker from "@/components/DateRangePicker";
+import {
+    PieChart as RechartsPieChart,
+    Pie,
+    Cell,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ComposedChart,
+    Area,
+    Line,
+    Funnel,
+    FunnelChart,
+    LabelList,
+} from "recharts";
 
 // Format helpers
 function formatCurrency(value: number): string {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatNumber(value: number): string {
-    return new Intl.NumberFormat("pt-BR").format(Math.round(value));
+    return value.toLocaleString("pt-BR");
 }
 
 function formatPercent(value: number): string {
     return `${value.toFixed(2)}%`;
 }
 
-// Mini KPI Card
+// Executive KPI Card - Larger and more prominent
+function ExecutiveKPI({
+    label,
+    value,
+    subvalue,
+    icon,
+    trend,
+    color = "primary",
+    isLoading
+}: {
+    label: string;
+    value: string;
+    subvalue?: string;
+    icon: string;
+    trend?: "up" | "down" | "neutral";
+    color?: "primary" | "accent" | "success" | "warning";
+    isLoading?: boolean;
+}) {
+    const colorClasses = {
+        primary: "from-[#19069E] to-[#3B28B8] text-white",
+        accent: "from-[#C2DF0C] to-[#B0CC0B] text-[#19069E]",
+        success: "from-emerald-500 to-emerald-600 text-white",
+        warning: "from-amber-500 to-amber-600 text-white",
+    };
+
+    return (
+        <div className={`p-5 rounded-2xl bg-gradient-to-br ${colorClasses[color]} shadow-lg`}>
+            {isLoading ? (
+                <div className="animate-pulse space-y-2">
+                    <div className="h-4 bg-white/30 rounded w-20" />
+                    <div className="h-8 bg-white/30 rounded w-28" />
+                </div>
+            ) : (
+                <>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium opacity-80">{label}</span>
+                        <span className="material-symbols-outlined text-xl opacity-60">{icon}</span>
+                    </div>
+                    <p className="text-3xl font-extrabold">{value}</p>
+                    {subvalue && <p className="text-xs mt-1 opacity-70">{subvalue}</p>}
+                </>
+            )}
+        </div>
+    );
+}
+
+// Mini KPI Card for secondary metrics
 function KPICard({
     icon,
     label,
@@ -35,28 +101,78 @@ function KPICard({
 }) {
     return (
         <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-outlined text-[#19069E] text-[20px]">{icon}</span>
-                <span className="text-xs font-medium text-gray-500">{label}</span>
-            </div>
             {isLoading ? (
-                <div className="h-8 w-24 bg-gray-100 animate-pulse rounded"></div>
+                <div className="animate-pulse space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-16" />
+                    <div className="h-6 bg-gray-200 rounded w-20" />
+                </div>
             ) : (
-                <p className="text-2xl font-extrabold text-[#19069E]">{value}</p>
+                <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[#19069E] text-xl">{icon}</span>
+                    <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+                        <p className="text-lg font-bold text-gray-900">{value}</p>
+                    </div>
+                </div>
             )}
         </div>
     );
 }
 
-// Pie Chart Component using Recharts
-import {
-    PieChart as RechartsPieChart,
-    Pie,
-    Cell,
-    Tooltip as RechartsTooltip,
-    ResponsiveContainer,
-} from "recharts";
+// Funnel Stage Card
+function FunnelStage({
+    label,
+    value,
+    rate,
+    icon,
+    color,
+    isFirst = false
+}: {
+    label: string;
+    value: number;
+    rate?: number;
+    icon: string;
+    color: string;
+    isFirst?: boolean;
+}) {
+    return (
+        <div className="flex-1 relative">
+            {!isFirst && (
+                <div className="absolute -left-4 top-1/2 -translate-y-1/2 text-gray-300">
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                </div>
+            )}
+            <div className="text-center p-3 rounded-xl bg-white border border-gray-200">
+                <span className="material-symbols-outlined text-2xl" style={{ color }}>{icon}</span>
+                <p className="text-xs text-gray-500 mt-1">{label}</p>
+                <p className="text-lg font-bold text-gray-900">{formatNumber(value)}</p>
+                {rate !== undefined && (
+                    <p className="text-xs font-medium" style={{ color }}>{rate.toFixed(1)}%</p>
+                )}
+            </div>
+        </div>
+    );
+}
 
+// Custom Tooltip for PieChart
+const CustomPieTooltip = ({ active, payload, total, valueFormatter }: {
+    active?: boolean;
+    payload?: Array<{ payload: { label: string; value: number; color: string } }>;
+    total: number;
+    valueFormatter: (v: number) => string;
+}) => {
+    if (!active || !payload || !payload.length) return null;
+    const item = payload[0].payload;
+    const percent = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+    return (
+        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl">
+            <p className="font-bold">{item.label}</p>
+            <p>{valueFormatter(item.value)} ({percent}%)</p>
+        </div>
+    );
+};
+
+// Pie Chart Component using Recharts
 function PieChart({
     data,
     title,
@@ -68,23 +184,10 @@ function PieChart({
 }) {
     const total = data.reduce((sum, d) => sum + d.value, 0);
 
-    const CustomPieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { label: string; value: number; color: string } }> }) => {
-        if (!active || !payload || !payload.length) return null;
-        const item = payload[0].payload;
-        const percent = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
-        return (
-            <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl">
-                <p className="font-bold">{item.label}</p>
-                <p>{valueFormatter(item.value)} ({percent}%)</p>
-            </div>
-        );
-    };
-
     return (
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
             <h3 className="text-lg font-bold text-[#19069E] mb-4">{title}</h3>
             <div className="flex items-center gap-6">
-                {/* Pie */}
                 <div className="w-36 h-36 flex-shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
@@ -103,131 +206,95 @@ function PieChart({
                                     <Cell key={i} fill={entry.color} />
                                 ))}
                             </Pie>
-                            <RechartsTooltip content={<CustomPieTooltip />} />
+                            <RechartsTooltip content={<CustomPieTooltip total={total} valueFormatter={valueFormatter} />} />
                         </RechartsPieChart>
                     </ResponsiveContainer>
                 </div>
-                {/* Legend */}
                 <div className="flex-1 space-y-2 max-h-32 overflow-y-auto">
                     {data.slice(0, 6).map((item, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs">
-                            <div
-                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: item.color }}
-                            />
+                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
                             <span className="text-gray-600 truncate flex-1" title={item.label}>
-                                {item.label.length > 25 ? `${item.label.slice(0, 25)}...` : item.label}
+                                {item.label.length > 20 ? `${item.label.slice(0, 20)}...` : item.label}
                             </span>
                             <span className="font-bold text-gray-900">{valueFormatter(item.value)}</span>
                         </div>
                     ))}
-                    {data.length > 6 && (
-                        <p className="text-xs text-gray-400">+{data.length - 6} mais...</p>
-                    )}
+                    {data.length > 6 && <p className="text-xs text-gray-400">+{data.length - 6} mais...</p>}
                 </div>
             </div>
         </div>
     );
 }
 
-// Line Chart Component using Recharts
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-} from "recharts";
-
-function LineChart({
-    data,
-    title,
-    lines
-}: {
-    data: StractDailyData[];
-    title: string;
-    lines: { key: keyof StractDailyData; label: string; color: string }[];
-}) {
-    // Transform data for Recharts - use last 14 days
-    const chartData = data.slice(-14).map((day) => ({
-        date: String(day.date).slice(5).replace("-", "/"),
-        ...lines.reduce((acc, line) => ({
-            ...acc,
-            [line.key]: Number(day[line.key]) || 0
-        }), {} as Record<string, number>)
+// ROAS Trend Chart
+function ROASTrendChart({ dailyData, isLoading }: { dailyData: StractDailyData[]; isLoading: boolean }) {
+    const chartData = dailyData.slice(-14).map((d) => ({
+        date: String(d.date).slice(5).replace("-", "/"),
+        spend: d.spend,
+        revenue: d.purchaseValue,
+        roas: d.spend > 0 ? d.purchaseValue / d.spend : 0,
     }));
-
-    const CustomLineTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
-        if (!active || !payload || !payload.length) return null;
-        return (
-            <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl">
-                <p className="font-bold mb-1">{label}</p>
-                {payload.map((entry, i) => {
-                    const lineConfig = lines.find(l => l.key === entry.dataKey);
-                    return (
-                        <p key={i} className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                            {lineConfig?.label || entry.dataKey}: {formatNumber(entry.value)}
-                        </p>
-                    );
-                })}
-            </div>
-        );
-    };
 
     return (
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-[#19069E] mb-4">{title}</h3>
-
+            <h3 className="text-lg font-bold text-[#19069E] mb-4">📈 Tendência ROAS</h3>
             <div className="h-56">
-                {data.length > 0 ? (
+                {isLoading ? (
+                    <div className="h-full bg-gray-100 animate-pulse rounded-lg" />
+                ) : dailyData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="roasGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#C2DF0C" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#C2DF0C" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                            <XAxis
-                                dataKey="date"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: "#9CA3AF", fontSize: 10 }}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: "#9CA3AF", fontSize: 10 }}
-                                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v.toString()}
-                            />
-                            <Tooltip content={<CustomLineTooltip />} cursor={{ fill: "#f3f4f6" }} />
-                            <Legend
-                                verticalAlign="top"
-                                height={30}
-                                iconType="circle"
-                                formatter={(value) => {
-                                    const lineConfig = lines.find(l => l.key === value);
-                                    return <span className="text-gray-600 text-xs">{lineConfig?.label || value}</span>;
+                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 10 }} />
+                            <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 10 }} />
+                            <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: "#9CA3AF", fontSize: 10 }} />
+                            <Tooltip
+                                content={({ active, payload, label }) => {
+                                    if (!active || !payload) return null;
+                                    return (
+                                        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl">
+                                            <p className="font-bold mb-1">{label}</p>
+                                            {payload.map((p, i) => (
+                                                <p key={i}>{p.name}: {p.name === "ROAS" ? `${Number(p.value).toFixed(2)}x` : formatCurrency(Number(p.value))}</p>
+                                            ))}
+                                        </div>
+                                    );
                                 }}
                             />
-                            {lines.map((line) => (
-                                <Bar
-                                    key={line.key}
-                                    dataKey={line.key}
-                                    fill={line.color}
-                                    radius={[4, 4, 0, 0]}
-                                    maxBarSize={30}
-                                />
-                            ))}
-                        </BarChart>
+                            <Legend verticalAlign="top" height={30} />
+                            <Bar yAxisId="left" dataKey="spend" name="Investimento" fill="#19069E" radius={[4, 4, 0, 0]} maxBarSize={25} />
+                            <Area yAxisId="left" type="monotone" dataKey="revenue" name="Faturamento" stroke="#C2DF0C" fill="url(#roasGradient)" strokeWidth={2} />
+                            <Line yAxisId="right" type="monotone" dataKey="roas" name="ROAS" stroke="#10B981" strokeWidth={3} dot={{ fill: "#10B981", r: 4 }} />
+                        </ComposedChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400">
-                        <span className="material-symbols-outlined text-4xl">show_chart</span>
-                        <p className="ml-2">Sem dados para exibir</p>
-                    </div>
+                    <div className="h-full flex items-center justify-center text-gray-400">Sem dados</div>
                 )}
             </div>
         </div>
     );
+}
+
+// Heatmap color based on value relative to average
+function getHeatmapColor(value: number, avg: number, isGoodWhenHigh: boolean): string {
+    if (avg === 0) return "bg-gray-50";
+    const ratio = value / avg;
+    if (isGoodWhenHigh) {
+        if (ratio >= 1.2) return "bg-emerald-100 text-emerald-700";
+        if (ratio >= 0.8) return "bg-yellow-50 text-yellow-700";
+        return "bg-red-50 text-red-600";
+    } else {
+        if (ratio <= 0.8) return "bg-emerald-100 text-emerald-700";
+        if (ratio <= 1.2) return "bg-yellow-50 text-yellow-700";
+        return "bg-red-50 text-red-600";
+    }
 }
 
 export default function CampanhasPage() {
@@ -251,18 +318,52 @@ export default function CampanhasPage() {
     const isLoading = settingsLoading || dataLoading;
     const hasData = !error && metrics.totalImpressions > 0;
 
+    // Executive KPIs calculations
+    const executiveKPIs = useMemo(() => {
+        const spend = metrics.totalSpend || 0;
+        const purchaseValue = metrics.totalPurchaseValue || 0;
+        const purchases = metrics.totalPurchases || 0;
+        const leads = metrics.totalLeads || 0;
+
+        return {
+            roas: spend > 0 ? purchaseValue / spend : 0,
+            cac: purchases > 0 ? spend / purchases : 0,
+            cpl: leads > 0 ? spend / leads : 0,
+            ticketMedio: purchases > 0 ? purchaseValue / purchases : 0,
+        };
+    }, [metrics]);
+
+    // Funnel data
+    const funnelData = useMemo(() => {
+        const impressions = metrics.totalImpressions || 0;
+        const clicks = metrics.totalLinkClicks || 0;
+        const landingPageViews = metrics.totalLandingPageViews || 0;
+        const checkouts = metrics.totalCheckouts || 0;
+        const purchases = metrics.totalPurchases || 0;
+
+        return {
+            impressions,
+            clicks,
+            landingPageViews,
+            checkouts,
+            purchases,
+            ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+            connectRate: clicks > 0 ? (landingPageViews / clicks) * 100 : 0,
+            checkoutRate: landingPageViews > 0 ? (checkouts / landingPageViews) * 100 : 0,
+            purchaseRate: checkouts > 0 ? (purchases / checkouts) * 100 : 0,
+        };
+    }, [metrics]);
+
     // Provide metrics for AI Assistant
     usePageMetrics({
         pagina: "Acompanhamento de Campanhas",
         descricao: "Análise detalhada de performance por campanha e criativo",
         periodo: `${dateRange.startDate} a ${dateRange.endDate}`,
         kpis: {
-            investimento_total: metrics.totalSpend,
-            impressoes: metrics.totalImpressions,
-            cliques: metrics.totalLinkClicks,
-            ctr: metrics.avgCtr,
-            conversoes: metrics.totalResults,
-            roas: metrics.avgRoas,
+            roas: executiveKPIs.roas,
+            cac: executiveKPIs.cac,
+            cpl: executiveKPIs.cpl,
+            ticket_medio: executiveKPIs.ticketMedio,
         },
     });
 
@@ -271,33 +372,6 @@ export default function CampanhasPage() {
         if (selectedCampaign === "all") return campaignSummary;
         return campaignSummary.filter(c => c.campaignName === selectedCampaign);
     }, [campaignSummary, selectedCampaign]);
-
-    // Calculate filtered metrics based on selected campaign
-    const filteredMetrics = useMemo(() => {
-        if (selectedCampaign === "all") {
-            return metrics;
-        }
-        // Calculate metrics from filtered campaigns
-        const filtered = filteredCampaignSummary;
-        const totalSpend = filtered.reduce((sum, c) => sum + c.spend, 0);
-        const totalImpressions = filtered.reduce((sum, c) => sum + c.impressions, 0);
-        const totalLinkClicks = filtered.reduce((sum, c) => sum + c.linkClicks, 0);
-        const totalLeads = filtered.reduce((sum, c) => sum + c.leads, 0);
-        const totalPurchases = filtered.reduce((sum, c) => sum + c.purchases, 0);
-        const avgCtr = totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0;
-        const avgRoas = totalSpend > 0 ? (totalPurchases * 100) / totalSpend : 0; // Simplified
-
-        return {
-            ...metrics,
-            totalSpend,
-            totalImpressions,
-            totalLinkClicks,
-            totalLeads,
-            totalPurchases,
-            avgCtr,
-            avgRoas,
-        };
-    }, [metrics, selectedCampaign, filteredCampaignSummary]);
 
     // Sort campaign data
     const sortedCampaigns = useMemo(() => {
@@ -308,26 +382,38 @@ export default function CampanhasPage() {
         });
     }, [filteredCampaignSummary, sortColumn, sortDirection]);
 
-    // Pie chart data - use filtered campaigns
+    // Pie chart data
     const pieColors = ["#19069E", "#C2DF0C", "#3B28B8", "#7C3AED", "#10B981", "#F59E0B", "#EF4444", "#6366F1"];
 
     const spendByPie = useMemo(() => {
-        const data = selectedCampaign === "all" ? campaignSummary : filteredCampaignSummary;
-        return data.slice(0, 8).map((c, i) => ({
+        return campaignSummary.slice(0, 8).map((c, i) => ({
             label: c.campaignName,
             value: c.spend,
             color: pieColors[i % pieColors.length],
         }));
-    }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
+    }, [campaignSummary]);
 
-    const purchasesByPie = useMemo(() => {
-        const data = selectedCampaign === "all" ? campaignSummary : filteredCampaignSummary;
-        return data.slice(0, 8).map((c, i) => ({
-            label: c.campaignName,
-            value: c.purchases,
-            color: pieColors[i % pieColors.length],
-        }));
-    }, [campaignSummary, filteredCampaignSummary, selectedCampaign]);
+    const roasByPie = useMemo(() => {
+        return campaignSummary
+            .filter(c => c.roas > 0)
+            .sort((a, b) => b.roas - a.roas)
+            .slice(0, 8)
+            .map((c, i) => ({
+                label: c.campaignName,
+                value: c.roas,
+                color: pieColors[i % pieColors.length],
+            }));
+    }, [campaignSummary]);
+
+    // Average metrics for heatmap
+    const avgMetrics = useMemo(() => {
+        if (campaignSummary.length === 0) return { roas: 0, ctr: 0, cpl: 0 };
+        return {
+            roas: campaignSummary.reduce((sum, c) => sum + (c.roas || 0), 0) / campaignSummary.length,
+            ctr: campaignSummary.reduce((sum, c) => sum + (c.ctr || 0), 0) / campaignSummary.length,
+            cpl: campaignSummary.reduce((sum, c) => sum + (c.cpl || 0), 0) / campaignSummary.length,
+        };
+    }, [campaignSummary]);
 
     const handleSort = (column: string) => {
         if (sortColumn === column) {
@@ -343,13 +429,11 @@ export default function CampanhasPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#19069E]">📊 Acompanhamento de Campanhas</h1>
-                    <p className="text-sm text-gray-500">Análise detalhada de performance por campanha e criativo</p>
+                    <h1 className="text-2xl font-extrabold text-[#19069E]">📊 Gestão de Campanhas</h1>
+                    <p className="text-sm text-gray-500">Métricas estratégicas para tomada de decisão</p>
                 </div>
 
-                {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
-                    {/* Date Range Picker */}
                     <DateRangePicker
                         startDate={new Date(dateRange.startDate + "T00:00:00")}
                         endDate={new Date(dateRange.endDate + "T00:00:00")}
@@ -359,23 +443,23 @@ export default function CampanhasPage() {
                         }}
                     />
 
-                    {/* Campaign Filter */}
+                    {/* Enhanced Campaign Selector with ROAS preview */}
                     <select
                         value={selectedCampaign}
                         onChange={(e) => setSelectedCampaign(e.target.value)}
-                        className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                        className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] max-w-xs"
                     >
-                        <option value="all">Todas as Campanhas</option>
+                        <option value="all">🎯 Todas as Campanhas ({campaignSummary.length})</option>
                         {campaignSummary.map((c) => (
                             <option key={c.campaignName} value={c.campaignName}>
-                                {c.campaignName}
+                                {c.campaignName.slice(0, 30)} | ROAS: {c.roas?.toFixed(1) || "0"}x
                             </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            {/* Error State */}
+            {/* Error/Warning States */}
             {error && (
                 <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700">
                     <div className="flex items-start gap-3">
@@ -388,14 +472,12 @@ export default function CampanhasPage() {
                 </div>
             )}
 
-            {/* No Sheet Warning */}
             {!settings?.visaoGeralSheetUrl && !settingsLoading && (
                 <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200 text-yellow-700">
                     <div className="flex items-start gap-3">
                         <span className="material-symbols-outlined text-yellow-500">info</span>
                         <div>
                             <p className="font-bold">Planilha não configurada</p>
-                            <p className="text-sm">Configure a URL do Google Sheets nas configurações.</p>
                             <a href="/configuracoes" className="text-sm font-bold text-[#19069E] hover:underline">
                                 Ir para Configurações →
                             </a>
@@ -404,56 +486,107 @@ export default function CampanhasPage() {
                 </div>
             )}
 
-            {/* Row 1: KPIs */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(filteredMetrics.totalSpend) : "—"} isLoading={isLoading} />
-                <KPICard icon="visibility" label="Impressões" value={hasData ? formatNumber(filteredMetrics.totalImpressions) : "—"} isLoading={isLoading} />
-                <KPICard icon="ads_click" label="Cliques" value={hasData ? formatNumber(filteredMetrics.totalLinkClicks) : "—"} isLoading={isLoading} />
-                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(filteredMetrics.avgCtr) : "—"} isLoading={isLoading} />
-                <KPICard icon="check_circle" label="Conversões" value={hasData ? formatNumber(filteredMetrics.totalResults) : "—"} isLoading={isLoading} />
-                <KPICard icon="trending_up" label="ROAS" value={hasData ? filteredMetrics.avgRoas.toFixed(2) : "—"} isLoading={isLoading} />
-            </div>
-
-            {/* Row 2: Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Line Chart: Daily Evolution */}
-                <LineChart
-                    data={dailyData}
-                    title="📈 Evolução Diária"
-                    lines={[
-                        { key: "spend", label: "Investimento (R$)", color: "#19069E" },
-                        { key: "clicks", label: "Cliques", color: "#C2DF0C" },
-                    ]}
+            {/* Row 1: Executive KPIs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <ExecutiveKPI
+                    label="ROAS"
+                    value={hasData ? `${executiveKPIs.roas.toFixed(2)}x` : "—"}
+                    subvalue="Retorno sobre investimento"
+                    icon="trending_up"
+                    color="primary"
+                    isLoading={isLoading}
                 />
-
-                {/* Line Chart: Impressions vs Clicks */}
-                <LineChart
-                    data={dailyData}
-                    title="👁️ Impressões vs Cliques"
-                    lines={[
-                        { key: "impressions", label: "Impressões", color: "#3B28B8" },
-                        { key: "linkClicks", label: "Cliques no Link", color: "#10B981" },
-                    ]}
+                <ExecutiveKPI
+                    label="CAC"
+                    value={hasData ? formatCurrency(executiveKPIs.cac) : "—"}
+                    subvalue="Custo por aquisição"
+                    icon="person_add"
+                    color="warning"
+                    isLoading={isLoading}
                 />
-            </div>
-
-            {/* Row 3: Pie Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PieChart
-                    data={spendByPie}
-                    title="💰 Investimento por Campanha"
-                    valueFormatter={formatCurrency}
+                <ExecutiveKPI
+                    label="CPL"
+                    value={hasData ? formatCurrency(executiveKPIs.cpl) : "—"}
+                    subvalue="Custo por lead"
+                    icon="contact_mail"
+                    color="accent"
+                    isLoading={isLoading}
                 />
-                <PieChart
-                    data={purchasesByPie}
-                    title="🎯 Conversões por Campanha"
-                    valueFormatter={formatNumber}
+                <ExecutiveKPI
+                    label="Ticket Médio"
+                    value={hasData ? formatCurrency(executiveKPIs.ticketMedio) : "—"}
+                    subvalue="Valor médio por venda"
+                    icon="receipt_long"
+                    color="success"
+                    isLoading={isLoading}
                 />
             </div>
 
-            {/* Row 4: Campaign Table */}
+            {/* Row 2: Funnel Visualization */}
             <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-bold text-[#19069E] mb-4">📋 Detalhes por Campanha</h3>
+                <h3 className="text-lg font-bold text-[#19069E] mb-4">🎯 Funil de Conversão</h3>
+                {isLoading ? (
+                    <div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+                ) : (
+                    <div className="flex items-center justify-between gap-2">
+                        <FunnelStage
+                            label="Impressões"
+                            value={funnelData.impressions}
+                            icon="visibility"
+                            color="#19069E"
+                            isFirst
+                        />
+                        <FunnelStage
+                            label="Cliques"
+                            value={funnelData.clicks}
+                            rate={funnelData.ctr}
+                            icon="ads_click"
+                            color="#3B28B8"
+                        />
+                        <FunnelStage
+                            label="LP Views"
+                            value={funnelData.landingPageViews}
+                            rate={funnelData.connectRate}
+                            icon="web"
+                            color="#7C3AED"
+                        />
+                        <FunnelStage
+                            label="Checkouts"
+                            value={funnelData.checkouts}
+                            rate={funnelData.checkoutRate}
+                            icon="shopping_cart"
+                            color="#C2DF0C"
+                        />
+                        <FunnelStage
+                            label="Compras"
+                            value={funnelData.purchases}
+                            rate={funnelData.purchaseRate}
+                            icon="paid"
+                            color="#10B981"
+                        />
+                    </div>
+                )}
+            </div>
+
+            {/* Row 3: Secondary KPIs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(metrics.totalSpend) : "—"} isLoading={isLoading} />
+                <KPICard icon="attach_money" label="Faturamento" value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"} isLoading={isLoading} />
+                <KPICard icon="group" label="Leads" value={hasData ? formatNumber(metrics.totalLeads) : "—"} isLoading={isLoading} />
+                <KPICard icon="shopping_bag" label="Vendas" value={hasData ? formatNumber(metrics.totalPurchases) : "—"} isLoading={isLoading} />
+                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(metrics.avgCtr) : "—"} isLoading={isLoading} />
+                <KPICard icon="speed" label="Frequência" value={hasData ? metrics.avgFrequency.toFixed(2) : "—"} isLoading={isLoading} />
+            </div>
+
+            {/* Row 4: Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ROASTrendChart dailyData={dailyData} isLoading={isLoading} />
+                <PieChart data={spendByPie} title="💰 Investimento por Campanha" valueFormatter={formatCurrency} />
+            </div>
+
+            {/* Row 5: Campaign Table with Heatmap */}
+            <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-[#19069E] mb-4">📋 Performance por Campanha</h3>
 
                 {isLoading ? (
                     <div className="h-48 flex items-center justify-center">
@@ -466,13 +599,13 @@ export default function CampanhasPage() {
                                 <tr className="border-b border-gray-200">
                                     <th className="text-left py-3 px-2 font-bold text-gray-700">Campanha</th>
                                     {[
-                                        { key: "spend", label: "Investimento" },
-                                        { key: "impressions", label: "Impressões" },
-                                        { key: "linkClicks", label: "Cliques" },
+                                        { key: "spend", label: "Invest." },
+                                        { key: "roas", label: "ROAS" },
+                                        { key: "cpl", label: "CPL" },
                                         { key: "ctr", label: "CTR" },
                                         { key: "leads", label: "Leads" },
-                                        { key: "cpc", label: "CPC" },
-                                        { key: "cpl", label: "CPL" },
+                                        { key: "purchases", label: "Vendas" },
+                                        { key: "conversionRate", label: "Conv%" },
                                     ].map((col) => (
                                         <th
                                             key={col.key}
@@ -482,7 +615,7 @@ export default function CampanhasPage() {
                                             <div className="flex items-center justify-end gap-1">
                                                 {col.label}
                                                 {sortColumn === col.key && (
-                                                    <span className="material-symbols-outlined text-[16px]">
+                                                    <span className="material-symbols-outlined text-[14px]">
                                                         {sortDirection === "desc" ? "arrow_downward" : "arrow_upward"}
                                                     </span>
                                                 )}
@@ -495,7 +628,7 @@ export default function CampanhasPage() {
                                 {sortedCampaigns.map((campaign, i) => (
                                     <tr
                                         key={campaign.campaignName}
-                                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
+                                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                                     >
                                         <td className="py-3 px-2">
                                             <div className="flex items-center gap-2">
@@ -503,18 +636,24 @@ export default function CampanhasPage() {
                                                     className="w-3 h-3 rounded-full flex-shrink-0"
                                                     style={{ backgroundColor: pieColors[i % pieColors.length] }}
                                                 />
-                                                <span className="font-medium text-gray-900" title={campaign.campaignName}>
+                                                <span className="font-medium text-gray-900 truncate max-w-[200px]" title={campaign.campaignName}>
                                                     {campaign.campaignName}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="text-right py-3 px-2 font-bold text-[#19069E]">{formatCurrency(campaign.spend)}</td>
-                                        <td className="text-right py-3 px-2">{formatNumber(campaign.impressions)}</td>
-                                        <td className="text-right py-3 px-2">{formatNumber(campaign.linkClicks)}</td>
-                                        <td className="text-right py-3 px-2">{formatPercent(campaign.ctr)}</td>
+                                        <td className={`text-right py-3 px-2 font-bold rounded ${getHeatmapColor(campaign.roas || 0, avgMetrics.roas, true)}`}>
+                                            {(campaign.roas || 0).toFixed(2)}x
+                                        </td>
+                                        <td className={`text-right py-3 px-2 rounded ${getHeatmapColor(campaign.cpl, avgMetrics.cpl, false)}`}>
+                                            {formatCurrency(campaign.cpl)}
+                                        </td>
+                                        <td className={`text-right py-3 px-2 rounded ${getHeatmapColor(campaign.ctr, avgMetrics.ctr, true)}`}>
+                                            {formatPercent(campaign.ctr)}
+                                        </td>
                                         <td className="text-right py-3 px-2">{formatNumber(campaign.leads)}</td>
-                                        <td className="text-right py-3 px-2">{formatCurrency(campaign.cpc)}</td>
-                                        <td className="text-right py-3 px-2">{formatCurrency(campaign.cpl)}</td>
+                                        <td className="text-right py-3 px-2 font-bold">{formatNumber(campaign.purchases)}</td>
+                                        <td className="text-right py-3 px-2">{formatPercent(campaign.conversionRate || 0)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -530,26 +669,24 @@ export default function CampanhasPage() {
                 )}
             </div>
 
-            {/* Row 5: Summary Stats */}
+            {/* Row 6: Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-[#19069E] to-[#3B28B8] text-white">
                     <p className="text-sm opacity-80">Total de Campanhas</p>
                     <p className="text-3xl font-extrabold">{campaignSummary.length}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-gradient-to-br from-[#C2DF0C] to-[#B0CC0B] text-[#19069E]">
-                    <p className="text-sm opacity-80">Investimento Médio/Campanha</p>
+                    <p className="text-sm opacity-80">Melhor ROAS</p>
                     <p className="text-3xl font-extrabold">
                         {campaignSummary.length > 0
-                            ? formatCurrency(metrics.totalSpend / campaignSummary.length)
+                            ? `${Math.max(...campaignSummary.map(c => c.roas || 0)).toFixed(1)}x`
                             : "—"}
                     </p>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 text-white">
-                    <p className="text-sm opacity-80">Melhor CTR</p>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+                    <p className="text-sm opacity-80">Total Conversões</p>
                     <p className="text-3xl font-extrabold">
-                        {campaignSummary.length > 0
-                            ? formatPercent(Math.max(...campaignSummary.map(c => c.ctr)))
-                            : "—"}
+                        {hasData ? formatNumber(metrics.totalPurchases + metrics.totalLeads) : "—"}
                     </p>
                 </div>
             </div>
