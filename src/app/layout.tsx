@@ -3,6 +3,7 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import { MetricsProvider } from "@/contexts/MetricsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AccessControlProvider } from "@/contexts/AccessControlContext";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
 
 const rubik = Rubik({
@@ -35,13 +36,16 @@ export default function RootLayout({
       </head>
       <body className={`${rubik.variable} font-sans antialiased`}>
         <AuthProvider>
-          <MetricsProvider>
-            <ProtectedLayout>
-              {children}
-            </ProtectedLayout>
-          </MetricsProvider>
+          <AccessControlProvider>
+            <MetricsProvider>
+              <ProtectedLayout>
+                {children}
+              </ProtectedLayout>
+            </MetricsProvider>
+          </AccessControlProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+

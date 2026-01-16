@@ -36,11 +36,13 @@ export interface CRMLead {
     utm_content: string | null;
     utm_term: string | null;
     custom_fields: Record<string, unknown>;
+    assigned_to: string | null; // ID of responsible org_user
     created_at: string;
     updated_at: string;
     // Joined fields
     current_stage?: CRMPipelineStage;
     pipeline?: CRMPipeline;
+    assigned_user?: { id: string; name: string | null; email: string }; // Joined from org_users
 }
 
 export type LeadOrigin = 'organic' | 'paid' | 'manual' | 'webhook';
@@ -118,6 +120,7 @@ export interface CreateLeadInput {
     utm_term?: string;
     custom_fields?: Record<string, unknown>;
     created_at?: string; // ISO date string for backfilling historical leads
+    assigned_to?: string; // ID of responsible org_user
 }
 
 export interface UpdateLeadInput {
@@ -126,6 +129,7 @@ export interface UpdateLeadInput {
     phone?: string;
     company?: string;
     custom_fields?: Record<string, unknown>;
+    assigned_to?: string | null; // ID of responsible org_user
 }
 
 export interface CreateInteractionInput {

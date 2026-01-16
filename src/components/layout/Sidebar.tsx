@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
+import { useAccessControlContext } from "@/contexts/AccessControlContext";
 
 // Navigation structure matching the PRD architecture
 const navigation = [
@@ -71,6 +72,7 @@ export default function Sidebar() {
   const { user, signOut } = useAuth();
   const { isOpen, closeSidebar } = useSidebar();
   const { settings } = useDashboardSettings();
+  const { canAccess, isAdmin } = useAccessControlContext();
 
   // Get hidden items from settings
   const hiddenItems = settings?.hiddenMenuItems || [];
@@ -146,8 +148,10 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-6">
           {navigation.map((group) => {
-            // Filter out hidden items from this section
-            const visibleItems = group.items.filter(item => !hiddenItems.includes(item.href));
+            // Filter out hidden items AND items user doesn't have access to
+            const visibleItems = group.items.filter(item =>
+              !hiddenItems.includes(item.href) && canAccess(item.href)
+            );
 
             // Skip rendering section if all items are hidden
             if (visibleItems.length === 0) return null;

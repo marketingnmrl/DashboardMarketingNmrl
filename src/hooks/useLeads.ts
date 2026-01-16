@@ -15,6 +15,7 @@ import type {
 interface UseLeadsOptions {
     pipelineId?: string;
     stageId?: string;
+    assignedToId?: string; // Filter by assigned user (for 'My Leads')
 }
 
 interface UseLeadsReturn {
@@ -40,7 +41,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const { pipelineId, stageId } = options;
+    const { pipelineId, stageId, assignedToId } = options;
 
     // Fetch leads with optional filters
     const fetchLeads = useCallback(async () => {
@@ -59,7 +60,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                 .select(`
                     *,
                     current_stage:crm_pipeline_stages(*),
-                    pipeline:crm_pipelines(id, name)
+                    pipeline:crm_pipelines(id, name),
+                    assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email)
                 `)
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
@@ -70,6 +72,10 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
 
             if (stageId) {
                 query = query.eq("current_stage_id", stageId);
+            }
+
+            if (assignedToId) {
+                query = query.eq("assigned_to", assignedToId);
             }
 
             const { data, error: fetchError } = await query;
@@ -83,7 +89,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         } finally {
             setIsLoading(false);
         }
-    }, [user, pipelineId, stageId]);
+    }, [user, pipelineId, stageId, assignedToId]);
 
     // Get single lead with full details
     const getLead = useCallback(async (id: string): Promise<CRMLead | null> => {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
+import AccessControlSettings from "@/components/AccessControlSettings";
 
 // All menu items for visibility toggle
 const allMenuItems = [
@@ -314,57 +315,8 @@ export default function ConfiguracoesPage() {
                 </div>
             </div>
 
-            {/* Users Section */}
-            <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 className="text-lg font-bold text-[#19069E]">Usuários</h3>
-                        <p className="text-sm text-gray-500">Gerencie o acesso à plataforma</p>
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-[#19069E] hover:bg-[#12047A] text-white font-bold text-sm rounded-lg transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">person_add</span>
-                        Convidar
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {[
-                        { name: "Admin User", email: "admin@namoral.com", role: "Administrador", avatar: "AD" },
-                        { name: "João Silva", email: "joao@namoral.com", role: "Editor", avatar: "JS" },
-                        { name: "Maria Costa", email: "maria@namoral.com", role: "Visualizador", avatar: "MC" },
-                    ].map((user) => (
-                        <div
-                            key={user.email}
-                            className="flex items-center justify-between p-4 rounded-lg border border-gray-200"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-[#19069E] flex items-center justify-center text-white text-sm font-bold">
-                                    {user.avatar}
-                                </div>
-                                <div>
-                                    <p className="font-bold text-gray-900">{user.name}</p>
-                                    <p className="text-sm text-gray-500">{user.email}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className={`px-3 py-1 rounded-full text-xs font-bold ${user.role === "Administrador"
-                                        ? "bg-[#19069E] text-white"
-                                        : user.role === "Editor"
-                                            ? "bg-blue-100 text-blue-700"
-                                            : "bg-gray-100 text-gray-600"
-                                        }`}
-                                >
-                                    {user.role}
-                                </span>
-                                <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#19069E] transition-colors">
-                                    <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Access Control Section */}
+            <AccessControlSettings />
 
             {/* Account Settings */}
             <div className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
