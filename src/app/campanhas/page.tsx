@@ -308,12 +308,69 @@ export default function CampanhasPage() {
         metrics,
         dailyData,
         campaignSummary,
+        filteredData,
         isLoading: dataLoading,
         error,
     } = useStractData(settings?.visaoGeralSheetUrl, {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
     });
+
+    // Top Creatives aggregated by adName with thumbnails
+    const topCreatives = useMemo(() => {
+        if (!filteredData || filteredData.length === 0) return [];
+
+        const byAd = new Map<string, {
+            adName: string;
+            thumbnailUrl: string;
+            campaignName: string;
+            spend: number;
+            impressions: number;
+            linkClicks: number;
+            leads: number;
+            purchases: number;
+            purchaseValue: number;
+        }>();
+
+        filteredData.forEach(row => {
+            const key = row.adName || 'Sem nome';
+            const existing = byAd.get(key);
+            if (existing) {
+                existing.spend += row.spend || 0;
+                existing.impressions += row.impressions || 0;
+                existing.linkClicks += row.linkClicks || 0;
+                existing.leads += row.leads || 0;
+                existing.purchases += row.purchases || 0;
+                existing.purchaseValue += row.purchaseValue || 0;
+                // Keep first thumbnail found
+                if (!existing.thumbnailUrl && row.thumbnailUrl) {
+                    existing.thumbnailUrl = row.thumbnailUrl;
+                }
+            } else {
+                byAd.set(key, {
+                    adName: key,
+                    thumbnailUrl: row.thumbnailUrl || '',
+                    campaignName: row.campaignName || '',
+                    spend: row.spend || 0,
+                    impressions: row.impressions || 0,
+                    linkClicks: row.linkClicks || 0,
+                    leads: row.leads || 0,
+                    purchases: row.purchases || 0,
+                    purchaseValue: row.purchaseValue || 0,
+                });
+            }
+        });
+
+        return Array.from(byAd.values())
+            .map(ad => ({
+                ...ad,
+                roas: ad.spend > 0 ? ad.purchaseValue / ad.spend : 0,
+                ctr: ad.impressions > 0 ? (ad.linkClicks / ad.impressions) * 100 : 0,
+                conversions: ad.leads + ad.purchases,
+            }))
+            .sort((a, b) => b.roas - a.roas)
+            .slice(0, 6);
+    }, [filteredData]);
 
     const isLoading = settingsLoading || dataLoading;
     const hasData = !error && metrics.totalImpressions > 0;
@@ -669,7 +726,82 @@ export default function CampanhasPage() {
                 )}
             </div>
 
-            {/* Row 6: Summary Stats */}
+            {/* Row 6: Top Creatives with Thumbnails */}
+            <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-[#19069E] mb-4">🎨 Top Criativos por ROAS</h3>
+                {isLoading ? (
+                    <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+                ) : topCreatives.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {topCreatives.map((creative, i) => (
+                            <div
+                                key={creative.adName}
+                                className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#19069E]/30 hover:shadow-md transition-all"
+                            >
+                                {/* Thumbnail */}
+                                <div className="w-20 h-20 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+                                    {creative.thumbnailUrl ? (
+                                        <img
+                                            src={creative.thumbnailUrl}
+                                            alt={creative.adName}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <span className="material-symbols-outlined text-2xl">image</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-sm text-gray-900 truncate" title={creative.adName}>
+                                        {creative.adName.length > 25 ? `${creative.adName.slice(0, 25)}...` : creative.adName}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">{creative.campaignName.slice(0, 30)}</p>
+                                    <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
+                                        <div>
+                                            <span className="text-gray-500">ROAS</span>
+                                            <p className="font-bold text-emerald-600">{creative.roas.toFixed(2)}x</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Spend</span>
+                                            <p className="font-bold text-[#19069E]">{formatCurrency(creative.spend)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">CTR</span>
+                                            <p className="font-bold">{creative.ctr.toFixed(2)}%</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Conv</span>
+                                            <p className="font-bold">{creative.conversions}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Rank badge */}
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                        i === 1 ? 'bg-gray-300 text-gray-700' :
+                                            i === 2 ? 'bg-amber-600 text-white' :
+                                                'bg-gray-100 text-gray-500'
+                                    }`}>
+                                    {i + 1}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="h-32 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                            <span className="material-symbols-outlined text-3xl">photo_library</span>
+                            <p className="mt-1 text-sm">Nenhum criativo encontrado</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Row 7: Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-[#19069E] to-[#3B28B8] text-white">
                     <p className="text-sm opacity-80">Total de Campanhas</p>
