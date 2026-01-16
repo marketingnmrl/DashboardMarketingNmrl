@@ -280,6 +280,7 @@ export default function LeadsPage() {
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Pipeline</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Etapa</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Origem</th>
+                                    <th className="text-left py-4 px-4 font-bold text-gray-700">Responsável</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">UTM</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Criado em</th>
                                     <th className="text-center py-4 px-4 font-bold text-gray-700">Ações</th>
@@ -334,6 +335,20 @@ export default function LeadsPage() {
                                                 {originLabels[lead.origin]}
                                             </span>
                                         </td>
+                                        <td className="py-3 px-4">
+                                            {lead.assigned_user ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-[#19069E] flex items-center justify-center text-white text-[10px] font-bold">
+                                                        {(lead.assigned_user.name || lead.assigned_user.email).charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="text-sm text-gray-600 truncate max-w-[100px]" title={lead.assigned_user.name || lead.assigned_user.email}>
+                                                        {lead.assigned_user.name || lead.assigned_user.email.split('@')[0]}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-sm">—</span>
+                                            )}
+                                        </td>
                                         <td className="py-3 px-4 text-xs text-gray-500">
                                             {lead.utm_source && (
                                                 <div><strong>source:</strong> {lead.utm_source}</div>
@@ -380,6 +395,7 @@ export default function LeadsPage() {
             {showNewLeadModal && (
                 <NewLeadModal
                     pipelines={pipelines}
+                    orgUsers={orgUsers}
                     onClose={() => setShowNewLeadModal(false)}
                     onSave={async (data) => {
                         const lead = await createLead(data);
@@ -397,10 +413,12 @@ export default function LeadsPage() {
 // New Lead Modal Component
 function NewLeadModal({
     pipelines,
+    orgUsers,
     onClose,
     onSave,
 }: {
     pipelines: Array<{ id: string; name: string; stages?: Array<{ id: string; name: string }> }>;
+    orgUsers: Array<{ id: string; name: string | null; email: string }>;
     onClose: () => void;
     onSave: (data: {
         pipeline_id: string;
@@ -411,6 +429,7 @@ function NewLeadModal({
         company?: string;
         origin: "organic" | "paid" | "manual";
         created_at?: string;
+        assigned_to?: string;
     }) => Promise<void>;
 }) {
     const [selectedPipeline, setSelectedPipeline] = useState(pipelines[0]?.id || "");
@@ -421,6 +440,7 @@ function NewLeadModal({
     const [company, setCompany] = useState("");
     const [origin, setOrigin] = useState<"organic" | "paid" | "manual">("manual");
     const [createdAt, setCreatedAt] = useState("");
+    const [assignedTo, setAssignedTo] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     const currentPipeline = pipelines.find(p => p.id === selectedPipeline);
@@ -440,6 +460,7 @@ function NewLeadModal({
                 company: company.trim() || undefined,
                 origin,
                 created_at: createdAt ? new Date(createdAt).toISOString() : undefined,
+                assigned_to: assignedTo || undefined,
             });
         } finally {
             setIsSaving(false);
@@ -564,6 +585,28 @@ function NewLeadModal({
                         />
                         <p className="text-xs text-gray-400 mt-1">Deixe vazio para usar a data atual</p>
                     </div>
+
+                    {/* Assigned To */}
+                    {orgUsers.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Responsável
+                                <span className="font-normal text-gray-400 ml-1">(opcional)</span>
+                            </label>
+                            <select
+                                value={assignedTo}
+                                onChange={(e) => setAssignedTo(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                            >
+                                <option value="">Sem responsável</option>
+                                {orgUsers.map(u => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.name || u.email}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Buttons */}
                     <div className="flex gap-3 pt-2">

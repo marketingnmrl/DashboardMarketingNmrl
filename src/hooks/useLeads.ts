@@ -100,7 +100,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                 .select(`
                     *,
                     current_stage:crm_pipeline_stages(*),
-                    pipeline:crm_pipelines(*)
+                    pipeline:crm_pipelines(*),
+                    assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email)
                 `)
                 .eq("id", id)
                 .single();

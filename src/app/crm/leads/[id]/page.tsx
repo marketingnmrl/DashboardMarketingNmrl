@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
 import { useCustomFields } from "@/hooks/useCustomFields";
+import { useAccessControlContext } from "@/contexts/AccessControlContext";
 import type { CRMLead, CRMLeadStageHistory, CRMLeadInteraction, InteractionType } from "@/types/crm";
 
 export default function LeadDetailsPage() {
@@ -16,13 +17,14 @@ export default function LeadDetailsPage() {
     const { getLead, getLeadHistory, getLeadInteractions, updateLead, moveLead, addInteraction, deleteLead, deleteStageHistory } = useLeads();
     const { pipelines } = usePipelines();
     const { customFields: globalCustomFields } = useCustomFields();
+    const { orgUsers } = useAccessControlContext();
 
     const [lead, setLead] = useState<CRMLead | null>(null);
     const [history, setHistory] = useState<CRMLeadStageHistory[]>([]);
     const [interactions, setInteractions] = useState<CRMLeadInteraction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", company: "" });
+    const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", company: "", assigned_to: "" });
     const [customFields, setCustomFields] = useState<Record<string, string>>({});
     const [showAddInteraction, setShowAddInteraction] = useState(false);
     const [newInteraction, setNewInteraction] = useState({ type: "note" as InteractionType, title: "", content: "" });
@@ -38,7 +40,8 @@ export default function LeadDetailsPage() {
                 name: leadData.name,
                 email: leadData.email || "",
                 phone: leadData.phone || "",
-                company: leadData.company || ""
+                company: leadData.company || "",
+                assigned_to: leadData.assigned_to || ""
             });
             setCustomFields(leadData.custom_fields as Record<string, string> || {});
 
@@ -59,7 +62,11 @@ export default function LeadDetailsPage() {
     // Save lead edits
     const handleSave = async () => {
         if (!lead) return;
-        await updateLead(lead.id, { ...editForm, custom_fields: customFields });
+        await updateLead(lead.id, {
+            ...editForm,
+            assigned_to: editForm.assigned_to || null,
+            custom_fields: customFields
+        });
         setIsEditing(false);
         await loadData();
     };
@@ -253,6 +260,21 @@ export default function LeadDetailsPage() {
                                         className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                                     />
                                 </div>
+                                <div className="col-span-2">
+                                    <label className="block text-xs text-gray-500 mb-1">Responsável</label>
+                                    <select
+                                        value={editForm.assigned_to}
+                                        onChange={(e) => setEditForm({ ...editForm, assigned_to: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                                    >
+                                        <option value="">Sem responsável</option>
+                                        {orgUsers.map(u => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.name || u.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4">
@@ -271,6 +293,19 @@ export default function LeadDetailsPage() {
                                 <div>
                                     <span className="text-xs text-gray-500">Telefone</span>
                                     <p className="font-medium">{lead.phone || "—"}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="text-xs text-gray-500">Responsável</span>
+                                    {lead.assigned_user ? (
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="w-6 h-6 rounded-full bg-[#19069E] flex items-center justify-center text-white text-[10px] font-bold">
+                                                {(lead.assigned_user.name || lead.assigned_user.email).charAt(0).toUpperCase()}
+                                            </div>
+                                            <p className="font-medium">{lead.assigned_user.name || lead.assigned_user.email}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="font-medium text-gray-400">Não atribuído</p>
+                                    )}
                                 </div>
                             </div>
                         )}
