@@ -826,9 +826,9 @@ export default function CampanhasPage() {
                                 </div>
                                 {/* Rank badge */}
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                        i === 1 ? 'bg-gray-300 text-gray-700' :
-                                            i === 2 ? 'bg-amber-600 text-white' :
-                                                'bg-gray-100 text-gray-500'
+                                    i === 1 ? 'bg-gray-300 text-gray-700' :
+                                        i === 2 ? 'bg-amber-600 text-white' :
+                                            'bg-gray-100 text-gray-500'
                                     }`}>
                                     {i + 1}
                                 </div>
@@ -872,18 +872,8 @@ export default function CampanhasPage() {
                         {/* Modal Content */}
                         <div className="p-6">
                             {/* Media Preview */}
-                            <div className="bg-gray-900 rounded-xl overflow-hidden mb-6 flex items-center justify-center" style={{ minHeight: '300px' }}>
-                                {selectedCreative.videoUrl ? (
-                                    <video
-                                        src={selectedCreative.videoUrl}
-                                        controls
-                                        autoPlay
-                                        className="max-w-full max-h-[400px]"
-                                        poster={selectedCreative.thumbnailUrl}
-                                    >
-                                        Seu navegador não suporta vídeo.
-                                    </video>
-                                ) : selectedCreative.thumbnailUrl ? (
+                            <div className="bg-gray-900 rounded-xl overflow-hidden mb-6 flex flex-col items-center justify-center relative" style={{ minHeight: '300px' }}>
+                                {selectedCreative.thumbnailUrl ? (
                                     <img
                                         src={selectedCreative.thumbnailUrl}
                                         alt={selectedCreative.adName}
@@ -894,6 +884,19 @@ export default function CampanhasPage() {
                                         <span className="material-symbols-outlined text-6xl">image_not_supported</span>
                                         <p className="mt-2">Mídia não disponível</p>
                                     </div>
+                                )}
+
+                                {/* Open Video Button */}
+                                {selectedCreative.videoUrl && (
+                                    <a
+                                        href={selectedCreative.videoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-[#19069E] hover:bg-[#3B28B8] text-white rounded-full shadow-lg transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined">play_circle</span>
+                                        <span className="font-medium">Abrir Vídeo</span>
+                                    </a>
                                 )}
                             </div>
 
