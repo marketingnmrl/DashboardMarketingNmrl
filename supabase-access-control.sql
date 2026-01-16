@@ -137,3 +137,57 @@ ADD COLUMN IF NOT EXISTS moved_by UUID REFERENCES org_users(id) ON DELETE SET NU
 -- Índice para buscar leads por responsável
 CREATE INDEX IF NOT EXISTS idx_crm_leads_assigned_to ON crm_leads(assigned_to);
 
+-- ================================================
+-- ATUALIZAR RLS DO CRM PARA ACESSO COMPARTILHADO
+-- Permite que todos usuários autenticados vejam os mesmos dados
+-- ================================================
+
+-- Remover policies antigas do CRM
+DROP POLICY IF EXISTS "Users can view own pipelines" ON crm_pipelines;
+DROP POLICY IF EXISTS "Users can create own pipelines" ON crm_pipelines;
+DROP POLICY IF EXISTS "Users can update own pipelines" ON crm_pipelines;
+DROP POLICY IF EXISTS "Users can delete own pipelines" ON crm_pipelines;
+
+DROP POLICY IF EXISTS "Users can view stages of own pipelines" ON crm_pipeline_stages;
+DROP POLICY IF EXISTS "Users can create stages in own pipelines" ON crm_pipeline_stages;
+DROP POLICY IF EXISTS "Users can update stages in own pipelines" ON crm_pipeline_stages;
+DROP POLICY IF EXISTS "Users can delete stages in own pipelines" ON crm_pipeline_stages;
+
+DROP POLICY IF EXISTS "Users can view own leads" ON crm_leads;
+DROP POLICY IF EXISTS "Users can create own leads" ON crm_leads;
+DROP POLICY IF EXISTS "Users can update own leads" ON crm_leads;
+DROP POLICY IF EXISTS "Users can delete own leads" ON crm_leads;
+
+DROP POLICY IF EXISTS "Users can view history of own leads" ON crm_lead_stage_history;
+DROP POLICY IF EXISTS "Users can create history for own leads" ON crm_lead_stage_history;
+DROP POLICY IF EXISTS "Users can delete history of own leads" ON crm_lead_stage_history;
+
+DROP POLICY IF EXISTS "Users can view interactions of own leads" ON crm_lead_interactions;
+DROP POLICY IF EXISTS "Users can create interactions for own leads" ON crm_lead_interactions;
+
+-- Novas policies: todos autenticados podem acessar
+CREATE POLICY "Authenticated can view all pipelines" ON crm_pipelines
+    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage all pipelines" ON crm_pipelines
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Authenticated can view all stages" ON crm_pipeline_stages
+    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage all stages" ON crm_pipeline_stages
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Authenticated can view all leads" ON crm_leads
+    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage all leads" ON crm_leads
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Authenticated can view all history" ON crm_lead_stage_history
+    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage all history" ON crm_lead_stage_history
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Authenticated can view all interactions" ON crm_lead_interactions
+    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage all interactions" ON crm_lead_interactions
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
