@@ -63,7 +63,6 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     pipeline:crm_pipelines(id, name),
                     assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email)
                 `)
-                .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
 
             if (pipelineId) {
@@ -104,7 +103,6 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     pipeline:crm_pipelines(*)
                 `)
                 .eq("id", id)
-                .eq("user_id", user.id)
                 .single();
 
             if (fetchError) throw fetchError;
@@ -237,8 +235,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     ...input,
                     updated_at: new Date().toISOString()
                 })
-                .eq("id", id)
-                .eq("user_id", user.id);
+                .eq("id", id);
 
             if (updateError) throw updateError;
 
@@ -258,8 +255,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
             const { error: deleteError } = await supabase
                 .from("crm_leads")
                 .delete()
-                .eq("id", id)
-                .eq("user_id", user.id);
+                .eq("id", id);
 
             if (deleteError) throw deleteError;
 
@@ -296,8 +292,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     current_stage_id: toStageId,
                     updated_at: new Date().toISOString()
                 })
-                .eq("id", leadId)
-                .eq("user_id", user.id);
+                .eq("id", leadId);
 
             if (updateError) throw updateError;
 

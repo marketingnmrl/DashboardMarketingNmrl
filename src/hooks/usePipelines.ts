@@ -49,7 +49,6 @@ export function usePipelines(): UsePipelinesReturn {
                     *,
                     stages:crm_pipeline_stages(*)
                 `)
-                .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
 
             if (fetchError) throw fetchError;
@@ -57,8 +56,7 @@ export function usePipelines(): UsePipelinesReturn {
             // Get all leads to count per stage
             const { data: leads } = await supabase
                 .from("crm_leads")
-                .select("current_stage_id")
-                .eq("user_id", user.id);
+                .select("current_stage_id");
 
             const leadCountMap: Record<string, number> = {};
             (leads || []).forEach(lead => {
@@ -101,7 +99,6 @@ export function usePipelines(): UsePipelinesReturn {
                     stages:crm_pipeline_stages(*)
                 `)
                 .eq("id", id)
-                .eq("user_id", user.id)
                 .single();
 
             if (fetchError) throw fetchError;
@@ -188,8 +185,7 @@ export function usePipelines(): UsePipelinesReturn {
                     ...input,
                     updated_at: new Date().toISOString()
                 })
-                .eq("id", id)
-                .eq("user_id", user.id);
+                .eq("id", id);
 
             if (updateError) throw updateError;
 
@@ -209,8 +205,7 @@ export function usePipelines(): UsePipelinesReturn {
             const { error: deleteError } = await supabase
                 .from("crm_pipelines")
                 .delete()
-                .eq("id", id)
-                .eq("user_id", user.id);
+                .eq("id", id);
 
             if (deleteError) throw deleteError;
 
