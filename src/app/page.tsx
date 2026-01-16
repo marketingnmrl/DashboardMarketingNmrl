@@ -103,15 +103,9 @@ interface DailyChartProps {
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string; color: string }>; label?: string }) => {
   if (!active || !payload || !payload.length) return null;
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const [, month, day] = dateStr.split("-");
-    return `${day}/${month}`;
-  };
-
   return (
     <div className="bg-gray-900 text-white text-xs rounded-xl px-4 py-3 shadow-2xl border border-gray-700">
-      <div className="font-bold mb-2 text-center text-sm">{formatDate(label || "")}</div>
+      <div className="font-bold mb-2 text-center text-sm">{label || ""}</div>
       <div className="space-y-1.5">
         {payload.map((entry, index) => {
           const labels: Record<string, string> = {
