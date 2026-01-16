@@ -122,22 +122,32 @@ export function useAccessControl(): UseAccessControlReturn {
     // Current user's data
     const currentUser = useMemo(() => {
         if (!user) return null;
-        return orgUsers.find(u => u.authUserId === user.id || u.email === user.email) || null;
+        const userEmail = user.email?.toLowerCase();
+        return orgUsers.find(u =>
+            u.authUserId === user.id ||
+            u.email.toLowerCase() === userEmail
+        ) || null;
     }, [user, orgUsers]);
 
     const accessLevel = useMemo(() => {
         return currentUser?.accessLevel || null;
     }, [currentUser]);
 
+    // If no org_users exist, treat as first-time setup - grant full access
+    // Also grant full access if current user is owner or has admin level
     const isAdmin = useMemo(() => {
+        // First-time setup: no users in org_users = everyone is admin
+        if (orgUsers.length === 0) return true;
+        // Current user is owner or has admin access level
         return currentUser?.isOwner || accessLevel?.isAdmin || false;
-    }, [currentUser, accessLevel]);
+    }, [currentUser, accessLevel, orgUsers.length]);
 
     const isOwner = useMemo(() => {
         return currentUser?.isOwner || false;
     }, [currentUser]);
 
     const allowedRoutes = useMemo(() => {
+        // If admin (including first-time setup), allow all routes
         if (isAdmin) {
             return ALL_ROUTES.map(r => r.href);
         }
@@ -145,7 +155,13 @@ export function useAccessControl(): UseAccessControlReturn {
     }, [isAdmin, accessLevel]);
 
     const canAccess = useCallback((route: string): boolean => {
+        // Admin can access everything
         if (isAdmin) return true;
+
+        // If user not in org_users and org has users, they have no access
+        if (!currentUser && orgUsers.length > 0) return false;
+
+        // Check if access level grants access to this route
         if (!accessLevel) return false;
 
         // Check exact match or if route starts with an allowed route
@@ -153,7 +169,7 @@ export function useAccessControl(): UseAccessControlReturn {
             route === allowed ||
             route.startsWith(allowed + "/")
         );
-    }, [isAdmin, accessLevel, allowedRoutes]);
+    }, [isAdmin, currentUser, accessLevel, allowedRoutes, orgUsers.length]);
 
     // CRUD: Access Levels
     const createAccessLevel = useCallback(async (
