@@ -404,12 +404,49 @@ export default function CampanhasPage() {
     const isLoading = settingsLoading || dataLoading;
     const hasData = !error && metrics.totalImpressions > 0;
 
-    // Executive KPIs calculations
+    // Calculate filtered metrics based on selected campaign
+    const filteredMetrics = useMemo(() => {
+        if (selectedCampaign === "all") {
+            return metrics;
+        }
+
+        // Filter raw data by campaign
+        const campData = filteredData.filter(row => row.campaignName === selectedCampaign);
+        if (campData.length === 0) return metrics;
+
+        // Aggregate filtered data
+        const totalSpend = campData.reduce((sum, r) => sum + (r.spend || 0), 0);
+        const totalImpressions = campData.reduce((sum, r) => sum + (r.impressions || 0), 0);
+        const totalLinkClicks = campData.reduce((sum, r) => sum + (r.linkClicks || 0), 0);
+        const totalLandingPageViews = campData.reduce((sum, r) => sum + (r.landingPageViews || 0), 0);
+        const totalCheckouts = campData.reduce((sum, r) => sum + (r.checkouts || 0), 0);
+        const totalPurchases = campData.reduce((sum, r) => sum + (r.purchases || 0), 0);
+        const totalPurchaseValue = campData.reduce((sum, r) => sum + (r.purchaseValue || 0), 0);
+        const totalLeads = campData.reduce((sum, r) => sum + (r.leads || 0), 0);
+        const totalReach = campData.reduce((sum, r) => sum + (r.reach || 0), 0);
+
+        return {
+            ...metrics,
+            totalSpend,
+            totalImpressions,
+            totalLinkClicks,
+            totalLandingPageViews,
+            totalCheckouts,
+            totalPurchases,
+            totalPurchaseValue,
+            totalLeads,
+            totalReach,
+            avgCtr: totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0,
+            avgFrequency: totalReach > 0 ? totalImpressions / totalReach : 0,
+        };
+    }, [metrics, filteredData, selectedCampaign]);
+
+    // Executive KPIs calculations - NOW USES filteredMetrics
     const executiveKPIs = useMemo(() => {
-        const spend = metrics.totalSpend || 0;
-        const purchaseValue = metrics.totalPurchaseValue || 0;
-        const purchases = metrics.totalPurchases || 0;
-        const leads = metrics.totalLeads || 0;
+        const spend = filteredMetrics.totalSpend || 0;
+        const purchaseValue = filteredMetrics.totalPurchaseValue || 0;
+        const purchases = filteredMetrics.totalPurchases || 0;
+        const leads = filteredMetrics.totalLeads || 0;
 
         return {
             roas: spend > 0 ? purchaseValue / spend : 0,
@@ -417,15 +454,15 @@ export default function CampanhasPage() {
             cpl: leads > 0 ? spend / leads : 0,
             ticketMedio: purchases > 0 ? purchaseValue / purchases : 0,
         };
-    }, [metrics]);
+    }, [filteredMetrics]);
 
-    // Funnel data
+    // Funnel data - NOW USES filteredMetrics
     const funnelData = useMemo(() => {
-        const impressions = metrics.totalImpressions || 0;
-        const clicks = metrics.totalLinkClicks || 0;
-        const landingPageViews = metrics.totalLandingPageViews || 0;
-        const checkouts = metrics.totalCheckouts || 0;
-        const purchases = metrics.totalPurchases || 0;
+        const impressions = filteredMetrics.totalImpressions || 0;
+        const clicks = filteredMetrics.totalLinkClicks || 0;
+        const landingPageViews = filteredMetrics.totalLandingPageViews || 0;
+        const checkouts = filteredMetrics.totalCheckouts || 0;
+        const purchases = filteredMetrics.totalPurchases || 0;
 
         return {
             impressions,
@@ -438,7 +475,7 @@ export default function CampanhasPage() {
             checkoutRate: landingPageViews > 0 ? (checkouts / landingPageViews) * 100 : 0,
             purchaseRate: checkouts > 0 ? (purchases / checkouts) * 100 : 0,
         };
-    }, [metrics]);
+    }, [filteredMetrics]);
 
     // Provide metrics for AI Assistant
     usePageMetrics({
