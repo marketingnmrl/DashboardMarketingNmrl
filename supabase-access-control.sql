@@ -36,41 +36,25 @@ CREATE INDEX IF NOT EXISTS idx_org_users_access_level ON org_users(access_level_
 ALTER TABLE access_levels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE org_users ENABLE ROW LEVEL SECURITY;
 
--- Políticas para access_levels (todos usuários autenticados podem ler)
-CREATE POLICY "Authenticated users can view access levels"
-    ON access_levels FOR SELECT
-    TO authenticated
-    USING (true);
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Authenticated users can view access levels" ON access_levels;
+DROP POLICY IF EXISTS "Admins can manage access levels" ON access_levels;
+DROP POLICY IF EXISTS "Users can view org users" ON org_users;
+DROP POLICY IF EXISTS "Admins can manage org users" ON org_users;
 
-CREATE POLICY "Admins can manage access levels"
+-- Simple policies: authenticated users can do everything
+-- (access control is handled in the application layer)
+CREATE POLICY "Allow all for authenticated users on access_levels"
     ON access_levels FOR ALL
     TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM org_users ou
-            JOIN access_levels al ON ou.access_level_id = al.id
-            WHERE ou.auth_user_id = auth.uid()
-            AND (al.is_admin = true OR ou.is_owner = true)
-        )
-    );
+    USING (true)
+    WITH CHECK (true);
 
--- Políticas para org_users
-CREATE POLICY "Users can view org users"
-    ON org_users FOR SELECT
-    TO authenticated
-    USING (true);
-
-CREATE POLICY "Admins can manage org users"
+CREATE POLICY "Allow all for authenticated users on org_users"
     ON org_users FOR ALL
     TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM org_users ou
-            JOIN access_levels al ON ou.access_level_id = al.id
-            WHERE ou.auth_user_id = auth.uid()
-            AND (al.is_admin = true OR ou.is_owner = true)
-        )
-    );
+    USING (true)
+    WITH CHECK (true);
 
 -- 5. Criar nível de acesso padrão "Administrador"
 INSERT INTO access_levels (name, description, is_admin, allowed_routes)
