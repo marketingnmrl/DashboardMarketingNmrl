@@ -196,6 +196,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     utm_content: input.utm_content || null,
                     utm_term: input.utm_term || null,
                     custom_fields: input.custom_fields || {},
+                    assigned_to: input.assigned_to || null,
                     created_at: createdAt
                 })
                 .select()

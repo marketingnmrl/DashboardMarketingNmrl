@@ -4,21 +4,30 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
+import { useAccessControlContext } from "@/contexts/AccessControlContext";
 import type { LeadOrigin } from "@/types/crm";
 
 export default function LeadsPage() {
     const { pipelines } = usePipelines();
+    const { currentUser, orgUsers } = useAccessControlContext();
     const [filterPipeline, setFilterPipeline] = useState<string>("all");
     const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "all">("all");
     const [filterUtmSource, setFilterUtmSource] = useState<string>("all");
     const [filterUtmCampaign, setFilterUtmCampaign] = useState<string>("all");
+    const [filterMyLeads, setFilterMyLeads] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [showUtmFilters, setShowUtmFilters] = useState(false);
     const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
-    const { leads, isLoading, error, deleteLead, createLead, fetchLeads } = useLeads(
-        filterPipeline !== "all" ? { pipelineId: filterPipeline } : {}
-    );
+    // Build options for useLeads hook
+    const leadOptions = useMemo(() => {
+        const options: { pipelineId?: string; assignedToId?: string } = {};
+        if (filterPipeline !== "all") options.pipelineId = filterPipeline;
+        if (filterMyLeads && currentUser) options.assignedToId = currentUser.id;
+        return options;
+    }, [filterPipeline, filterMyLeads, currentUser]);
+
+    const { leads, isLoading, error, deleteLead, createLead, fetchLeads } = useLeads(leadOptions);
 
     // Extract unique UTM values for filter options
     const utmOptions = useMemo(() => {
@@ -72,11 +81,12 @@ export default function LeadsPage() {
         setFilterOrigin("all");
         setFilterUtmSource("all");
         setFilterUtmCampaign("all");
+        setFilterMyLeads(false);
         setSearchTerm("");
     };
 
     const hasActiveFilters = filterPipeline !== "all" || filterOrigin !== "all" ||
-        filterUtmSource !== "all" || filterUtmCampaign !== "all" || searchTerm !== "";
+        filterUtmSource !== "all" || filterUtmCampaign !== "all" || filterMyLeads || searchTerm !== "";
 
     const originLabels: Record<LeadOrigin, string> = {
         organic: "Orgânico",
@@ -149,6 +159,20 @@ export default function LeadsPage() {
                     <option value="manual">Manual</option>
                     <option value="webhook">Webhook</option>
                 </select>
+
+                {/* My Leads Toggle */}
+                {currentUser && (
+                    <button
+                        onClick={() => setFilterMyLeads(!filterMyLeads)}
+                        className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl transition-colors ${filterMyLeads
+                            ? "border-[#19069E] bg-[#19069E] text-white"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                            }`}
+                    >
+                        <span className="material-symbols-outlined text-[18px]">person</span>
+                        Meus Leads
+                    </button>
+                )}
 
                 {/* Toggle UTM Filters */}
                 <button
