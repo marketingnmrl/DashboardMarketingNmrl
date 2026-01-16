@@ -886,16 +886,20 @@ export default function CampanhasPage() {
                                     </div>
                                 )}
 
-                                {/* Open Video Button */}
-                                {selectedCreative.videoUrl && (
+                                {/* Open Media Button */}
+                                {(selectedCreative.videoUrl || selectedCreative.thumbnailUrl) && (
                                     <a
-                                        href={selectedCreative.videoUrl}
+                                        href={selectedCreative.videoUrl || selectedCreative.thumbnailUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-[#19069E] hover:bg-[#3B28B8] text-white rounded-full shadow-lg transition-colors"
                                     >
-                                        <span className="material-symbols-outlined">play_circle</span>
-                                        <span className="font-medium">Abrir Vídeo</span>
+                                        <span className="material-symbols-outlined">
+                                            {selectedCreative.videoUrl ? 'play_circle' : 'open_in_new'}
+                                        </span>
+                                        <span className="font-medium">
+                                            {selectedCreative.videoUrl ? 'Abrir Vídeo' : 'Abrir Imagem'}
+                                        </span>
                                     </a>
                                 )}
                             </div>
