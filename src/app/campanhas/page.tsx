@@ -316,13 +316,21 @@ export default function CampanhasPage() {
         endDate: dateRange.endDate,
     });
 
-    // Top Creatives aggregated by adName with thumbnails
+    // Top Creatives aggregated by adName with thumbnails - filtered by selected campaign
     const topCreatives = useMemo(() => {
         if (!filteredData || filteredData.length === 0) return [];
+
+        // Filter by selected campaign if not "all"
+        const dataToUse = selectedCampaign === "all"
+            ? filteredData
+            : filteredData.filter(row => row.campaignName === selectedCampaign);
+
+        if (dataToUse.length === 0) return [];
 
         const byAd = new Map<string, {
             adName: string;
             thumbnailUrl: string;
+            videoUrl: string;
             campaignName: string;
             spend: number;
             impressions: number;
@@ -330,9 +338,13 @@ export default function CampanhasPage() {
             leads: number;
             purchases: number;
             purchaseValue: number;
+            postEngagement: number;
+            postReactions: number;
+            postComments: number;
+            postShares: number;
         }>();
 
-        filteredData.forEach(row => {
+        dataToUse.forEach(row => {
             const key = row.adName || 'Sem nome';
             const existing = byAd.get(key);
             if (existing) {
@@ -342,14 +354,22 @@ export default function CampanhasPage() {
                 existing.leads += row.leads || 0;
                 existing.purchases += row.purchases || 0;
                 existing.purchaseValue += row.purchaseValue || 0;
-                // Keep first thumbnail found
+                existing.postEngagement += row.postEngagement || 0;
+                existing.postReactions += row.postReactions || 0;
+                existing.postComments += row.postComments || 0;
+                existing.postShares += row.postShares || 0;
+                // Keep first thumbnail/video found
                 if (!existing.thumbnailUrl && row.thumbnailUrl) {
                     existing.thumbnailUrl = row.thumbnailUrl;
+                }
+                if (!existing.videoUrl && row.videoUrl) {
+                    existing.videoUrl = row.videoUrl;
                 }
             } else {
                 byAd.set(key, {
                     adName: key,
                     thumbnailUrl: row.thumbnailUrl || '',
+                    videoUrl: row.videoUrl || '',
                     campaignName: row.campaignName || '',
                     spend: row.spend || 0,
                     impressions: row.impressions || 0,
@@ -357,6 +377,10 @@ export default function CampanhasPage() {
                     leads: row.leads || 0,
                     purchases: row.purchases || 0,
                     purchaseValue: row.purchaseValue || 0,
+                    postEngagement: row.postEngagement || 0,
+                    postReactions: row.postReactions || 0,
+                    postComments: row.postComments || 0,
+                    postShares: row.postShares || 0,
                 });
             }
         });
@@ -367,10 +391,15 @@ export default function CampanhasPage() {
                 roas: ad.spend > 0 ? ad.purchaseValue / ad.spend : 0,
                 ctr: ad.impressions > 0 ? (ad.linkClicks / ad.impressions) * 100 : 0,
                 conversions: ad.leads + ad.purchases,
+                totalEngagement: ad.linkClicks + ad.postEngagement,
             }))
-            .sort((a, b) => b.roas - a.roas)
+            // Sort by ENGAGEMENT (clicks + post engagement)
+            .sort((a, b) => b.totalEngagement - a.totalEngagement)
             .slice(0, 6);
-    }, [filteredData]);
+    }, [filteredData, selectedCampaign]);
+
+    // State for creative preview modal
+    const [selectedCreative, setSelectedCreative] = useState<typeof topCreatives[0] | null>(null);
 
     const isLoading = settingsLoading || dataLoading;
     const hasData = !error && metrics.totalImpressions > 0;
@@ -728,7 +757,14 @@ export default function CampanhasPage() {
 
             {/* Row 6: Top Creatives with Thumbnails */}
             <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-bold text-[#19069E] mb-4">🎨 Top Criativos por ROAS</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-[#19069E]">🎨 Top Criativos por Engajamento</h3>
+                    {selectedCampaign !== "all" && (
+                        <span className="text-xs bg-[#19069E]/10 text-[#19069E] px-2 py-1 rounded-full">
+                            Filtrado: {selectedCampaign.slice(0, 25)}...
+                        </span>
+                    )}
+                </div>
                 {isLoading ? (
                     <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
                 ) : topCreatives.length > 0 ? (
@@ -736,19 +772,27 @@ export default function CampanhasPage() {
                         {topCreatives.map((creative, i) => (
                             <div
                                 key={creative.adName}
-                                className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#19069E]/30 hover:shadow-md transition-all"
+                                className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#19069E]/30 hover:shadow-md transition-all cursor-pointer"
+                                onClick={() => setSelectedCreative(creative)}
                             >
                                 {/* Thumbnail */}
-                                <div className="w-20 h-20 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+                                <div className="w-20 h-20 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden relative group">
                                     {creative.thumbnailUrl ? (
-                                        <img
-                                            src={creative.thumbnailUrl}
-                                            alt={creative.adName}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                            }}
-                                        />
+                                        <>
+                                            <img
+                                                src={creative.thumbnailUrl}
+                                                alt={creative.adName}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-white text-2xl">
+                                                    {creative.videoUrl ? 'play_circle' : 'fullscreen'}
+                                                </span>
+                                            </div>
+                                        </>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                                             <span className="material-symbols-outlined text-2xl">image</span>
@@ -763,8 +807,8 @@ export default function CampanhasPage() {
                                     <p className="text-xs text-gray-500 truncate">{creative.campaignName.slice(0, 30)}</p>
                                     <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
                                         <div>
-                                            <span className="text-gray-500">ROAS</span>
-                                            <p className="font-bold text-emerald-600">{creative.roas.toFixed(2)}x</p>
+                                            <span className="text-gray-500">Engaj.</span>
+                                            <p className="font-bold text-[#C2DF0C]">{formatNumber(creative.totalEngagement)}</p>
                                         </div>
                                         <div>
                                             <span className="text-gray-500">Spend</span>
@@ -800,6 +844,118 @@ export default function CampanhasPage() {
                     </div>
                 )}
             </div>
+
+            {/* Creative Preview Modal */}
+            {selectedCreative && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+                    onClick={() => setSelectedCreative(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-auto shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                            <div>
+                                <h3 className="font-bold text-lg text-[#19069E]">{selectedCreative.adName}</h3>
+                                <p className="text-sm text-gray-500">{selectedCreative.campaignName}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedCreative(null)}
+                                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6">
+                            {/* Media Preview */}
+                            <div className="bg-gray-900 rounded-xl overflow-hidden mb-6 flex items-center justify-center" style={{ minHeight: '300px' }}>
+                                {selectedCreative.videoUrl ? (
+                                    <video
+                                        src={selectedCreative.videoUrl}
+                                        controls
+                                        autoPlay
+                                        className="max-w-full max-h-[400px]"
+                                        poster={selectedCreative.thumbnailUrl}
+                                    >
+                                        Seu navegador não suporta vídeo.
+                                    </video>
+                                ) : selectedCreative.thumbnailUrl ? (
+                                    <img
+                                        src={selectedCreative.thumbnailUrl}
+                                        alt={selectedCreative.adName}
+                                        className="max-w-full max-h-[400px] object-contain"
+                                    />
+                                ) : (
+                                    <div className="text-gray-500 text-center p-8">
+                                        <span className="material-symbols-outlined text-6xl">image_not_supported</span>
+                                        <p className="mt-2">Mídia não disponível</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Metrics Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="p-4 bg-gradient-to-br from-[#C2DF0C] to-[#B0CC0B] rounded-xl text-center">
+                                    <p className="text-xs text-[#19069E]/70">Engajamento Total</p>
+                                    <p className="text-2xl font-extrabold text-[#19069E]">{formatNumber(selectedCreative.totalEngagement)}</p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-[#19069E] to-[#3B28B8] rounded-xl text-center text-white">
+                                    <p className="text-xs opacity-70">Investimento</p>
+                                    <p className="text-2xl font-extrabold">{formatCurrency(selectedCreative.spend)}</p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl text-center text-white">
+                                    <p className="text-xs opacity-70">ROAS</p>
+                                    <p className="text-2xl font-extrabold">{selectedCreative.roas.toFixed(2)}x</p>
+                                </div>
+                                <div className="p-4 bg-gray-100 rounded-xl text-center">
+                                    <p className="text-xs text-gray-500">Conversões</p>
+                                    <p className="text-2xl font-extrabold text-gray-900">{selectedCreative.conversions}</p>
+                                </div>
+                            </div>
+
+                            {/* Detailed Metrics */}
+                            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Impressões</p>
+                                    <p className="font-bold">{formatNumber(selectedCreative.impressions)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Cliques</p>
+                                    <p className="font-bold">{formatNumber(selectedCreative.linkClicks)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">CTR</p>
+                                    <p className="font-bold">{selectedCreative.ctr.toFixed(2)}%</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Faturamento</p>
+                                    <p className="font-bold">{formatCurrency(selectedCreative.purchaseValue)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Reações</p>
+                                    <p className="font-bold">{formatNumber(selectedCreative.postReactions)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Comentários</p>
+                                    <p className="font-bold">{formatNumber(selectedCreative.postComments)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Compartilhamentos</p>
+                                    <p className="font-bold">{formatNumber(selectedCreative.postShares)}</p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500">Leads + Vendas</p>
+                                    <p className="font-bold">{selectedCreative.leads} + {selectedCreative.purchases}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Row 7: Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
