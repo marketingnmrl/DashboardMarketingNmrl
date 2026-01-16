@@ -377,9 +377,9 @@ export default function DashboardPage() {
           tooltip={hasData ? `Faturamento: ${formatCurrency(metrics.totalPurchaseValue)}` : undefined}
         />
 
-        {/* Vendas / Leads */}
+        {/* Vendas */}
         <KPICard
-          label="Vendas / Leads"
+          label="Vendas"
           value={hasData ? formatNumber(kpiData.vendasLeads) : "—"}
           icon="shopping_cart"
           isLoading={isLoading}
