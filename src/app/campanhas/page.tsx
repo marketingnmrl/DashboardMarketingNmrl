@@ -693,12 +693,12 @@ export default function CampanhasPage() {
 
             {/* Row 3: Secondary KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(metrics.totalSpend) : "—"} isLoading={isLoading} />
-                <KPICard icon="attach_money" label="Faturamento" value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"} isLoading={isLoading} />
-                <KPICard icon="group" label="Leads" value={hasData ? formatNumber(metrics.totalLeads) : "—"} isLoading={isLoading} />
-                <KPICard icon="shopping_bag" label="Vendas" value={hasData ? formatNumber(metrics.totalPurchases) : "—"} isLoading={isLoading} />
-                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(metrics.avgCtr) : "—"} isLoading={isLoading} />
-                <KPICard icon="speed" label="Frequência" value={hasData ? metrics.avgFrequency.toFixed(2) : "—"} isLoading={isLoading} />
+                <KPICard icon="payments" label="Investimento" value={hasData ? formatCurrency(filteredMetrics.totalSpend) : "—"} isLoading={isLoading} />
+                <KPICard icon="attach_money" label="Faturamento" value={hasData ? formatCurrency(filteredMetrics.totalPurchaseValue) : "—"} isLoading={isLoading} />
+                <KPICard icon="group" label="Leads" value={hasData ? formatNumber(filteredMetrics.totalLeads) : "—"} isLoading={isLoading} />
+                <KPICard icon="shopping_bag" label="Vendas" value={hasData ? formatNumber(filteredMetrics.totalPurchases) : "—"} isLoading={isLoading} />
+                <KPICard icon="percent" label="CTR" value={hasData ? formatPercent(filteredMetrics.avgCtr) : "—"} isLoading={isLoading} />
+                <KPICard icon="speed" label="Frequência" value={hasData ? filteredMetrics.avgFrequency.toFixed(2) : "—"} isLoading={isLoading} />
             </div>
 
             {/* Row 4: Charts */}

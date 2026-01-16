@@ -94,14 +94,13 @@ export function useCRMFunnelData(options: UseCRMFunnelDataOptions | null): UseCR
             const cohortLeadIds = cohortLeads.map(l => l.id);
             const leadOriginMap = new Map(cohortLeads.map(l => [l.id, l.origin as LeadOrigin]));
 
-            // Step 2: Get stage history for cohort leads - entries into each stage
+            // Step 2: Get ALL stage history for cohort leads - entries into each stage
+            // No date filter on moved_at - we want to see their full journey
             const { data: historyData, error: historyError } = await supabase
                 .from("crm_lead_stage_history")
                 .select("lead_id, to_stage_id, moved_at")
                 .in("lead_id", cohortLeadIds)
-                .in("to_stage_id", options.stageIds)
-                .gte("moved_at", startDate.toISOString())
-                .lte("moved_at", endDate.toISOString());
+                .in("to_stage_id", options.stageIds);
 
             if (historyError) throw historyError;
 
