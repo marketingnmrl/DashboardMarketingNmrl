@@ -1095,7 +1095,7 @@ export default function FunilDetailPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {funnel.evaluationStages.map((stage) => {
-                            const value = getStageValueForPeriod(stage.name);
+                            const value = getStageValueForPeriod(stage.name, stage.id, stage.dataSource, stage.crmStageId);
                             const status = getPerformanceStatus(value, stage.thresholds, null, dayCount);
                             const config = PERFORMANCE_CONFIG[status];
 
