@@ -15,7 +15,7 @@ export function useRecovery() {
     const fetchRecoveryLeads = useCallback(async (
         pipelineId: string,
         passedStageId: string,
-        excludeStageId: string
+        excludeStageIds: string[]  // Changed to array
     ) => {
         if (!user) return;
         setIsLoading(true);
@@ -26,7 +26,7 @@ export function useRecovery() {
                 .rpc("get_stage_history_leads", {
                     target_pipeline_id: pipelineId,
                     passed_stage_id: passedStageId,
-                    exclude_current_stage_id: excludeStageId
+                    exclude_current_stage_ids: excludeStageIds  // Pass as array
                 });
 
             if (error) throw error;

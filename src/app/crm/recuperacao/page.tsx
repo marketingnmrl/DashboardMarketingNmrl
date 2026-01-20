@@ -12,7 +12,7 @@ export default function RecoveryPage() {
 
     const [selectedPipelineId, setSelectedPipelineId] = useState("");
     const [passedStageId, setPassedStageId] = useState("");
-    const [excludeStageId, setExcludeStageId] = useState("");
+    const [excludeStageIds, setExcludeStageIds] = useState<string[]>([]);
     const [targetStageId, setTargetStageId] = useState("");
     const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
     const [showBulkAction, setShowBulkAction] = useState(false);
@@ -24,11 +24,19 @@ export default function RecoveryPage() {
     const selectedPipeline = pipelines.find(p => p.id === selectedPipelineId);
 
     const handleSearch = () => {
-        if (selectedPipelineId && passedStageId && excludeStageId) {
-            fetchRecoveryLeads(selectedPipelineId, passedStageId, excludeStageId);
+        if (selectedPipelineId && passedStageId && excludeStageIds.length > 0) {
+            fetchRecoveryLeads(selectedPipelineId, passedStageId, excludeStageIds);
             setSelectedLeads([]);
             setShowBulkAction(false);
         }
+    };
+
+    const handleToggleExcludeStage = (stageId: string) => {
+        setExcludeStageIds(prev =>
+            prev.includes(stageId)
+                ? prev.filter(id => id !== stageId)
+                : [...prev, stageId]
+        );
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +116,7 @@ export default function RecoveryPage() {
                             onChange={(e) => {
                                 setSelectedPipelineId(e.target.value);
                                 setPassedStageId("");
-                                setExcludeStageId("");
+                                setExcludeStageIds([]);
                             }}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                         >
@@ -134,27 +142,38 @@ export default function RecoveryPage() {
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">
-                            NÃO está na etapa (Sucesso)
+                    <div className="md:col-span-1">
+                        <label className="block text-xs font-bold text-gray-500 mb-2">
+                            NÃO está nas etapas (selecione uma ou mais)
                         </label>
-                        <select
-                            value={excludeStageId}
-                            onChange={(e) => setExcludeStageId(e.target.value)}
-                            disabled={!selectedPipelineId}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg disabled:bg-gray-50"
-                        >
-                            <option value="">Selecione (ex: Venda Acelera)...</option>
+                        <div className="space-y-2 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
                             {selectedPipeline?.stages?.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
+                                <label key={s.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input
+                                        type="checkbox"
+                                        checked={excludeStageIds.includes(s.id)}
+                                        onChange={() => handleToggleExcludeStage(s.id)}
+                                        disabled={!selectedPipelineId}
+                                        className="rounded border-gray-300 text-[#19069E] focus:ring-[#19069E]"
+                                    />
+                                    <span className="text-sm text-gray-700">{s.name}</span>
+                                </label>
                             ))}
-                        </select>
+                            {!selectedPipeline?.stages?.length && (
+                                <p className="text-xs text-gray-400 p-2">Selecione um pipeline primeiro</p>
+                            )}
+                        </div>
+                        {excludeStageIds.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                {excludeStageIds.length} etapa(s) selecionada(s)
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="flex justify-end">
                     <button
                         onClick={handleSearch}
-                        disabled={!selectedPipelineId || !passedStageId || !excludeStageId || isLoading}
+                        disabled={!selectedPipelineId || !passedStageId || excludeStageIds.length === 0 || isLoading}
                         className="px-6 py-2 bg-[#19069E] text-white font-bold rounded-xl hover:bg-[#150580] disabled:opacity-50 transition-colors flex items-center gap-2"
                     >
                         {isLoading ? (

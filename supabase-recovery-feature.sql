@@ -1,10 +1,11 @@
--- Function to get leads that passed through a specific stage but are NOT in a current specific stage
--- Used for "Sprint Recovery" feature (e.g., passed "Call" but not in "Won")
+-- Function to get leads that passed through a specific stage but are NOT in ANY of the excluded current stages
+-- Used for "Lead Recovery" feature (e.g., passed "Call" but not in "Won" or "Negotiation")
+-- UPDATED: Now accepts an array of exclude_stage_ids
 
 CREATE OR REPLACE FUNCTION get_stage_history_leads(
   target_pipeline_id UUID,
   passed_stage_id UUID,
-  exclude_current_stage_id UUID
+  exclude_current_stage_ids UUID[]  -- Changed to array
 )
 RETURNS SETOF crm_leads
 LANGUAGE sql
@@ -15,7 +16,7 @@ AS $$
   JOIN crm_lead_stage_history h ON l.id = h.lead_id
   WHERE l.pipeline_id = target_pipeline_id
   AND h.to_stage_id = passed_stage_id
-  AND (l.current_stage_id != exclude_current_stage_id OR l.current_stage_id IS NULL);
+  AND (l.current_stage_id IS NULL OR NOT (l.current_stage_id = ANY(exclude_current_stage_ids)));
 $$;
 
-COMMENT ON FUNCTION get_stage_history_leads IS 'Returns leads that have a history entry for passed_stage_id but are currently NOT in exclude_current_stage_id';
+COMMENT ON FUNCTION get_stage_history_leads IS 'Returns leads that have a history entry for passed_stage_id but are currently NOT in any of the exclude_current_stage_ids';
