@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePipelines } from "@/hooks/usePipelines";
 import { useLeads } from "@/hooks/useLeads";
 import type { CRMPipeline, CRMLead, CRMPipelineStage } from "@/types/crm";
+import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal";
 
 export default function PipelineKanbanPage() {
     const params = useParams();
@@ -23,8 +24,10 @@ export default function PipelineKanbanPage() {
     const [newLeadEmail, setNewLeadEmail] = useState("");
     const [newLeadPhone, setNewLeadPhone] = useState("");
     const [showAddStage, setShowAddStage] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(false);
     const [newStageName, setNewStageName] = useState("");
     const [newStageColor, setNewStageColor] = useState("#19069E");
+    const [newStageValue, setNewStageValue] = useState<string>("");
 
     // Fetch pipeline data
     const loadPipeline = useCallback(async () => {
@@ -87,9 +90,11 @@ export default function PipelineKanbanPage() {
     const handleAddStage = async () => {
         if (!newStageName.trim()) return;
 
-        await addStage(pipelineId, newStageName, newStageColor);
+        const defaultValue = newStageValue ? parseFloat(newStageValue) : null;
+        await addStage(pipelineId, newStageName, newStageColor, defaultValue);
         setNewStageName("");
         setNewStageColor("#19069E");
+        setNewStageValue("");
         setShowAddStage(false);
         await loadPipeline();
     };
@@ -139,13 +144,22 @@ export default function PipelineKanbanPage() {
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setShowAddStage(true)}
-                    className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-[#19069E] hover:text-[#19069E] transition-colors"
-                >
-                    <span className="material-symbols-outlined text-[18px]">add</span>
-                    Adicionar Etapa
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowAnalytics(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:text-[#19069E] transition-colors shadow-sm"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">bar_chart</span>
+                        Gráfico
+                    </button>
+                    <button
+                        onClick={() => setShowAddStage(true)}
+                        className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-[#19069E] hover:text-[#19069E] transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        Adicionar Etapa
+                    </button>
+                </div>
             </div>
 
             {/* Kanban Board */}
@@ -212,18 +226,25 @@ export default function PipelineKanbanPage() {
                                             </button>
                                         </div>
 
-                                        {/* Origin Badge */}
+                                        {/* Origin Badge + Deal Value */}
                                         <div className="flex items-center gap-2 mt-2">
                                             <span className={`text-xs px-2 py-0.5 rounded-full ${lead.origin === "paid" ? "bg-blue-100 text-blue-700" :
-                                                    lead.origin === "organic" ? "bg-green-100 text-green-700" :
-                                                        lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
-                                                            "bg-gray-100 text-gray-600"
+                                                lead.origin === "organic" ? "bg-green-100 text-green-700" :
+                                                    lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
+                                                        lead.origin === "manual" ? "bg-gray-100 text-gray-600" :
+                                                            "bg-orange-100 text-orange-700"
                                                 }`}>
                                                 {lead.origin === "paid" ? "Pago" :
                                                     lead.origin === "organic" ? "Orgânico" :
                                                         lead.origin === "webhook" ? "Webhook" :
-                                                            "Manual"}
+                                                            lead.origin === "manual" ? "Manual" :
+                                                                lead.origin}
                                             </span>
+                                            {lead.deal_value && (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">
+                                                    R$ {lead.deal_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -303,6 +324,18 @@ export default function PipelineKanbanPage() {
                                         className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
                                     />
                                 </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-500">Valor padrão:</span>
+                                    <input
+                                        type="number"
+                                        value={newStageValue}
+                                        onChange={(e) => setNewStageValue(e.target.value)}
+                                        placeholder="R$ 0,00"
+                                        step="0.01"
+                                        min="0"
+                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                                    />
+                                </div>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleAddStage}
@@ -323,6 +356,15 @@ export default function PipelineKanbanPage() {
                     )}
                 </div>
             </div>
+
+            {pipeline && (
+                <PipelineAnalyticsModal
+                    isOpen={showAnalytics}
+                    onClose={() => setShowAnalytics(false)}
+                    pipelineId={pipelineId}
+                    pipelineName={pipeline.name}
+                />
+            )}
         </div>
     );
 }

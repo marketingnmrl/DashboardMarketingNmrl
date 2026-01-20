@@ -16,6 +16,7 @@ export interface CRMPipelineStage {
     name: string;
     order_index: number;
     color: string;
+    default_value?: number | null; // Default deal value when lead enters this stage
     created_at: string;
     lead_count?: number; // Computed field
 }
@@ -29,7 +30,7 @@ export interface CRMLead {
     email: string | null;
     phone: string | null;
     company: string | null;
-    origin: LeadOrigin;
+    origin: string; // Custom origin (e.g., 'paid', 'organic', 'Instagram', 'Indicação Ricardo')
     utm_source: string | null;
     utm_medium: string | null;
     utm_campaign: string | null;
@@ -37,6 +38,7 @@ export interface CRMLead {
     utm_term: string | null;
     custom_fields: Record<string, unknown>;
     assigned_to: string | null; // ID of responsible org_user
+    deal_value: number | null; // Deal/sale value for this lead
     created_at: string;
     updated_at: string;
     // Joined fields
@@ -45,7 +47,9 @@ export interface CRMLead {
     assigned_user?: { id: string; name: string | null; email: string }; // Joined from org_users
 }
 
-export type LeadOrigin = 'organic' | 'paid' | 'manual' | 'webhook';
+// Default origin options (can be extended with custom origins)
+export const DEFAULT_LEAD_ORIGINS = ['organic', 'paid', 'manual', 'webhook', 'instagram', 'indicação'] as const;
+export type LeadOrigin = string; // Allows custom origins
 
 export interface CRMLeadStageHistory {
     id: string;
@@ -130,6 +134,8 @@ export interface UpdateLeadInput {
     company?: string;
     custom_fields?: Record<string, unknown>;
     assigned_to?: string | null; // ID of responsible org_user
+    deal_value?: number | null; // Deal/sale value
+    origin?: string; // Custom origin
 }
 
 export interface CreateInteractionInput {

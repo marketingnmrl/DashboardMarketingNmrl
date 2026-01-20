@@ -19,8 +19,8 @@ interface UsePipelinesReturn {
     createPipeline: (input: CreatePipelineInput) => Promise<CRMPipeline | null>;
     updatePipeline: (id: string, input: UpdatePipelineInput) => Promise<boolean>;
     deletePipeline: (id: string) => Promise<boolean>;
-    addStage: (pipelineId: string, name: string, color?: string) => Promise<CRMPipelineStage | null>;
-    updateStage: (stageId: string, name: string, color?: string) => Promise<boolean>;
+    addStage: (pipelineId: string, name: string, color?: string, defaultValue?: number | null) => Promise<CRMPipelineStage | null>;
+    updateStage: (stageId: string, name: string, color?: string, defaultValue?: number | null) => Promise<boolean>;
     deleteStage: (stageId: string) => Promise<boolean>;
     reorderStages: (pipelineId: string, stageIds: string[]) => Promise<boolean>;
 }
@@ -221,7 +221,8 @@ export function usePipelines(): UsePipelinesReturn {
     const addStage = useCallback(async (
         pipelineId: string,
         name: string,
-        color: string = "#19069E"
+        color: string = "#19069E",
+        defaultValue?: number | null
     ): Promise<CRMPipelineStage | null> => {
         if (!user) return null;
 
@@ -238,14 +239,19 @@ export function usePipelines(): UsePipelinesReturn {
                 ? existingStages[0].order_index + 1
                 : 0;
 
+            const insertData: Record<string, unknown> = {
+                pipeline_id: pipelineId,
+                name,
+                color,
+                order_index: nextIndex
+            };
+            if (defaultValue !== undefined && defaultValue !== null) {
+                insertData.default_value = defaultValue;
+            }
+
             const { data: stage, error: stageError } = await supabase
                 .from("crm_pipeline_stages")
-                .insert({
-                    pipeline_id: pipelineId,
-                    name,
-                    color,
-                    order_index: nextIndex
-                })
+                .insert(insertData)
                 .select()
                 .single();
 
@@ -263,11 +269,13 @@ export function usePipelines(): UsePipelinesReturn {
     const updateStage = useCallback(async (
         stageId: string,
         name: string,
-        color?: string
+        color?: string,
+        defaultValue?: number | null
     ): Promise<boolean> => {
         try {
-            const updateData: Partial<CRMPipelineStage> = { name };
-            if (color) updateData.color = color;
+            const updateData: Record<string, unknown> = { name };
+            if (color !== undefined) updateData.color = color;
+            if (defaultValue !== undefined) updateData.default_value = defaultValue;
 
             const { error: updateError } = await supabase
                 .from("crm_pipeline_stages")

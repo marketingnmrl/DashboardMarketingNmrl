@@ -277,22 +277,37 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         if (!user) return false;
 
         try {
-            // Get current stage
+            // Get current stage and lead's deal_value
             const { data: lead } = await supabase
                 .from("crm_leads")
-                .select("current_stage_id")
+                .select("current_stage_id, deal_value")
                 .eq("id", leadId)
                 .single();
 
             const fromStageId = lead?.current_stage_id || null;
 
+            // Get the target stage's default_value
+            const { data: targetStage } = await supabase
+                .from("crm_pipeline_stages")
+                .select("default_value")
+                .eq("id", toStageId)
+                .single();
+
+            // Build update data
+            const updateData: Record<string, unknown> = {
+                current_stage_id: toStageId,
+                updated_at: new Date().toISOString()
+            };
+
+            // If target stage has default_value and lead doesn't have deal_value, inherit it
+            if (targetStage?.default_value && !lead?.deal_value) {
+                updateData.deal_value = targetStage.default_value;
+            }
+
             // Update lead
             const { error: updateError } = await supabase
                 .from("crm_leads")
-                .update({
-                    current_stage_id: toStageId,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq("id", leadId);
 
             if (updateError) throw updateError;

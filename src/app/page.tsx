@@ -366,15 +366,31 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ============ 4 KPI CARDS ============ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ============ 6 KPI CARDS (Main Metrics) ============ */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Investimento */}
         <KPICard
           label="Investimento"
           value={hasData ? formatCurrency(metrics.totalSpend) : "—"}
           icon="payments"
           isLoading={isLoading}
-          tooltip={hasData ? `Faturamento: ${formatCurrency(metrics.totalPurchaseValue)}` : undefined}
+        />
+
+        {/* Faturamento */}
+        <KPICard
+          label="Faturamento"
+          value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"}
+          icon="attach_money"
+          isLoading={isLoading}
+        />
+
+        {/* ROAS */}
+        <KPICard
+          label="ROAS"
+          value={hasData ? `${metrics.avgRoas.toFixed(2)}x` : "—"}
+          icon="trending_up"
+          isLoading={isLoading}
+          tooltip={hasData ? `Retorno: ${formatCurrency(metrics.totalPurchaseValue - metrics.totalSpend)}` : undefined}
         />
 
         {/* Vendas */}
@@ -400,6 +416,87 @@ export default function DashboardPage() {
           icon="percent"
           isLoading={isLoading}
         />
+      </div>
+
+      {/* ============ TRAFFIC METRICS ============ */}
+      <div className="p-5 rounded-xl bg-white border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="material-symbols-outlined text-[#19069E]">analytics</span>
+          <h3 className="font-bold text-gray-800">Métricas de Tráfego</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Impressões */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Impressões</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? formatNumber(metrics.totalImpressions) : "—"}
+              </p>
+            )}
+          </div>
+
+          {/* Cliques */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Cliques</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? formatNumber(metrics.totalLinkClicks) : "—"}
+              </p>
+            )}
+          </div>
+
+          {/* CTR */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">CTR</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? `${metrics.avgCtr.toFixed(2)}%` : "—"}
+              </p>
+            )}
+          </div>
+
+          {/* CPM */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">CPM</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? formatCurrency(metrics.avgCpm) : "—"}
+              </p>
+            )}
+          </div>
+
+          {/* CPC */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">CPC</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? formatCurrency(metrics.avgCpc) : "—"}
+              </p>
+            )}
+          </div>
+
+          {/* CPL */}
+          <div className="text-center py-3 px-2 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">CPL</p>
+            {isLoading ? (
+              <div className="h-6 w-16 bg-gray-200 animate-pulse rounded mx-auto" />
+            ) : (
+              <p className="text-lg font-bold text-gray-800">
+                {hasData ? formatCurrency(metrics.avgCpl) : "—"}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ============ DAILY CHART ============ */}

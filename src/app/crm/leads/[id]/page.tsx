@@ -8,6 +8,7 @@ import { usePipelines } from "@/hooks/usePipelines";
 import { useCustomFields } from "@/hooks/useCustomFields";
 import { useAccessControlContext } from "@/contexts/AccessControlContext";
 import type { CRMLead, CRMLeadStageHistory, CRMLeadInteraction, InteractionType } from "@/types/crm";
+import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 
 export default function LeadDetailsPage() {
     const params = useParams();
@@ -24,7 +25,15 @@ export default function LeadDetailsPage() {
     const [interactions, setInteractions] = useState<CRMLeadInteraction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", company: "", assigned_to: "" });
+    const [editForm, setEditForm] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        assigned_to: "",
+        deal_value: "",
+        origin: ""
+    });
     const [customFields, setCustomFields] = useState<Record<string, string>>({});
     const [showAddInteraction, setShowAddInteraction] = useState(false);
     const [newInteraction, setNewInteraction] = useState({ type: "note" as InteractionType, title: "", content: "" });
@@ -41,7 +50,9 @@ export default function LeadDetailsPage() {
                 email: leadData.email || "",
                 phone: leadData.phone || "",
                 company: leadData.company || "",
-                assigned_to: leadData.assigned_to || ""
+                assigned_to: leadData.assigned_to || "",
+                deal_value: leadData.deal_value ? leadData.deal_value.toString() : "",
+                origin: leadData.origin || ""
             });
             setCustomFields(leadData.custom_fields as Record<string, string> || {});
 
@@ -64,7 +75,9 @@ export default function LeadDetailsPage() {
         if (!lead) return;
         await updateLead(lead.id, {
             ...editForm,
+            ...editForm,
             assigned_to: editForm.assigned_to || null,
+            deal_value: editForm.deal_value ? parseFloat(editForm.deal_value) : null,
             custom_fields: customFields
         });
         setIsEditing(false);
@@ -275,6 +288,37 @@ export default function LeadDetailsPage() {
                                         ))}
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label className="block text-xs text-gray-500 mb-1">Valor Venda (R$)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={editForm.deal_value}
+                                        onChange={(e) => setEditForm({ ...editForm, deal_value: e.target.value })}
+                                        placeholder="0,00"
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="block text-xs text-gray-500 mb-1">Origem</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            list="origin-options"
+                                            value={editForm.origin}
+                                            onChange={(e) => setEditForm({ ...editForm, origin: e.target.value })}
+                                            placeholder="Selecione ou digite..."
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                                        />
+                                        <datalist id="origin-options">
+                                            {DEFAULT_LEAD_ORIGINS.map(origin => (
+                                                <option key={origin} value={origin} />
+                                            ))}
+                                        </datalist>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4">
@@ -306,6 +350,36 @@ export default function LeadDetailsPage() {
                                     ) : (
                                         <p className="font-medium text-gray-400">Não atribuído</p>
                                     )}
+                                </div>
+                                <div>
+                                    <span className="text-xs text-gray-500">Valor Venda</span>
+                                    <p className="font-medium text-green-700">
+                                        {lead.deal_value
+                                            ? lead.deal_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                                            : "—"}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-gray-500">Origem</span>
+                                    <div className="mt-1">
+                                        <span className={`text-xs px-2 py-1 rounded-full ${lead.origin === "paid" ? "bg-blue-100 text-blue-700" :
+                                            lead.origin === "organic" ? "bg-green-100 text-green-700" :
+                                                lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
+                                                    lead.origin === "manual" ? "bg-gray-100 text-gray-600" :
+                                                        "bg-orange-100 text-orange-700"
+                                            }`}>
+                                            {lead.origin === "paid" ? "Pago" :
+                                                lead.origin === "organic" ? "Orgânico" :
+                                                    lead.origin === "webhook" ? "Webhook" :
+                                                        lead.origin === "manual" ? "Manual" :
+                                                            lead.origin}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="col-span-2 border-t pt-3 mt-1">
+                                    <p className="text-xs text-gray-400 mb-1">
+                                        Criado em {new Date(lead.created_at).toLocaleDateString()} às {new Date(lead.created_at).toLocaleTimeString()}
+                                    </p>
                                 </div>
                             </div>
                         )}
@@ -617,7 +691,7 @@ export default function LeadDetailsPage() {
                         )}
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
