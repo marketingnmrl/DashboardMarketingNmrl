@@ -5,6 +5,7 @@ import { usePageMetrics } from "@/hooks/usePageMetrics";
 import { useDashboardSettings } from "@/hooks/useDashboardSettings";
 import { useStractData } from "@/hooks/useStractData";
 import { useDateFilter } from "@/contexts/DateFilterContext";
+import { useCRMSales } from "@/hooks/useCRMSales";
 
 // Format currency
 function formatCurrency(value: number): string {
@@ -277,6 +278,9 @@ export default function DashboardPage() {
     endDate: dateRange.endDate,
   });
 
+  // Fetch CRM sales data
+  const { totalSales: crmSales, salesCount: crmSalesCount, isLoading: crmLoading } = useCRMSales();
+
   // Update available dates in context when data loads
   useEffect(() => {
     if (dailyData.length > 0) {
@@ -285,25 +289,32 @@ export default function DashboardPage() {
     }
   }, [dailyData, setAvailableDates]);
 
-  const isLoading = settingsLoading || dataLoading;
-  const hasData = !error && metrics.totalImpressions > 0;
+  const isLoading = settingsLoading || dataLoading || crmLoading;
+  const hasData = !error && (metrics.totalImpressions > 0 || crmSales > 0);
 
-  // Calculate derived metrics for KPIs
+  // Calculate derived metrics for KPIs (combining traffic + CRM data)
   const kpiData = useMemo(() => {
-    const faturamento = metrics.totalPurchaseValue || 0;
+    const trafficFaturamento = metrics.totalPurchaseValue || 0;
+    const trafficVendas = metrics.totalPurchases || 0;
+    const faturamento = trafficFaturamento + crmSales;
     const investimento = metrics.totalSpend || 0;
-    const vendas = metrics.totalPurchases || 0;
+    const vendas = trafficVendas + crmSalesCount;
     const leads = metrics.totalLeads || 0;
     const leadsTotal = leads;
     const taxaConversao = leads > 0 ? (vendas / leads) * 100 : 0;
 
     return {
+      faturamento,
+      investimento,
       faturamentoInvestimento: faturamento - investimento,
+      vendas,
       vendasLeads: vendas,
       leadsTotal,
       taxaConversao,
+      crmSales,
+      crmSalesCount,
     };
-  }, [metrics]);
+  }, [metrics, crmSales, crmSalesCount]);
 
   // Provide metrics for AI Assistant
   usePageMetrics({

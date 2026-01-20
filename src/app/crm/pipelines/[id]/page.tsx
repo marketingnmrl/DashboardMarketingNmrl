@@ -8,6 +8,7 @@ import { useLeads } from "@/hooks/useLeads";
 import type { CRMPipeline, CRMLead, CRMPipelineStage } from "@/types/crm";
 import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal";
+import { QuickEditLeadModal } from "@/components/crm/QuickEditLeadModal";
 
 export default function PipelineKanbanPage() {
     const params = useParams();
@@ -30,6 +31,8 @@ export default function PipelineKanbanPage() {
     const [newStageName, setNewStageName] = useState("");
     const [newStageColor, setNewStageColor] = useState("#19069E");
     const [newStageValue, setNewStageValue] = useState<string>("");
+    const [editingLead, setEditingLead] = useState<CRMLead | null>(null);
+    const [menuOpenLead, setMenuOpenLead] = useState<string | null>(null);
 
     // Fetch pipeline data
     const loadPipeline = useCallback(async () => {
@@ -228,12 +231,43 @@ export default function PipelineKanbanPage() {
                                                     <p className="text-xs text-gray-500">{lead.phone}</p>
                                                 )}
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteLead(lead.id)}
-                                                className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <span className="material-symbols-outlined text-[16px]">close</span>
-                                            </button>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpenLead(menuOpenLead === lead.id ? null : lead.id);
+                                                    }}
+                                                    className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">more_vert</span>
+                                                </button>
+                                                {menuOpenLead === lead.id && (
+                                                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-36 py-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingLead(lead);
+                                                                setMenuOpenLead(null);
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setMenuOpenLead(null);
+                                                                handleDeleteLead(lead.id);
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                            Excluir
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Origin Badge + Deal Value */}
@@ -388,6 +422,16 @@ export default function PipelineKanbanPage() {
                     onClose={() => setShowAnalytics(false)}
                     pipelineId={pipelineId}
                     pipelineName={pipeline.name}
+                />
+            )}
+
+            {editingLead && (
+                <QuickEditLeadModal
+                    lead={editingLead}
+                    isOpen={!!editingLead}
+                    onClose={() => setEditingLead(null)}
+                    onSave={() => loadPipeline()}
+                    availableOrigins={availableOrigins}
                 />
             )}
         </div>
