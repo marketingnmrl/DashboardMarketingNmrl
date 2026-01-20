@@ -57,6 +57,32 @@ export default function RecoveryPage() {
         }
     };
 
+    const handleExport = () => {
+        if (leads.length === 0) return;
+
+        const headers = ["Nome", "Email", "Telefone", "Etapa Atual", "Data Criação", "Origem"];
+        const csvContent = [
+            headers.join(","),
+            ...leads.map(lead => [
+                `"${lead.name}"`,
+                `"${lead.email || ""}"`,
+                `"${lead.phone || ""}"`,
+                `"${lead.current_stage?.name || ""}"`,
+                `"${new Date(lead.created_at).toLocaleDateString()}"`,
+                `"${lead.origin || ""}"`
+            ].join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `recuperacao_leads_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
@@ -67,7 +93,7 @@ export default function RecoveryPage() {
                     <span className="material-symbols-outlined text-gray-500">arrow_back</span>
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#19069E]">Recuperação de Leads (Sprint)</h1>
+                    <h1 className="text-2xl font-extrabold text-[#19069E]">Recuperação de Leads</h1>
                     <p className="text-sm text-gray-500">Encontre leads perdidos e faça novas ofertas.</p>
                 </div>
             </div>
@@ -145,9 +171,18 @@ export default function RecoveryPage() {
             {leads.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <h3 className="font-bold text-gray-700">
-                            {leads.length} leads encontrados
-                        </h3>
+                        <div className="flex items-center gap-4">
+                            <h3 className="font-bold text-gray-700">
+                                {leads.length} leads encontrados
+                            </h3>
+                            <button
+                                onClick={handleExport}
+                                className="text-sm text-[#19069E] hover:underline flex items-center gap-1"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">download</span>
+                                Exportar CSV
+                            </button>
+                        </div>
                         {selectedLeads.length > 0 && (
                             <div className="flex items-center gap-2 animate-fadeIn">
                                 <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-lg border border-gray-200">
