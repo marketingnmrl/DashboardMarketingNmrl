@@ -44,11 +44,11 @@ export function EditStageModal({
                 onSave();
                 onClose();
             } else {
-                alert("Erro ao atualizar etapa.");
+                alert("Erro ao atualizar etapa. Verifique o console ou a conexão.");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error updating stage:", err);
-            alert("Erro ao atualizar etapa.");
+            alert(`Erro ao atualizar etapa: ${err.message || JSON.stringify(err)}`);
         } finally {
             setIsSaving(false);
         }
