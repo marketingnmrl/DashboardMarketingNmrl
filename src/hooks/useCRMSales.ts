@@ -10,7 +10,7 @@ interface CRMSalesData {
     wonStageLeadsCount: number; // Number of leads in "won" stages
 }
 
-export function useCRMSales() {
+export function useCRMSales(startDate?: string, endDate?: string) {
     const { user } = useAuth();
     const [data, setData] = useState<CRMSalesData>({
         totalSales: 0,
@@ -25,10 +25,20 @@ export function useCRMSales() {
         setIsLoading(true);
         try {
             // Fetch all leads with deal_value
-            const { data: leads, error } = await supabase
+            let query = supabase
                 .from("crm_leads")
-                .select("id, deal_value, current_stage_id")
+                .select("id, deal_value, current_stage_id, created_at")
                 .not("deal_value", "is", null);
+
+            // Apply date filters if provided
+            if (startDate) {
+                query = query.gte("created_at", `${startDate}T00:00:00`);
+            }
+            if (endDate) {
+                query = query.lte("created_at", `${endDate}T23:59:59`);
+            }
+
+            const { data: leads, error } = await query;
 
             if (error) throw error;
 
@@ -46,7 +56,7 @@ export function useCRMSales() {
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, [user, startDate, endDate]);
 
     useEffect(() => {
         fetchSalesData();

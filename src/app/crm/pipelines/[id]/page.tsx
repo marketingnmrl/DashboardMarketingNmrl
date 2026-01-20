@@ -9,6 +9,7 @@ import type { CRMPipeline, CRMLead, CRMPipelineStage } from "@/types/crm";
 import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal";
 import { QuickEditLeadModal } from "@/components/crm/QuickEditLeadModal";
+import { EditStageModal } from "@/components/crm/EditStageModal";
 
 export default function PipelineKanbanPage() {
     const params = useParams();
@@ -33,6 +34,7 @@ export default function PipelineKanbanPage() {
     const [newStageValue, setNewStageValue] = useState<string>("");
     const [editingLead, setEditingLead] = useState<CRMLead | null>(null);
     const [menuOpenLead, setMenuOpenLead] = useState<string | null>(null);
+    const [editingStage, setEditingStage] = useState<CRMPipelineStage | null>(null);
 
     // Fetch pipeline data
     const loadPipeline = useCallback(async () => {
@@ -200,6 +202,13 @@ export default function PipelineKanbanPage() {
                                         {leadsByStage[stage.id]?.length || 0}
                                     </span>
                                 </div>
+                                <button
+                                    onClick={() => setEditingStage(stage)}
+                                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded transition-colors"
+                                    title="Editar Etapa"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                                </button>
                             </div>
 
                             {/* Column Body */}
@@ -432,6 +441,15 @@ export default function PipelineKanbanPage() {
                     onClose={() => setEditingLead(null)}
                     onSave={() => loadPipeline()}
                     availableOrigins={availableOrigins}
+                />
+            )}
+
+            {editingStage && (
+                <EditStageModal
+                    stage={editingStage}
+                    isOpen={!!editingStage}
+                    onClose={() => setEditingStage(null)}
+                    onSave={() => loadPipeline()}
                 />
             )}
         </div>

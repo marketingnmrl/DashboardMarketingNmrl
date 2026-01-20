@@ -278,8 +278,11 @@ export default function DashboardPage() {
     endDate: dateRange.endDate,
   });
 
-  // Fetch CRM sales data
-  const { totalSales: crmSales, salesCount: crmSalesCount, isLoading: crmLoading } = useCRMSales();
+  // Fetch CRM sales data with date filtering
+  const { totalSales: crmSales, salesCount: crmSalesCount, isLoading: crmLoading } = useCRMSales(
+    dateRange.startDate,
+    dateRange.endDate
+  );
 
   // Update available dates in context when data loads
   useEffect(() => {
