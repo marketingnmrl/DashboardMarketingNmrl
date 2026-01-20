@@ -23,6 +23,7 @@ const navigation = [
     items: [
       { name: "Pipelines", href: "/crm/pipelines", icon: "view_kanban" },
       { name: "Leads", href: "/crm/leads", icon: "people" },
+      { name: "Recuperação", href: "/crm/recuperacao", icon: "history" },
       { name: "Configurações", href: "/crm/configuracoes", icon: "tune" },
     ],
   },
