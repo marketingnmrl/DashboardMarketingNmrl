@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePipelines } from "@/hooks/usePipelines";
 import { useLeads } from "@/hooks/useLeads";
 import type { CRMPipeline, CRMLead, CRMPipelineStage } from "@/types/crm";
+import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal";
 
 export default function PipelineKanbanPage() {
@@ -23,6 +24,7 @@ export default function PipelineKanbanPage() {
     const [newLeadName, setNewLeadName] = useState("");
     const [newLeadEmail, setNewLeadEmail] = useState("");
     const [newLeadPhone, setNewLeadPhone] = useState("");
+    const [newLeadOrigin, setNewLeadOrigin] = useState("");
     const [showAddStage, setShowAddStage] = useState(false);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [newStageName, setNewStageName] = useState("");
@@ -48,6 +50,12 @@ export default function PipelineKanbanPage() {
         acc[stage.id] = leads.filter(lead => lead.current_stage_id === stage.id);
         return acc;
     }, {} as Record<string, CRMLead[]>);
+
+    // Compute all available origins from defaults + existing leads
+    const availableOrigins = Array.from(new Set([
+        ...DEFAULT_LEAD_ORIGINS,
+        ...leads.map(l => l.origin).filter(Boolean)
+    ])).sort();
 
     // Drag handlers
     const handleDragStart = (leadId: string) => {
@@ -76,15 +84,17 @@ export default function PipelineKanbanPage() {
             name: newLeadName,
             email: newLeadEmail || undefined,
             phone: newLeadPhone || undefined,
-            origin: "manual"
+            origin: newLeadOrigin || "manual"
         });
 
         setNewLeadName("");
         setNewLeadEmail("");
         setNewLeadPhone("");
+        setNewLeadOrigin("");
         setShowAddLead(null);
         await loadPipeline();
     };
+
 
     // Add stage
     const handleAddStage = async () => {
@@ -274,6 +284,21 @@ export default function PipelineKanbanPage() {
                                             placeholder="Telefone (opcional)"
                                             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
                                         />
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                list={`origins-${stage.id}`}
+                                                value={newLeadOrigin}
+                                                onChange={(e) => setNewLeadOrigin(e.target.value)}
+                                                placeholder="Origem (ex: Indicação)"
+                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                                            />
+                                            <datalist id={`origins-${stage.id}`}>
+                                                {availableOrigins.map(origin => (
+                                                    <option key={origin} value={origin} />
+                                                ))}
+                                            </datalist>
+                                        </div>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => handleAddLead(stage.id)}
