@@ -31,11 +31,14 @@ export function useCRMSales(startDate?: string, endDate?: string) {
                 .not("deal_value", "is", null);
 
             // Apply date filters if provided
+            // Convert local date strings (YYYY-MM-DD) to UTC ISO strings for Supabase
             if (startDate) {
-                query = query.gte("created_at", `${startDate}T00:00:00`);
+                const start = new Date(`${startDate}T00:00:00`);
+                query = query.gte("created_at", start.toISOString());
             }
             if (endDate) {
-                query = query.lte("created_at", `${endDate}T23:59:59`);
+                const end = new Date(`${endDate}T23:59:59.999`);
+                query = query.lte("created_at", end.toISOString());
             }
 
             const { data: leads, error } = await query;
