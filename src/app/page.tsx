@@ -316,8 +316,11 @@ export default function DashboardPage() {
       taxaConversao,
       crmSales,
       crmSalesCount,
+      // Debug info
+      debugStart: dateRange.startDate,
+      debugEnd: dateRange.endDate
     };
-  }, [metrics, crmSales, crmSalesCount]);
+  }, [metrics, crmSales, crmSalesCount, dateRange]);
 
   // Provide metrics for AI Assistant
   usePageMetrics({
@@ -393,7 +396,7 @@ export default function DashboardPage() {
         {/* Faturamento */}
         <KPICard
           label="Faturamento"
-          value={hasData ? formatCurrency(metrics.totalPurchaseValue) : "—"}
+          value={hasData ? formatCurrency(kpiData.faturamento) : "—"}
           icon="attach_money"
           isLoading={isLoading}
         />
@@ -401,10 +404,10 @@ export default function DashboardPage() {
         {/* ROAS */}
         <KPICard
           label="ROAS"
-          value={hasData ? `${metrics.avgRoas.toFixed(2)}x` : "—"}
+          value={hasData && metrics.totalSpend > 0 ? `${(kpiData.faturamento / metrics.totalSpend).toFixed(2)}x` : "—"}
           icon="trending_up"
           isLoading={isLoading}
-          tooltip={hasData ? `Retorno: ${formatCurrency(metrics.totalPurchaseValue - metrics.totalSpend)}` : undefined}
+          tooltip={hasData ? `Retorno: ${formatCurrency(kpiData.faturamentoInvestimento)}` : undefined}
         />
 
         {/* Vendas */}
