@@ -10,6 +10,7 @@ import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal";
 import { QuickEditLeadModal } from "@/components/crm/QuickEditLeadModal";
 import { EditStageModal } from "@/components/crm/EditStageModal";
+import { ImportLeadsModal } from "@/components/crm/ImportLeadsModal";
 
 export default function PipelineKanbanPage() {
     const params = useParams();
@@ -35,6 +36,7 @@ export default function PipelineKanbanPage() {
     const [editingLead, setEditingLead] = useState<CRMLead | null>(null);
     const [menuOpenLead, setMenuOpenLead] = useState<string | null>(null);
     const [editingStage, setEditingStage] = useState<CRMPipelineStage | null>(null);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     // Fetch pipeline data
     const loadPipeline = useCallback(async () => {
@@ -173,6 +175,13 @@ export default function PipelineKanbanPage() {
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         Adicionar Etapa
+                    </button>
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-[#19069E] hover:text-[#19069E] transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Importar Leads
                     </button>
                 </div>
             </div>
@@ -450,6 +459,16 @@ export default function PipelineKanbanPage() {
                     isOpen={!!editingStage}
                     onClose={() => setEditingStage(null)}
                     onSave={() => loadPipeline()}
+                />
+            )}
+
+            {pipeline && (
+                <ImportLeadsModal
+                    isOpen={showImportModal}
+                    onClose={() => setShowImportModal(false)}
+                    onSuccess={() => loadPipeline()}
+                    stages={pipeline.stages || []}
+                    pipelineId={pipelineId}
                 />
             )}
         </div>
