@@ -2,7 +2,9 @@
 
 import { useState, useRef } from "react";
 import { useLeads } from "@/hooks/useLeads";
-import type { CreateLeadInput, CRMPipelineStage } from "@/types/crm";
+import { useTags } from "@/hooks/useTags";
+import { TagSelector } from "./TagSelector";
+import type { CreateLeadInput, CRMPipelineStage, CRMTag } from "@/types/crm";
 
 interface ImportLeadsModalProps {
     isOpen: boolean;
@@ -20,9 +22,11 @@ export function ImportLeadsModal({
     pipelineId
 }: ImportLeadsModalProps) {
     const { importLeads } = useLeads({ pipelineId });
+    const { tags: availableTags, createTag, addTagToLeads } = useTags();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [selectedStageId, setSelectedStageId] = useState<string>(stages[0]?.id || "");
+    const [selectedTags, setSelectedTags] = useState<CRMTag[]>([]);
     const [file, setFile] = useState<File | null>(null);
     const [previewData, setPreviewData] = useState<CreateLeadInput[]>([]);
     const [isParsing, setIsParsing] = useState(false);
@@ -118,20 +122,26 @@ export function ImportLeadsModal({
         setIsImporting(true);
         setError(null);
         try {
-            const success = await importLeads(previewData, selectedStageId);
-            if (success) {
-                setSuccessCount(previewData.length);
-                setTimeout(() => {
-                    onSuccess();
-                    onClose();
-                    // Reset state
-                    setFile(null);
-                    setPreviewData([]);
-                    setSuccessCount(null);
-                }, 1500);
-            } else {
-                setError("Erro ao importar leads. Tente novamente.");
+            // Import leads and get created IDs
+            const createdLeadIds = await importLeads(previewData, selectedStageId);
+
+            // Apply selected tags to all imported leads
+            if (createdLeadIds.length > 0 && selectedTags.length > 0) {
+                for (const tag of selectedTags) {
+                    await addTagToLeads(createdLeadIds, tag.id);
+                }
             }
+
+            setSuccessCount(createdLeadIds.length);
+            setTimeout(() => {
+                onSuccess();
+                onClose();
+                // Reset state
+                setFile(null);
+                setPreviewData([]);
+                setSelectedTags([]);
+                setSuccessCount(null);
+            }, 1500);
         } catch (err: any) {
             console.error("Import error:", err);
             setError(err?.message || "Erro inesperado na importação.");
@@ -223,6 +233,22 @@ export function ImportLeadsModal({
                                             <option key={stage.id} value={stage.id}>{stage.name}</option>
                                         ))}
                                     </select>
+                                </div>
+                            )}
+
+                            {/* Step 4: Tags (optional) */}
+                            {previewData.length > 0 && (
+                                <div>
+                                    <h4 className="font-bold text-gray-800 mb-2">4. Adicionar tags (opcional)</h4>
+                                    <p className="text-sm text-gray-500 mb-2">As tags selecionadas serão aplicadas a todos os leads importados.</p>
+                                    <TagSelector
+                                        availableTags={availableTags}
+                                        selectedTags={selectedTags}
+                                        onTagSelect={(tag) => setSelectedTags([...selectedTags, tag])}
+                                        onTagRemove={(tagId) => setSelectedTags(selectedTags.filter(t => t.id !== tagId))}
+                                        onCreateTag={createTag}
+                                        placeholder="Selecione ou crie tags..."
+                                    />
                                 </div>
                             )}
 

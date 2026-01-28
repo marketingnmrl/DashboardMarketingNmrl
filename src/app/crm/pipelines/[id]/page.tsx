@@ -11,6 +11,7 @@ import { PipelineAnalyticsModal } from "@/components/crm/PipelineAnalyticsModal"
 import { QuickEditLeadModal } from "@/components/crm/QuickEditLeadModal";
 import { EditStageModal } from "@/components/crm/EditStageModal";
 import { ImportLeadsModal } from "@/components/crm/ImportLeadsModal";
+import { TagList } from "@/components/crm/TagBadge";
 
 export default function PipelineKanbanPage() {
     const params = useParams();
@@ -362,6 +363,11 @@ export default function PipelineKanbanPage() {
                                                     )}
                                                     {lead.phone && (
                                                         <p className="text-xs text-gray-500">{lead.phone}</p>
+                                                    )}
+                                                    {lead.tags && lead.tags.length > 0 && (
+                                                        <div className="mt-2">
+                                                            <TagList tags={lead.tags} maxVisible={3} />
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <div className="relative">

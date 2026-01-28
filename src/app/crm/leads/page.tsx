@@ -4,16 +4,20 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
+import { useTags } from "@/hooks/useTags";
 import { useAccessControlContext } from "@/contexts/AccessControlContext";
+import { TagList } from "@/components/crm/TagBadge";
 import type { LeadOrigin } from "@/types/crm";
 
 export default function LeadsPage() {
     const { pipelines } = usePipelines();
+    const { tags: availableTags } = useTags();
     const { currentUser, orgUsers } = useAccessControlContext();
     const [filterPipeline, setFilterPipeline] = useState<string>("all");
     const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "all">("all");
     const [filterUtmSource, setFilterUtmSource] = useState<string>("all");
     const [filterUtmCampaign, setFilterUtmCampaign] = useState<string>("all");
+    const [filterTag, setFilterTag] = useState<string>("all");
     const [filterMyLeads, setFilterMyLeads] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [showUtmFilters, setShowUtmFilters] = useState(false);
@@ -54,6 +58,12 @@ export default function LeadsPage() {
         if (filterUtmSource !== "all" && lead.utm_source !== filterUtmSource) return false;
         if (filterUtmCampaign !== "all" && lead.utm_campaign !== filterUtmCampaign) return false;
 
+        // Tag filter
+        if (filterTag !== "all") {
+            const hasTag = lead.tags?.some(t => t.id === filterTag);
+            if (!hasTag) return false;
+        }
+
         // Search filter
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
@@ -81,6 +91,7 @@ export default function LeadsPage() {
         setFilterOrigin("all");
         setFilterUtmSource("all");
         setFilterUtmCampaign("all");
+        setFilterTag("all");
         setFilterMyLeads(false);
         setSearchTerm("");
     };
@@ -158,6 +169,18 @@ export default function LeadsPage() {
                     <option value="paid">Tráfego Pago</option>
                     <option value="manual">Manual</option>
                     <option value="webhook">Webhook</option>
+                </select>
+
+                {/* Tag Filter */}
+                <select
+                    value={filterTag}
+                    onChange={(e) => setFilterTag(e.target.value)}
+                    className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                >
+                    <option value="all">🏷️ Todas as Tags</option>
+                    {availableTags.map(tag => (
+                        <option key={tag.id} value={tag.id}>{tag.name}</option>
+                    ))}
                 </select>
 
                 {/* My Leads Toggle */}
@@ -279,6 +302,7 @@ export default function LeadsPage() {
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Email</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Pipeline</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Etapa</th>
+                                    <th className="text-left py-4 px-4 font-bold text-gray-700">Tags</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Origem</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">Responsável</th>
                                     <th className="text-left py-4 px-4 font-bold text-gray-700">UTM</th>
@@ -328,6 +352,13 @@ export default function LeadsPage() {
                                                     />
                                                     {lead.current_stage.name}
                                                 </span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {lead.tags && lead.tags.length > 0 ? (
+                                                <TagList tags={lead.tags} maxVisible={2} />
+                                            ) : (
+                                                <span className="text-gray-400 text-sm">—</span>
                                             )}
                                         </td>
                                         <td className="py-3 px-4">

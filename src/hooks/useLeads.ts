@@ -33,7 +33,7 @@ interface UseLeadsReturn {
     addInteraction: (input: CreateInteractionInput) => Promise<CRMLeadInteraction | null>;
     getLeadCountByStage: (pipelineId: string) => Promise<Record<string, number>>;
     deleteStageHistory: (historyId: string) => Promise<boolean>;
-    importLeads: (leads: CreateLeadInput[], stageId: string) => Promise<boolean>;
+    importLeads: (leads: CreateLeadInput[], stageId: string) => Promise<string[]>; // Returns created lead IDs
 }
 
 export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
@@ -62,7 +62,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     *,
                     current_stage:crm_pipeline_stages(*),
                     pipeline:crm_pipelines(id, name),
-                    assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email)
+                    assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email),
+                    crm_lead_tags(tag_id, crm_tags(*))
                 `)
                 .order("created_at", { ascending: false })
                 .limit(10000); // Override default 1000 limit
@@ -83,7 +84,16 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
 
             if (fetchError) throw fetchError;
 
-            setLeads(data || []);
+            // Transform data to extract tags from junction table
+            const leadsWithTags = (data || []).map((lead: any) => ({
+                ...lead,
+                tags: (lead.crm_lead_tags || [])
+                    .map((lt: any) => lt.crm_tags)
+                    .filter(Boolean),
+                crm_lead_tags: undefined // Remove junction table data
+            }));
+
+            setLeads(leadsWithTags);
         } catch (err) {
             console.error("Error fetching leads:", err);
             setError(err instanceof Error ? err.message : "Erro ao carregar leads");
@@ -395,11 +405,11 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         }
     }, []);
 
-    // Import leads in bulk (for CSV import)
+    // Import leads in bulk (for CSV import) - returns array of created lead IDs
     const importLeads = useCallback(async (
         leadsData: CreateLeadInput[],
         stageId: string
-    ): Promise<boolean> => {
+    ): Promise<string[]> => {
         if (!user) {
             console.error("Import failed: No user logged in");
             throw new Error("Usuário não autenticado");
@@ -407,6 +417,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         if (leadsData.length === 0) {
             throw new Error("Nenhum lead para importar");
         }
+
+        const allCreatedIds: string[] = [];
 
         try {
             // Process leads in batches of 50
@@ -436,8 +448,10 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
 
                 if (insertError) throw insertError;
 
-                // Record initial stage history for each lead
+                // Collect IDs and record history
                 if (createdLeads && createdLeads.length > 0) {
+                    allCreatedIds.push(...createdLeads.map(l => l.id));
+
                     const historyBatch = createdLeads.map(lead => ({
                         lead_id: lead.id,
                         from_stage_id: null,
@@ -457,7 +471,7 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
             }
 
             await fetchLeads();
-            return true;
+            return allCreatedIds;
         } catch (err: any) {
             console.error("Error importing leads:", err);
             const errorMessage = err?.message || err?.details || err?.hint || "Erro desconhecido";

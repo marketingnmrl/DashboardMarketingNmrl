@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useLeads } from "@/hooks/useLeads";
+import { useTags } from "@/hooks/useTags";
+import { TagSelector } from "./TagSelector";
 import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
-import type { CRMLead } from "@/types/crm";
+import type { CRMLead, CRMTag } from "@/types/crm";
 
 interface QuickEditLeadModalProps {
     lead: CRMLead;
@@ -21,13 +23,24 @@ export function QuickEditLeadModal({
     availableOrigins
 }: QuickEditLeadModalProps) {
     const { updateLead } = useLeads({});
+    const { tags: availableTags, createTag, addTagToLead, removeTagFromLead, getLeadTags } = useTags();
 
     const [name, setName] = useState(lead.name);
     const [email, setEmail] = useState(lead.email || "");
     const [phone, setPhone] = useState(lead.phone || "");
     const [origin, setOrigin] = useState(lead.origin || "");
     const [dealValue, setDealValue] = useState(lead.deal_value?.toString() || "");
+    const [leadTags, setLeadTags] = useState<CRMTag[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Load lead tags
+    useEffect(() => {
+        const loadTags = async () => {
+            const tags = await getLeadTags(lead.id);
+            setLeadTags(tags);
+        };
+        if (isOpen) loadTags();
+    }, [lead.id, isOpen, getLeadTags]);
 
     // Reset form when lead changes
     useEffect(() => {
@@ -128,6 +141,25 @@ export function QuickEditLeadModal({
                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
                             />
                         </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Tags</label>
+                        <TagSelector
+                            availableTags={availableTags}
+                            selectedTags={leadTags}
+                            onTagSelect={async (tag) => {
+                                const success = await addTagToLead(lead.id, tag.id);
+                                if (success) setLeadTags([...leadTags, tag]);
+                            }}
+                            onTagRemove={async (tagId) => {
+                                const success = await removeTagFromLead(lead.id, tagId);
+                                if (success) setLeadTags(leadTags.filter(t => t.id !== tagId));
+                            }}
+                            onCreateTag={createTag}
+                            placeholder="Adicionar tags..."
+                        />
                     </div>
                 </div>
 

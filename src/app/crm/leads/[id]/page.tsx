@@ -6,8 +6,11 @@ import Link from "next/link";
 import { useLeads } from "@/hooks/useLeads";
 import { usePipelines } from "@/hooks/usePipelines";
 import { useCustomFields } from "@/hooks/useCustomFields";
+import { useTags } from "@/hooks/useTags";
 import { useAccessControlContext } from "@/contexts/AccessControlContext";
-import type { CRMLead, CRMLeadStageHistory, CRMLeadInteraction, InteractionType } from "@/types/crm";
+import { TagSelector } from "@/components/crm/TagSelector";
+import { TagBadge } from "@/components/crm/TagBadge";
+import type { CRMLead, CRMLeadStageHistory, CRMLeadInteraction, InteractionType, CRMTag } from "@/types/crm";
 import { DEFAULT_LEAD_ORIGINS } from "@/types/crm";
 
 export default function LeadDetailsPage() {
@@ -18,6 +21,7 @@ export default function LeadDetailsPage() {
     const { getLead, getLeadHistory, getLeadInteractions, updateLead, moveLead, addInteraction, deleteLead, deleteStageHistory } = useLeads();
     const { pipelines } = usePipelines();
     const { customFields: globalCustomFields } = useCustomFields();
+    const { tags: availableTags, createTag, addTagToLead, removeTagFromLead, getLeadTags } = useTags();
     const { orgUsers } = useAccessControlContext();
 
     const [lead, setLead] = useState<CRMLead | null>(null);
@@ -38,6 +42,7 @@ export default function LeadDetailsPage() {
     const [showAddInteraction, setShowAddInteraction] = useState(false);
     const [newInteraction, setNewInteraction] = useState({ type: "note" as InteractionType, title: "", content: "" });
     const [isSavingCustom, setIsSavingCustom] = useState(false);
+    const [leadTags, setLeadTags] = useState<CRMTag[]>([]);
 
     // Load lead data
     const loadData = useCallback(async () => {
@@ -62,9 +67,28 @@ export default function LeadDetailsPage() {
             ]);
             setHistory(historyData);
             setInteractions(interactionsData);
+
+            // Load lead tags
+            const tagsData = await getLeadTags(leadId);
+            setLeadTags(tagsData);
         }
         setIsLoading(false);
-    }, [leadId, getLead, getLeadHistory, getLeadInteractions]);
+    }, [leadId, getLead, getLeadHistory, getLeadInteractions, getLeadTags]);
+
+    // Handle tag operations
+    const handleAddTag = async (tag: CRMTag) => {
+        const success = await addTagToLead(leadId, tag.id);
+        if (success) {
+            setLeadTags([...leadTags, tag]);
+        }
+    };
+
+    const handleRemoveTag = async (tagId: string) => {
+        const success = await removeTagFromLead(leadId, tagId);
+        if (success) {
+            setLeadTags(leadTags.filter(t => t.id !== tagId));
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -201,6 +225,23 @@ export default function LeadDetailsPage() {
                 >
                     <span className="material-symbols-outlined">delete</span>
                 </button>
+            </div>
+
+            {/* Tags Section */}
+            <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-600">🏷️ Tags:</span>
+                    <div className="flex-1">
+                        <TagSelector
+                            availableTags={availableTags}
+                            selectedTags={leadTags}
+                            onTagSelect={handleAddTag}
+                            onTagRemove={handleRemoveTag}
+                            onCreateTag={createTag}
+                            placeholder="Adicionar tags..."
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

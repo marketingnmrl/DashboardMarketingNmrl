@@ -21,6 +21,14 @@ export interface CRMPipelineStage {
     lead_count?: number; // Computed field
 }
 
+export interface CRMTag {
+    id: string;
+    user_id: string;
+    name: string;
+    color: string;
+    created_at: string;
+}
+
 export interface CRMLead {
     id: string;
     user_id: string;
@@ -44,7 +52,8 @@ export interface CRMLead {
     // Joined fields
     current_stage?: CRMPipelineStage;
     pipeline?: CRMPipeline;
-    assigned_user?: { id: string; name: string | null; email: string }; // Joined from org_users
+    assigned_user?: { id: string; name: string | null; email: string };
+    tags?: CRMTag[]; // Tags assigned to this lead
 }
 
 // Default origin options (can be extended with custom origins)
