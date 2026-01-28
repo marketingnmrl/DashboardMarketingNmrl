@@ -87,6 +87,24 @@ export default function PipelineKanbanPage() {
     const handleStageDragStart = (e: React.DragEvent, stageId: string) => {
         e.dataTransfer.effectAllowed = "move";
         setDraggedStage(stageId);
+
+        // Create a ghost preview of the header being dragged
+        const target = e.currentTarget as HTMLElement;
+        const ghost = target.cloneNode(true) as HTMLElement;
+        ghost.style.position = "absolute";
+        ghost.style.top = "-1000px";
+        ghost.style.left = "-1000px";
+        ghost.style.width = `${target.offsetWidth}px`;
+        ghost.style.opacity = "0.9";
+        ghost.style.transform = "rotate(2deg)";
+        ghost.style.boxShadow = "0 8px 32px rgba(25, 6, 158, 0.25)";
+        ghost.style.borderRadius = "12px";
+        ghost.style.pointerEvents = "none";
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, target.offsetWidth / 2, 20);
+
+        // Remove ghost after drag starts
+        setTimeout(() => ghost.remove(), 0);
     };
 
     const handleStageDragOver = (e: React.DragEvent) => {
