@@ -60,9 +60,9 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                 .from("crm_leads")
                 .select(`
                     *,
-                    current_stage:crm_pipeline_stages(*),
-                    pipeline:crm_pipelines(id, name),
-                    assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email),
+                    current_stage:crm_pipeline_stages!crm_leads_current_stage_id_fkey(*),
+                    pipeline:crm_pipelines!crm_leads_pipeline_id_fkey(id, name),
+                    assigned_user:org_users(id, name, email),
                     crm_lead_tags(tag_id, crm_tags(*))
                 `)
                 .order("created_at", { ascending: false })
