@@ -369,6 +369,21 @@ export default function PipelineKanbanPage() {
                                                             <TagList tags={lead.tags} maxVisible={3} />
                                                         </div>
                                                     )}
+                                                    {lead.scheduled_call_at && (
+                                                        <div className="mt-2 flex items-center gap-1 text-[10px]">
+                                                            {lead.call_completed_at ? (
+                                                                <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+                                                                    <span className="material-symbols-outlined text-[12px]">check</span>
+                                                                    Call feita
+                                                                </span>
+                                                            ) : (
+                                                                <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                                                    <span className="material-symbols-outlined text-[12px]">call</span>
+                                                                    {new Date(lead.scheduled_call_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="relative">
                                                     <button

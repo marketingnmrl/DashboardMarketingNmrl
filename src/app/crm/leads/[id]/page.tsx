@@ -244,6 +244,59 @@ export default function LeadDetailsPage() {
                 </div>
             </div>
 
+            {/* Call Scheduling Section */}
+            <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#19069E]">call</span>
+                        <span className="font-medium text-gray-700">Call Agendada:</span>
+                    </div>
+                    <input
+                        type="datetime-local"
+                        value={lead.scheduled_call_at ? new Date(lead.scheduled_call_at).toISOString().slice(0, 16) : ""}
+                        onChange={async (e) => {
+                            const newValue = e.target.value ? new Date(e.target.value).toISOString() : null;
+                            await updateLead(lead.id, { scheduled_call_at: newValue });
+                            loadData();
+                        }}
+                        className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] text-sm"
+                    />
+
+                    {lead.scheduled_call_at && (
+                        <div className="flex items-center gap-2">
+                            {lead.call_completed_at ? (
+                                <span className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                    Call realizada em {new Date(lead.call_completed_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={async () => {
+                                        await updateLead(lead.id, { call_completed_at: new Date().toISOString() });
+                                        loadData();
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-[#C2DF0C] text-[#19069E] rounded-lg text-sm font-bold hover:bg-[#B0CC0B] transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">check</span>
+                                    Marcar como realizada
+                                </button>
+                            )}
+                            {lead.call_completed_at && (
+                                <button
+                                    onClick={async () => {
+                                        await updateLead(lead.id, { call_completed_at: null });
+                                        loadData();
+                                    }}
+                                    className="text-xs text-gray-400 hover:text-gray-600"
+                                >
+                                    Desfazer
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Info */}
                 <div className="lg:col-span-2 space-y-6">

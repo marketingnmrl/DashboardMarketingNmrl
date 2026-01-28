@@ -47,6 +47,8 @@ export interface CRMLead {
     custom_fields: Record<string, unknown>;
     assigned_to: string | null; // ID of responsible org_user
     deal_value: number | null; // Deal/sale value for this lead
+    scheduled_call_at: string | null; // When the call is scheduled
+    call_completed_at: string | null; // When the call was completed
     created_at: string;
     updated_at: string;
     // Joined fields
@@ -146,6 +148,8 @@ export interface UpdateLeadInput {
     assigned_to?: string | null; // ID of responsible org_user
     deal_value?: number | null; // Deal/sale value
     origin?: string; // Custom origin
+    scheduled_call_at?: string | null; // When the call is scheduled
+    call_completed_at?: string | null; // When the call was completed
 }
 
 export interface CreateInteractionInput {
