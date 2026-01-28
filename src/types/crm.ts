@@ -159,3 +159,46 @@ export interface CreateInteractionInput {
     content?: string;
     created_by?: string;
 }
+// SDR Reports
+export interface SdrReport {
+    id: string;
+    user_id: string;
+    report_date: string;
+
+    // Acquisition Metrics
+    acquisition_new_leads: number;
+    acquisition_responses: number;
+    acquisition_invalid_leads: number;
+    acquisition_disqualified_leads: number;
+    acquisition_appointments: number;
+
+    // Application Metrics
+    application_new_leads: number;
+    application_responses: number;
+    application_invalid_leads: number;
+    application_disqualified_leads: number;
+    application_appointments: number;
+
+    created_at: string;
+    updated_at: string;
+
+    // Joined fields
+    user?: { id: string; name: string | null; email: string };
+}
+
+export interface CreateSdrReportInput {
+    user_id: string;
+    report_date: string;
+
+    acquisition_new_leads?: number;
+    acquisition_responses?: number;
+    acquisition_invalid_leads?: number;
+    acquisition_disqualified_leads?: number;
+    acquisition_appointments?: number;
+
+    application_new_leads?: number;
+    application_responses?: number;
+    application_invalid_leads?: number;
+    application_disqualified_leads?: number;
+    application_appointments?: number;
+}
