@@ -88,23 +88,40 @@ export default function PipelineKanbanPage() {
         e.dataTransfer.effectAllowed = "move";
         setDraggedStage(stageId);
 
-        // Create a ghost preview of the header being dragged
-        const target = e.currentTarget as HTMLElement;
-        const ghost = target.cloneNode(true) as HTMLElement;
-        ghost.style.position = "absolute";
-        ghost.style.top = "-1000px";
-        ghost.style.left = "-1000px";
-        ghost.style.width = `${target.offsetWidth}px`;
-        ghost.style.opacity = "0.9";
-        ghost.style.transform = "rotate(2deg)";
-        ghost.style.boxShadow = "0 8px 32px rgba(25, 6, 158, 0.25)";
-        ghost.style.borderRadius = "12px";
-        ghost.style.pointerEvents = "none";
+        // Find the stage being dragged
+        const stage = pipeline?.stages?.find(s => s.id === stageId);
+        if (!stage) return;
+
+        // Create a visible ghost preview card
+        const ghost = document.createElement("div");
+        ghost.style.cssText = `
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+            width: 280px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #19069E 0%, #3d1fd1 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(25, 6, 158, 0.5), 0 0 0 4px rgba(194, 223, 12, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: rotate(3deg);
+            pointer-events: none;
+            font-family: system-ui, -apple-system, sans-serif;
+        `;
+        ghost.innerHTML = `
+            <span style="font-size: 20px;">≡</span>
+            <span>${stage.name}</span>
+        `;
         document.body.appendChild(ghost);
-        e.dataTransfer.setDragImage(ghost, target.offsetWidth / 2, 20);
+        e.dataTransfer.setDragImage(ghost, 140, 25);
 
         // Remove ghost after drag starts
-        setTimeout(() => ghost.remove(), 0);
+        requestAnimationFrame(() => ghost.remove());
     };
 
     const handleStageDragOver = (e: React.DragEvent) => {
