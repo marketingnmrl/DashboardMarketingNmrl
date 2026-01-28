@@ -453,6 +453,82 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         }
     }, []);
 
+    // Import leads in bulk (for CSV import)
+    const importLeads = useCallback(async (
+        leadsData: CreateLeadInput[],
+        stageId: string
+    ): Promise<boolean> => {
+        if (!user || leadsData.length === 0) return false;
+
+        try {
+            // Get current max order_index for this stage
+            const { data: existingLeads } = await supabase
+                .from("crm_leads")
+                .select("order_index")
+                .eq("current_stage_id", stageId)
+                .order("order_index", { ascending: false })
+                .limit(1);
+
+            let nextOrderIndex = (existingLeads?.[0]?.order_index ?? -1) + 1;
+
+            // Process leads in batches of 50
+            const BATCH_SIZE = 50;
+            for (let i = 0; i < leadsData.length; i += BATCH_SIZE) {
+                const batch = leadsData.slice(i, i + BATCH_SIZE).map((lead, idx) => ({
+                    user_id: user.id,
+                    pipeline_id: lead.pipeline_id,
+                    current_stage_id: stageId,
+                    name: lead.name,
+                    email: lead.email || null,
+                    phone: lead.phone || null,
+                    company: lead.company || null,
+                    origin: lead.origin || "import",
+                    deal_value: lead.deal_value || null,
+                    utm_source: lead.utm_source || null,
+                    utm_medium: lead.utm_medium || null,
+                    utm_campaign: lead.utm_campaign || null,
+                    order_index: nextOrderIndex + idx,
+                    created_at: lead.created_at || new Date().toISOString()
+                }));
+
+                // Insert batch and get created IDs
+                const { data: createdLeads, error: insertError } = await supabase
+                    .from("crm_leads")
+                    .insert(batch)
+                    .select("id, created_at");
+
+                if (insertError) throw insertError;
+
+                // Record initial stage history for each lead
+                if (createdLeads && createdLeads.length > 0) {
+                    const historyBatch = createdLeads.map(lead => ({
+                        lead_id: lead.id,
+                        from_stage_id: null,
+                        to_stage_id: stageId,
+                        moved_by: "import",
+                        moved_at: lead.created_at
+                    }));
+
+                    const { error: historyError } = await supabase
+                        .from("crm_lead_stage_history")
+                        .insert(historyBatch);
+
+                    if (historyError) {
+                        console.error("Error inserting history:", historyError);
+                    }
+                }
+
+                nextOrderIndex += batch.length;
+            }
+
+            await fetchLeads();
+            return true;
+        } catch (err) {
+            console.error("Error importing leads:", err);
+            return false;
+        }
+    }, [user, fetchLeads]);
+
     // Initial fetch
     useEffect(() => {
         fetchLeads();
