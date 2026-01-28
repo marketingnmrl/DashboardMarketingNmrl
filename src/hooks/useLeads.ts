@@ -64,7 +64,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     pipeline:crm_pipelines(id, name),
                     assigned_user:org_users!crm_leads_assigned_to_fkey(id, name, email)
                 `)
-                .order("created_at", { ascending: false });
+                .order("created_at", { ascending: false })
+                .limit(10000); // Override default 1000 limit
 
             if (pipelineId) {
                 query = query.eq("pipeline_id", pipelineId);
