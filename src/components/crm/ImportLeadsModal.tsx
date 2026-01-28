@@ -116,6 +116,7 @@ export function ImportLeadsModal({
         if (!selectedStageId || previewData.length === 0) return;
 
         setIsImporting(true);
+        setError(null);
         try {
             const success = await importLeads(previewData, selectedStageId);
             if (success) {
@@ -131,8 +132,9 @@ export function ImportLeadsModal({
             } else {
                 setError("Erro ao importar leads. Tente novamente.");
             }
-        } catch (err) {
-            setError("Erro inesperado na importação.");
+        } catch (err: any) {
+            console.error("Import error:", err);
+            setError(err?.message || "Erro inesperado na importação.");
         } finally {
             setIsImporting(false);
         }

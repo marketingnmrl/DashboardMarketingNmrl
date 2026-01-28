@@ -226,65 +226,6 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         }
     }, [user, fetchLeads]);
 
-    // Bulk create leads (Import)
-    const importLeads = useCallback(async (leadsData: CreateLeadInput[], stageId: string): Promise<boolean> => {
-        if (!user || leadsData.length === 0) return false;
-
-        try {
-            // Get current max order in stage to append
-            const { data: maxOrderData } = await supabase
-                .from("crm_leads")
-                .select("order_index")
-                .eq("current_stage_id", stageId)
-                .order("order_index", { ascending: false })
-                .limit(1);
-
-            let startOrder = (maxOrderData && maxOrderData.length > 0 ? maxOrderData[0].order_index : 0) + 1;
-
-            const batch = leadsData.map((data, index) => ({
-                user_id: user.id,
-                pipeline_id: data.pipeline_id,
-                current_stage_id: stageId,
-                name: data.name,
-                email: data.email || null,
-                phone: data.phone || null,
-                company: data.company || null,
-                origin: data.origin || "import",
-                deal_value: data.deal_value || null,
-                assigned_to: data.assigned_to || null,
-                order_index: startOrder + index,
-                custom_fields: data.custom_fields || {},
-                created_at: new Date().toISOString()
-            }));
-
-            const { data: createdLeads, error } = await supabase
-                .from("crm_leads")
-                .insert(batch)
-                .select("id, created_at");
-
-            if (error) throw error;
-
-            // Record history for all
-            if (createdLeads && createdLeads.length > 0) {
-                const historyBatch = createdLeads.map(l => ({
-                    lead_id: l.id,
-                    from_stage_id: null,
-                    to_stage_id: stageId,
-                    moved_by: "import",
-                    moved_at: l.created_at
-                }));
-                await supabase.from("crm_lead_stage_history").insert(historyBatch);
-            }
-
-            await fetchLeads();
-            return true;
-        } catch (err) {
-            console.error("Error importing leads:", err);
-            setError(err instanceof Error ? err.message : "Erro ao importar leads");
-            return false;
-        }
-    }, [user, fetchLeads]);
-
     // Update lead
     const updateLead = useCallback(async (id: string, input: UpdateLeadInput): Promise<boolean> => {
         if (!user) return false;
@@ -458,7 +399,13 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         leadsData: CreateLeadInput[],
         stageId: string
     ): Promise<boolean> => {
-        if (!user || leadsData.length === 0) return false;
+        if (!user) {
+            console.error("Import failed: No user logged in");
+            throw new Error("Usuário não autenticado");
+        }
+        if (leadsData.length === 0) {
+            throw new Error("Nenhum lead para importar");
+        }
 
         try {
             // Get current max order_index for this stage
@@ -523,9 +470,10 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
 
             await fetchLeads();
             return true;
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error importing leads:", err);
-            return false;
+            const errorMessage = err?.message || err?.details || err?.hint || "Erro desconhecido";
+            throw new Error(`Falha na importação: ${errorMessage}`);
         }
     }, [user, fetchLeads]);
 
