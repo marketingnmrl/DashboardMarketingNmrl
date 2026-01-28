@@ -23,6 +23,7 @@ export default function PipelineKanbanPage() {
     const [pipeline, setPipeline] = useState<CRMPipeline | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [draggedLead, setDraggedLead] = useState<string | null>(null);
+    const [draggedStage, setDraggedStage] = useState<string | null>(null);
     const [showAddLead, setShowAddLead] = useState<string | null>(null); // stage id
     const [newLeadName, setNewLeadName] = useState("");
     const [newLeadEmail, setNewLeadEmail] = useState("");
@@ -77,8 +78,46 @@ export default function PipelineKanbanPage() {
         if (draggedLead) {
             await moveLead(draggedLead, stageId, "user");
             setDraggedLead(null);
-            await loadPipeline();
+            // Não chama loadPipeline() para evitar scroll reset
+            // fetchLeads já é chamado dentro do moveLead
         }
+    };
+
+    // Stage drag handlers (for reordering columns)
+    const handleStageDragStart = (e: React.DragEvent, stageId: string) => {
+        e.dataTransfer.effectAllowed = "move";
+        setDraggedStage(stageId);
+    };
+
+    const handleStageDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+    };
+
+    const handleStageDrop = async (targetStageId: string) => {
+        if (!draggedStage || draggedStage === targetStageId || !pipeline?.stages) {
+            setDraggedStage(null);
+            return;
+        }
+
+        const stages = [...pipeline.stages];
+        const draggedIndex = stages.findIndex(s => s.id === draggedStage);
+        const targetIndex = stages.findIndex(s => s.id === targetStageId);
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+            setDraggedStage(null);
+            return;
+        }
+
+        // Reorder locally first (optimistic update)
+        const [removed] = stages.splice(draggedIndex, 1);
+        stages.splice(targetIndex, 0, removed);
+        setPipeline({ ...pipeline, stages });
+
+        // Persist to DB
+        const newOrder = stages.map(s => s.id);
+        await reorderStages(pipelineId, newOrder);
+        setDraggedStage(null);
     };
 
     // Add lead
@@ -192,16 +231,29 @@ export default function PipelineKanbanPage() {
                     {(pipeline.stages || []).map((stage) => (
                         <div
                             key={stage.id}
-                            className="w-80 flex-shrink-0"
-                            onDragOver={handleDragOver}
-                            onDrop={() => handleDrop(stage.id)}
+                            className={`w-80 flex-shrink-0 transition-opacity ${draggedStage === stage.id ? "opacity-50" : ""}`}
+                            onDragOver={(e) => {
+                                handleDragOver(e);
+                                handleStageDragOver(e);
+                            }}
+                            onDrop={() => {
+                                if (draggedStage) {
+                                    handleStageDrop(stage.id);
+                                } else {
+                                    handleDrop(stage.id);
+                                }
+                            }}
                         >
-                            {/* Column Header */}
+                            {/* Column Header - Draggable for reordering */}
                             <div
-                                className="flex items-center justify-between p-3 rounded-t-xl"
+                                draggable
+                                onDragStart={(e) => handleStageDragStart(e, stage.id)}
+                                onDragEnd={() => setDraggedStage(null)}
+                                className="flex items-center justify-between p-3 rounded-t-xl cursor-grab active:cursor-grabbing"
                                 style={{ backgroundColor: stage.color + "20" }}
                             >
                                 <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-gray-300 text-[16px] cursor-grab">drag_indicator</span>
                                     <div
                                         className="w-3 h-3 rounded-full"
                                         style={{ backgroundColor: stage.color }}
