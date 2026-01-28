@@ -408,20 +408,10 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
         }
 
         try {
-            // Get current max order_index for this stage
-            const { data: existingLeads } = await supabase
-                .from("crm_leads")
-                .select("order_index")
-                .eq("current_stage_id", stageId)
-                .order("order_index", { ascending: false })
-                .limit(1);
-
-            let nextOrderIndex = (existingLeads?.[0]?.order_index ?? -1) + 1;
-
             // Process leads in batches of 50
             const BATCH_SIZE = 50;
             for (let i = 0; i < leadsData.length; i += BATCH_SIZE) {
-                const batch = leadsData.slice(i, i + BATCH_SIZE).map((lead, idx) => ({
+                const batch = leadsData.slice(i, i + BATCH_SIZE).map((lead) => ({
                     user_id: user.id,
                     pipeline_id: lead.pipeline_id,
                     current_stage_id: stageId,
@@ -434,7 +424,6 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                     utm_source: lead.utm_source || null,
                     utm_medium: lead.utm_medium || null,
                     utm_campaign: lead.utm_campaign || null,
-                    order_index: nextOrderIndex + idx,
                     created_at: lead.created_at || new Date().toISOString()
                 }));
 
@@ -464,8 +453,6 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
                         console.error("Error inserting history:", historyError);
                     }
                 }
-
-                nextOrderIndex += batch.length;
             }
 
             await fetchLeads();
