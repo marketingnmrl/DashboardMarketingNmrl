@@ -24,6 +24,7 @@ export default function PipelineKanbanPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [draggedLead, setDraggedLead] = useState<string | null>(null);
     const [draggedStage, setDraggedStage] = useState<string | null>(null);
+    const [dragOverStage, setDragOverStage] = useState<string | null>(null);
     const [showAddLead, setShowAddLead] = useState<string | null>(null); // stage id
     const [newLeadName, setNewLeadName] = useState("");
     const [newLeadEmail, setNewLeadEmail] = useState("");
@@ -153,6 +154,7 @@ export default function PipelineKanbanPage() {
         const newOrder = stages.map(s => s.id);
         await reorderStages(pipelineId, newOrder);
         setDraggedStage(null);
+        setDragOverStage(null);
     };
 
     // Add lead
@@ -263,209 +265,236 @@ export default function PipelineKanbanPage() {
             {/* Kanban Board */}
             <div className="overflow-x-auto pb-4">
                 <div className="flex gap-4 min-w-min">
-                    {(pipeline.stages || []).map((stage) => (
-                        <div
-                            key={stage.id}
-                            className={`w-80 flex-shrink-0 transition-opacity ${draggedStage === stage.id ? "opacity-50" : ""}`}
-                            onDragOver={(e) => {
-                                handleDragOver(e);
-                                handleStageDragOver(e);
-                            }}
-                            onDrop={() => {
-                                if (draggedStage) {
-                                    handleStageDrop(stage.id);
-                                } else {
-                                    handleDrop(stage.id);
-                                }
-                            }}
-                        >
-                            {/* Column Header - Draggable for reordering */}
+                    {(pipeline.stages || []).map((stage, index) => {
+                        // Determine if this column should slide
+                        const isDragging = !!draggedStage;
+                        const isBeingDragged = draggedStage === stage.id;
+                        const isDropTarget = dragOverStage === stage.id && draggedStage !== stage.id;
+                        const draggedIndex = pipeline.stages?.findIndex(s => s.id === draggedStage) ?? -1;
+                        const shouldSlideRight = isDragging && isDropTarget && draggedIndex > index;
+                        const shouldSlideLeft = isDragging && isDropTarget && draggedIndex < index;
+
+                        return (
                             <div
-                                draggable
-                                onDragStart={(e) => handleStageDragStart(e, stage.id)}
-                                onDragEnd={() => setDraggedStage(null)}
-                                className="flex items-center justify-between p-3 rounded-t-xl cursor-grab active:cursor-grabbing"
-                                style={{ backgroundColor: stage.color + "20" }}
+                                key={stage.id}
+                                className={`w-80 flex-shrink-0 transition-all duration-200 ease-out ${isBeingDragged ? "opacity-40 scale-95" : ""}`}
+                                style={{
+                                    transform: shouldSlideRight ? "translateX(20px)" : shouldSlideLeft ? "translateX(-20px)" : "none",
+                                    marginLeft: isDropTarget && !isBeingDragged ? "40px" : undefined,
+                                }}
+                                onDragOver={(e) => {
+                                    handleDragOver(e);
+                                    handleStageDragOver(e);
+                                }}
+                                onDragEnter={() => {
+                                    if (draggedStage && draggedStage !== stage.id) {
+                                        setDragOverStage(stage.id);
+                                    }
+                                }}
+                                onDragLeave={(e) => {
+                                    // Only clear if actually leaving the column (not entering a child)
+                                    const relatedTarget = e.relatedTarget as Node;
+                                    if (!e.currentTarget.contains(relatedTarget)) {
+                                        setDragOverStage(null);
+                                    }
+                                }}
+                                onDrop={() => {
+                                    setDragOverStage(null);
+                                    if (draggedStage) {
+                                        handleStageDrop(stage.id);
+                                    } else {
+                                        handleDrop(stage.id);
+                                    }
+                                }}
                             >
-                                <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-gray-300 text-[16px] cursor-grab">drag_indicator</span>
-                                    <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: stage.color }}
-                                    />
-                                    <span className="font-bold text-gray-800">{stage.name}</span>
-                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                                        {leadsByStage[stage.id]?.length || 0}
-                                    </span>
-                                </div>
-                                <button
-                                    onClick={() => setEditingStage(stage)}
-                                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded transition-colors"
-                                    title="Editar Etapa"
+                                {/* Column Header - Draggable for reordering */}
+                                <div
+                                    draggable
+                                    onDragStart={(e) => handleStageDragStart(e, stage.id)}
+                                    onDragEnd={() => { setDraggedStage(null); setDragOverStage(null); }}
+                                    className={`flex items-center justify-between p-3 rounded-t-xl cursor-grab active:cursor-grabbing transition-all duration-200 ${isDropTarget ? "ring-2 ring-[#19069E] ring-offset-2" : ""}`}
+                                    style={{ backgroundColor: stage.color + "20" }}
                                 >
-                                    <span className="material-symbols-outlined text-[16px]">edit</span>
-                                </button>
-                            </div>
-
-                            {/* Column Body */}
-                            <div
-                                className="bg-gray-50 p-3 rounded-b-xl min-h-[60vh] space-y-3"
-                                style={{ borderTop: `3px solid ${stage.color}` }}
-                            >
-                                {/* Lead Cards */}
-                                {(leadsByStage[stage.id] || []).map((lead) => (
-                                    <div
-                                        key={lead.id}
-                                        draggable
-                                        onDragStart={() => handleDragStart(lead.id)}
-                                        className={`p-4 bg-white rounded-xl border border-gray-200 shadow-sm cursor-move hover:shadow-md transition-shadow group ${draggedLead === lead.id ? "opacity-50" : ""
-                                            }`}
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1 min-w-0">
-                                                <Link
-                                                    href={`/crm/leads/${lead.id}`}
-                                                    className="font-bold text-gray-900 hover:text-[#19069E] block truncate"
-                                                >
-                                                    {lead.name}
-                                                </Link>
-                                                {lead.email && (
-                                                    <p className="text-xs text-gray-500 truncate">{lead.email}</p>
-                                                )}
-                                                {lead.phone && (
-                                                    <p className="text-xs text-gray-500">{lead.phone}</p>
-                                                )}
-                                            </div>
-                                            <div className="relative">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setMenuOpenLead(menuOpenLead === lead.id ? null : lead.id);
-                                                    }}
-                                                    className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <span className="material-symbols-outlined text-[18px]">more_vert</span>
-                                                </button>
-                                                {menuOpenLead === lead.id && (
-                                                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-36 py-1">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditingLead(lead);
-                                                                setMenuOpenLead(null);
-                                                            }}
-                                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                            Editar
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setMenuOpenLead(null);
-                                                                handleDeleteLead(lead.id);
-                                                            }}
-                                                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[16px]">delete</span>
-                                                            Excluir
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Origin Badge + Deal Value */}
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className={`text-xs px-2 py-0.5 rounded-full ${lead.origin === "paid" ? "bg-blue-100 text-blue-700" :
-                                                lead.origin === "organic" ? "bg-green-100 text-green-700" :
-                                                    lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
-                                                        lead.origin === "manual" ? "bg-gray-100 text-gray-600" :
-                                                            "bg-orange-100 text-orange-700"
-                                                }`}>
-                                                {lead.origin === "paid" ? "Pago" :
-                                                    lead.origin === "organic" ? "Orgânico" :
-                                                        lead.origin === "webhook" ? "Webhook" :
-                                                            lead.origin === "manual" ? "Manual" :
-                                                                lead.origin}
-                                            </span>
-                                            {lead.deal_value && (
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">
-                                                    R$ {lead.deal_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            )}
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-gray-300 text-[16px] cursor-grab">drag_indicator</span>
+                                        <div
+                                            className="w-3 h-3 rounded-full"
+                                            style={{ backgroundColor: stage.color }}
+                                        />
+                                        <span className="font-bold text-gray-800">{stage.name}</span>
+                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                            {leadsByStage[stage.id]?.length || 0}
+                                        </span>
                                     </div>
-                                ))}
+                                    <button
+                                        onClick={() => setEditingStage(stage)}
+                                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded transition-colors"
+                                        title="Editar Etapa"
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                    </button>
+                                </div>
 
-                                {/* Add Lead Button/Form */}
-                                {showAddLead === stage.id ? (
-                                    <div className="p-3 bg-white rounded-xl border-2 border-[#19069E] space-y-2">
-                                        <input
-                                            type="text"
-                                            value={newLeadName}
-                                            onChange={(e) => setNewLeadName(e.target.value)}
-                                            placeholder="Nome do lead *"
-                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
-                                            autoFocus
-                                        />
-                                        <input
-                                            type="email"
-                                            value={newLeadEmail}
-                                            onChange={(e) => setNewLeadEmail(e.target.value)}
-                                            placeholder="Email (opcional)"
-                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
-                                        />
-                                        <input
-                                            type="tel"
-                                            value={newLeadPhone}
-                                            onChange={(e) => setNewLeadPhone(e.target.value)}
-                                            placeholder="Telefone (opcional)"
-                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
-                                        />
-                                        <div className="relative">
+                                {/* Column Body */}
+                                <div
+                                    className="bg-gray-50 p-3 rounded-b-xl min-h-[60vh] space-y-3"
+                                    style={{ borderTop: `3px solid ${stage.color}` }}
+                                >
+                                    {/* Lead Cards */}
+                                    {(leadsByStage[stage.id] || []).map((lead) => (
+                                        <div
+                                            key={lead.id}
+                                            draggable
+                                            onDragStart={() => handleDragStart(lead.id)}
+                                            className={`p-4 bg-white rounded-xl border border-gray-200 shadow-sm cursor-move hover:shadow-md transition-shadow group ${draggedLead === lead.id ? "opacity-50" : ""
+                                                }`}
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <Link
+                                                        href={`/crm/leads/${lead.id}`}
+                                                        className="font-bold text-gray-900 hover:text-[#19069E] block truncate"
+                                                    >
+                                                        {lead.name}
+                                                    </Link>
+                                                    {lead.email && (
+                                                        <p className="text-xs text-gray-500 truncate">{lead.email}</p>
+                                                    )}
+                                                    {lead.phone && (
+                                                        <p className="text-xs text-gray-500">{lead.phone}</p>
+                                                    )}
+                                                </div>
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMenuOpenLead(menuOpenLead === lead.id ? null : lead.id);
+                                                        }}
+                                                        className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">more_vert</span>
+                                                    </button>
+                                                    {menuOpenLead === lead.id && (
+                                                        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-36 py-1">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEditingLead(lead);
+                                                                    setMenuOpenLead(null);
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                                Editar
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setMenuOpenLead(null);
+                                                                    handleDeleteLead(lead.id);
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                                Excluir
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Origin Badge + Deal Value */}
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className={`text-xs px-2 py-0.5 rounded-full ${lead.origin === "paid" ? "bg-blue-100 text-blue-700" :
+                                                    lead.origin === "organic" ? "bg-green-100 text-green-700" :
+                                                        lead.origin === "webhook" ? "bg-purple-100 text-purple-700" :
+                                                            lead.origin === "manual" ? "bg-gray-100 text-gray-600" :
+                                                                "bg-orange-100 text-orange-700"
+                                                    }`}>
+                                                    {lead.origin === "paid" ? "Pago" :
+                                                        lead.origin === "organic" ? "Orgânico" :
+                                                            lead.origin === "webhook" ? "Webhook" :
+                                                                lead.origin === "manual" ? "Manual" :
+                                                                    lead.origin}
+                                                </span>
+                                                {lead.deal_value && (
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">
+                                                        R$ {lead.deal_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Add Lead Button/Form */}
+                                    {showAddLead === stage.id ? (
+                                        <div className="p-3 bg-white rounded-xl border-2 border-[#19069E] space-y-2">
                                             <input
                                                 type="text"
-                                                list={`origins-${stage.id}`}
-                                                value={newLeadOrigin}
-                                                onChange={(e) => setNewLeadOrigin(e.target.value)}
-                                                placeholder="Origem (ex: Indicação)"
+                                                value={newLeadName}
+                                                onChange={(e) => setNewLeadName(e.target.value)}
+                                                placeholder="Nome do lead *"
+                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                                                autoFocus
+                                            />
+                                            <input
+                                                type="email"
+                                                value={newLeadEmail}
+                                                onChange={(e) => setNewLeadEmail(e.target.value)}
+                                                placeholder="Email (opcional)"
                                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
                                             />
-                                            <datalist id={`origins-${stage.id}`}>
-                                                {availableOrigins.map(origin => (
-                                                    <option key={origin} value={origin} />
-                                                ))}
-                                            </datalist>
+                                            <input
+                                                type="tel"
+                                                value={newLeadPhone}
+                                                onChange={(e) => setNewLeadPhone(e.target.value)}
+                                                placeholder="Telefone (opcional)"
+                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    list={`origins-${stage.id}`}
+                                                    value={newLeadOrigin}
+                                                    onChange={(e) => setNewLeadOrigin(e.target.value)}
+                                                    placeholder="Origem (ex: Indicação)"
+                                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E]"
+                                                />
+                                                <datalist id={`origins-${stage.id}`}>
+                                                    {availableOrigins.map(origin => (
+                                                        <option key={origin} value={origin} />
+                                                    ))}
+                                                </datalist>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleAddLead(stage.id)}
+                                                    disabled={!newLeadName.trim()}
+                                                    className="flex-1 py-2 bg-[#C2DF0C] text-[#19069E] text-sm font-bold rounded-lg hover:bg-[#B0CC0B] disabled:opacity-50"
+                                                >
+                                                    Adicionar
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowAddLead(null)}
+                                                    className="px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleAddLead(stage.id)}
-                                                disabled={!newLeadName.trim()}
-                                                className="flex-1 py-2 bg-[#C2DF0C] text-[#19069E] text-sm font-bold rounded-lg hover:bg-[#B0CC0B] disabled:opacity-50"
-                                            >
-                                                Adicionar
-                                            </button>
-                                            <button
-                                                onClick={() => setShowAddLead(null)}
-                                                className="px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg"
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">close</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() => setShowAddLead(stage.id)}
-                                        className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-400 rounded-xl hover:border-[#19069E] hover:text-[#19069E] transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">add</span>
-                                        Adicionar Lead
-                                    </button>
-                                )}
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowAddLead(stage.id)}
+                                            className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-400 rounded-xl hover:border-[#19069E] hover:text-[#19069E] transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">add</span>
+                                            Adicionar Lead
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {/* Add Stage Column */}
                     {showAddStage && (
