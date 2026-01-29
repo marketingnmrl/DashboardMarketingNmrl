@@ -24,7 +24,7 @@ export default function AccessControlSettings() {
     const [activeTab, setActiveTab] = useState<"levels" | "users">("levels");
     const [showNewLevelModal, setShowNewLevelModal] = useState(false);
     const [showNewUserModal, setShowNewUserModal] = useState(false);
-    const [editingLevelId, setEditingLevelId] = useState<string | null>(null);
+    const [editingLevel, setEditingLevel] = useState<{ id: string; name: string; description: string; routes: string[]; isAdmin: boolean } | null>(null);
     const [saveMessage, setSaveMessage] = useState<{ success: boolean; message: string } | null>(null);
 
     // New level form state
@@ -106,6 +106,42 @@ export default function AccessControlSettings() {
         );
     };
 
+    const toggleEditRoute = (route: string) => {
+        if (!editingLevel) return;
+        setEditingLevel(prev => prev ? {
+            ...prev,
+            routes: prev.routes.includes(route)
+                ? prev.routes.filter(r => r !== route)
+                : [...prev.routes, route]
+        } : null);
+    };
+
+    const handleEditLevel = (level: typeof accessLevels[0]) => {
+        setEditingLevel({
+            id: level.id,
+            name: level.name,
+            description: level.description || "",
+            routes: level.allowedRoutes,
+            isAdmin: level.isAdmin
+        });
+    };
+
+    const handleSaveLevel = async () => {
+        if (!editingLevel) return;
+        try {
+            await updateAccessLevel(editingLevel.id, {
+                name: editingLevel.name,
+                description: editingLevel.description,
+                allowedRoutes: editingLevel.routes,
+                isAdmin: editingLevel.isAdmin
+            });
+            setEditingLevel(null);
+            setSaveMessage({ success: true, message: "Nível atualizado com sucesso!" });
+        } catch (err) {
+            setSaveMessage({ success: false, message: err instanceof Error ? err.message : "Erro ao atualizar" });
+        }
+    };
+
     // Group routes by section
     const routesBySection = ALL_ROUTES.reduce((acc, route) => {
         if (!acc[route.section]) acc[route.section] = [];
@@ -139,8 +175,8 @@ export default function AccessControlSettings() {
                 <button
                     onClick={() => setActiveTab("levels")}
                     className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === "levels"
-                            ? "text-[#19069E] border-b-2 border-[#19069E]"
-                            : "text-gray-500 hover:text-gray-700"
+                        ? "text-[#19069E] border-b-2 border-[#19069E]"
+                        : "text-gray-500 hover:text-gray-700"
                         }`}
                 >
                     Níveis de Acesso
@@ -148,8 +184,8 @@ export default function AccessControlSettings() {
                 <button
                     onClick={() => setActiveTab("users")}
                     className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === "users"
-                            ? "text-[#19069E] border-b-2 border-[#19069E]"
-                            : "text-gray-500 hover:text-gray-700"
+                        ? "text-[#19069E] border-b-2 border-[#19069E]"
+                        : "text-gray-500 hover:text-gray-700"
                         }`}
                 >
                     Usuários
@@ -204,6 +240,13 @@ export default function AccessControlSettings() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleEditLevel(level)}
+                                            className="p-2 rounded-lg text-gray-400 hover:text-[#19069E] hover:bg-[#19069E]/10 transition-colors"
+                                            title="Editar nível"
+                                        >
+                                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                                        </button>
                                         <button
                                             onClick={() => handleDeleteLevel(level.id)}
                                             className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -392,6 +435,94 @@ export default function AccessControlSettings() {
                                 className="px-4 py-2 bg-[#19069E] hover:bg-[#12047A] text-white font-bold rounded-lg transition-colors disabled:opacity-50"
                             >
                                 Criar Nível
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Level Modal */}
+            {editingLevel && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto shadow-2xl">
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-[#19069E]">Editar Nível: {editingLevel.name}</h3>
+                                <button onClick={() => setEditingLevel(null)} className="p-2 rounded-lg hover:bg-gray-100">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Nível</label>
+                                <input
+                                    type="text"
+                                    value={editingLevel.name}
+                                    onChange={(e) => setEditingLevel({ ...editingLevel, name: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#19069E]"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                                <input
+                                    type="text"
+                                    value={editingLevel.description}
+                                    onChange={(e) => setEditingLevel({ ...editingLevel, description: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#19069E]"
+                                />
+                            </div>
+                            <div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={editingLevel.isAdmin}
+                                        onChange={(e) => setEditingLevel({ ...editingLevel, isAdmin: e.target.checked })}
+                                        className="w-4 h-4 rounded text-[#19069E] focus:ring-[#19069E]"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">Acesso de Administrador (todas as rotas)</span>
+                                </label>
+                            </div>
+                            {!editingLevel.isAdmin && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Rotas Permitidas</label>
+                                    <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-4">
+                                        {Object.entries(routesBySection).map(([section, routes]) => (
+                                            <div key={section}>
+                                                <p className="text-xs font-bold uppercase text-gray-400 mb-2">{section}</p>
+                                                <div className="space-y-1">
+                                                    {routes.map(route => (
+                                                        <label key={route.href} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editingLevel.routes.includes(route.href)}
+                                                                onChange={() => toggleEditRoute(route.href)}
+                                                                className="w-4 h-4 rounded text-[#19069E] focus:ring-[#19069E]"
+                                                            />
+                                                            <span className="material-symbols-outlined text-[16px] text-gray-400">{route.icon}</span>
+                                                            <span className="text-sm text-gray-700">{route.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+                            <button
+                                onClick={() => setEditingLevel(null)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveLevel}
+                                disabled={!editingLevel.name}
+                                className="px-4 py-2 bg-[#19069E] hover:bg-[#12047A] text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Salvar Alterações
                             </button>
                         </div>
                     </div>
