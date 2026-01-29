@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 import { useAccessControlContext } from "@/contexts/AccessControlContext";
 import type { SdrReport, CreateSdrReportInput } from "@/types/crm";
 
 export function useSdrReports() {
-    const supabase = createClientComponentClient();
     const { currentUser } = useAccessControlContext();
     const [reports, setReports] = useState<SdrReport[]>([]);
     const [isLoading, setIsLoading] = useState(false);
