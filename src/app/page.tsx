@@ -351,23 +351,25 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">Acompanhamento em tempo real dos principais ativos</p>
         </div>
 
-        {uniqueAccounts.length > 0 && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 font-medium">Conta:</label>
-            <select
-              value={selectedAccount}
-              onChange={(e) => setSelectedAccount(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] min-w-[200px]"
-            >
-              <option value="">Todas as contas</option>
-              {uniqueAccounts.map((account) => (
-                <option key={account} value={account}>
-                  {account}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Account Selector - always visible */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-500 font-medium">Conta:</label>
+          <select
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+            disabled={dataLoading || uniqueAccounts.length === 0}
+            className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] min-w-[200px] disabled:opacity-50"
+          >
+            <option value="">
+              {dataLoading ? "Carregando..." : uniqueAccounts.length === 0 ? "Sem contas disponíveis" : "Todas as contas"}
+            </option>
+            {uniqueAccounts.map((account) => (
+              <option key={account} value={account}>
+                {account}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Error Message */}

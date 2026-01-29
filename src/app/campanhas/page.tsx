@@ -569,21 +569,22 @@ export default function CampanhasPage() {
                         }}
                     />
 
-                    {/* Account Selector */}
-                    {uniqueAccounts.length > 0 && (
-                        <select
-                            value={selectedAccount}
-                            onChange={(e) => setSelectedAccount(e.target.value)}
-                            className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] max-w-[200px]"
-                        >
-                            <option value="">🏢 Todas as Contas</option>
-                            {uniqueAccounts.map((account) => (
-                                <option key={account} value={account}>
-                                    {account}
-                                </option>
-                            ))}
-                        </select>
-                    )}
+                    {/* Account Selector - always visible */}
+                    <select
+                        value={selectedAccount}
+                        onChange={(e) => setSelectedAccount(e.target.value)}
+                        disabled={dataLoading || uniqueAccounts.length === 0}
+                        className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] max-w-[200px] disabled:opacity-50"
+                    >
+                        <option value="">
+                            {dataLoading ? "🏢 Carregando..." : uniqueAccounts.length === 0 ? "🏢 Sem contas" : "🏢 Todas as Contas"}
+                        </option>
+                        {uniqueAccounts.map((account) => (
+                            <option key={account} value={account}>
+                                {account}
+                            </option>
+                        ))}
+                    </select>
 
                     {/* Enhanced Campaign Selector with ROAS preview */}
                     <select
