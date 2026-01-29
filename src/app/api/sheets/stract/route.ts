@@ -31,17 +31,35 @@ export async function GET(request: NextRequest) {
         const gidMatch = sheetsUrl.match(/gid=(\d+)/);
         const gid = gidMatch ? gidMatch[1] : "0";
 
-        // Fetch CSV from Google Sheets
+        // Fetch CSV from Google Sheets using export endpoint
         const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
 
+        console.log("[Stract API] Fetching from:", csvUrl);
+
         const response = await fetch(csvUrl, {
+            method: "GET",
             headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/csv,text/plain,*/*",
+                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
                 "Cache-Control": "no-cache",
             },
+            redirect: "follow",
         });
 
+        console.log("[Stract API] Response status:", response.status, response.statusText);
+
         if (!response.ok) {
-            throw new Error("Não foi possível acessar a planilha. Verifique se ela está pública.");
+            const errorText = await response.text().catch(() => "");
+            console.error("[Stract API] Error response:", errorText.slice(0, 500));
+
+            if (response.status === 404) {
+                throw new Error("Planilha não encontrada. Verifique se a URL está correta.");
+            } else if (response.status === 403 || response.status === 401) {
+                throw new Error("Acesso negado. A planilha precisa estar 'Publicada na Web' (não apenas compartilhada).");
+            } else {
+                throw new Error(`Erro ao acessar planilha (${response.status}). Verifique se ela está publicada na web.`);
+            }
         }
 
         const csvText = await response.text();
