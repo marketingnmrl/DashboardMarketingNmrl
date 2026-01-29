@@ -31,35 +31,49 @@ export async function GET(request: NextRequest) {
         const gidMatch = sheetsUrl.match(/gid=(\d+)/);
         const gid = gidMatch ? gidMatch[1] : "0";
 
-        // Fetch CSV from Google Sheets using export endpoint
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+        console.log("[Stract API] Sheet ID:", sheetId, "GID:", gid);
 
-        console.log("[Stract API] Fetching from:", csvUrl);
+        // Try multiple endpoints for better reliability
+        const endpoints = [
+            // Method 1: Direct export (most common)
+            `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
+            // Method 2: gviz/tq query endpoint
+            `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`,
+            // Method 3: pub endpoint (for published sheets)
+            `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=csv&gid=${gid}`,
+        ];
 
-        const response = await fetch(csvUrl, {
-            method: "GET",
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/csv,text/plain,*/*",
-                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Cache-Control": "no-cache",
-            },
-            redirect: "follow",
-        });
+        let response: Response | null = null;
+        let lastError = "";
 
-        console.log("[Stract API] Response status:", response.status, response.statusText);
+        for (const csvUrl of endpoints) {
+            console.log("[Stract API] Trying:", csvUrl);
 
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => "");
-            console.error("[Stract API] Error response:", errorText.slice(0, 500));
+            try {
+                response = await fetch(csvUrl, {
+                    method: "GET",
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                        "Accept": "text/csv,text/plain,*/*",
+                    },
+                    redirect: "follow",
+                });
 
-            if (response.status === 404) {
-                throw new Error("Planilha não encontrada. Verifique se a URL está correta.");
-            } else if (response.status === 403 || response.status === 401) {
-                throw new Error("Acesso negado. A planilha precisa estar 'Publicada na Web' (não apenas compartilhada).");
-            } else {
-                throw new Error(`Erro ao acessar planilha (${response.status}). Verifique se ela está publicada na web.`);
+                console.log("[Stract API] Response:", response.status);
+
+                if (response.ok) {
+                    break; // Success!
+                }
+
+                lastError = `Status ${response.status}`;
+            } catch (fetchErr) {
+                lastError = fetchErr instanceof Error ? fetchErr.message : "Fetch failed";
+                console.error("[Stract API] Fetch error:", lastError);
             }
+        }
+
+        if (!response || !response.ok) {
+            throw new Error(`Não foi possível acessar a planilha. ${lastError}. Verifique se ela está publicada na web (Arquivo > Compartilhar > Publicar na Web).`);
         }
 
         const csvText = await response.text();
