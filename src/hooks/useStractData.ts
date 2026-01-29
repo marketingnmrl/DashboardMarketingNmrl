@@ -11,6 +11,7 @@ import {
 interface UseStractDataOptions {
     startDate?: string;
     endDate?: string;
+    accountName?: string; // Filter by account name (null or undefined = all accounts)
     autoRefresh?: boolean;
     refreshInterval?: number; // in milliseconds
 }
@@ -21,6 +22,7 @@ interface UseStractDataReturn {
     metrics: StractAggregatedMetrics;
     dailyData: StractDailyData[];
     campaignSummary: StractCampaignSummary[];
+    uniqueAccounts: string[]; // List of unique account names from data
     isLoading: boolean;
     error: string | null;
     dateRange: { start: string; end: string } | null;
@@ -31,7 +33,7 @@ export function useStractData(
     sheetUrl: string | null | undefined,
     options: UseStractDataOptions = {}
 ): UseStractDataReturn {
-    const { startDate, endDate, autoRefresh = false, refreshInterval = 4 * 60 * 60 * 1000 } = options;
+    const { startDate, endDate, accountName, autoRefresh = false, refreshInterval = 4 * 60 * 60 * 1000 } = options;
 
     const [data, setData] = useState<StractCampaignRow[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -82,14 +84,21 @@ export function useStractData(
         return () => clearInterval(interval);
     }, [autoRefresh, refreshInterval, fetchData, sheetUrl]);
 
-    // Filter data by date range
+    // Filter data by date range and account
     const filteredData = useMemo(() => {
         return data.filter(row => {
             if (startDate && row.date < startDate) return false;
             if (endDate && row.date > endDate) return false;
+            if (accountName && row.accountName !== accountName) return false;
             return true;
         });
-    }, [data, startDate, endDate]);
+    }, [data, startDate, endDate, accountName]);
+
+    // Extract unique account names from full data (not filtered)
+    const uniqueAccounts = useMemo(() => {
+        const accounts = [...new Set(data.map(row => row.accountName).filter(Boolean))];
+        return accounts.sort();
+    }, [data]);
 
     // Calculate aggregated metrics
     const metrics = useMemo((): StractAggregatedMetrics => {
@@ -332,6 +341,7 @@ export function useStractData(
         metrics,
         dailyData,
         campaignSummary,
+        uniqueAccounts,
         isLoading,
         error,
         dateRange,

@@ -300,6 +300,7 @@ function getHeatmapColor(value: number, avg: number, isGoodWhenHigh: boolean): s
 export default function CampanhasPage() {
     const { settings, isLoading: settingsLoading } = useDashboardSettings();
     const { dateRange, setCustomRange } = useDateFilter();
+    const [selectedAccount, setSelectedAccount] = useState<string>("");
     const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
     const [sortColumn, setSortColumn] = useState<string>("spend");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -309,11 +310,13 @@ export default function CampanhasPage() {
         dailyData,
         campaignSummary,
         filteredData,
+        uniqueAccounts,
         isLoading: dataLoading,
         error,
     } = useStractData(settings?.visaoGeralSheetUrl, {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
+        accountName: selectedAccount || undefined,
     });
 
     // Top Creatives aggregated by adName with thumbnails - filtered by selected campaign
@@ -565,6 +568,22 @@ export default function CampanhasPage() {
                             setCustomRange(formatDate(start), formatDate(end));
                         }}
                     />
+
+                    {/* Account Selector */}
+                    {uniqueAccounts.length > 0 && (
+                        <select
+                            value={selectedAccount}
+                            onChange={(e) => setSelectedAccount(e.target.value)}
+                            className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] max-w-[200px]"
+                        >
+                            <option value="">🏢 Todas as Contas</option>
+                            {uniqueAccounts.map((account) => (
+                                <option key={account} value={account}>
+                                    {account}
+                                </option>
+                            ))}
+                        </select>
+                    )}
 
                     {/* Enhanced Campaign Selector with ROAS preview */}
                     <select

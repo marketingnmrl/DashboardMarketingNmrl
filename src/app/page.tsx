@@ -266,16 +266,19 @@ function DailyChart({ dailyData, isLoading }: DailyChartProps) {
 export default function DashboardPage() {
   const { settings, isLoading: settingsLoading } = useDashboardSettings();
   const { dateRange, setAvailableDates } = useDateFilter();
+  const [selectedAccount, setSelectedAccount] = useState<string>("");
 
   // Fetch Stract data
   const {
     metrics,
     dailyData,
+    uniqueAccounts,
     isLoading: dataLoading,
     error,
   } = useStractData(settings?.visaoGeralSheetUrl, {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
+    accountName: selectedAccount || undefined,
   });
 
   // Fetch CRM sales data with date filtering
@@ -341,10 +344,30 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-[#19069E]">Visão Geral do Projeto</h1>
-        <p className="text-sm text-gray-500">Acompanhamento em tempo real dos principais ativos</p>
+      {/* Header with Account Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-[#19069E]">Visão Geral do Projeto</h1>
+          <p className="text-sm text-gray-500">Acompanhamento em tempo real dos principais ativos</p>
+        </div>
+
+        {uniqueAccounts.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-500 font-medium">Conta:</label>
+            <select
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#19069E]/20 focus:border-[#19069E] min-w-[200px]"
+            >
+              <option value="">Todas as contas</option>
+              {uniqueAccounts.map((account) => (
+                <option key={account} value={account}>
+                  {account}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
