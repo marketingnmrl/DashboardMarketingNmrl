@@ -28,6 +28,8 @@ export const ALL_ROUTES = [
     { section: "Campanhas", name: "Campanhas", href: "/campanhas", icon: "campaign" },
     { section: "CRM", name: "Pipelines", href: "/crm/pipelines", icon: "view_kanban" },
     { section: "CRM", name: "Leads (CRM)", href: "/crm/leads", icon: "people" },
+    { section: "CRM", name: "Recuperação", href: "/crm/recuperacao", icon: "history" },
+    { section: "CRM", name: "Relatório SDR", href: "/crm/sdr-reports", icon: "analytics" },
     { section: "CRM", name: "Configurações CRM", href: "/crm/configuracoes", icon: "settings" },
     { section: "Funis", name: "Meus Funis", href: "/funis", icon: "filter_alt" },
     { section: "Análise", name: "Alcance", href: "/analise/alcance", icon: "visibility" },
