@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing na Moral - CRM Dashboard</title>
+  <link rel="stylesheet" href="/public/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<%
+  const userName = authUser?.name || authUser?.email || 'Usuario';
+  const userEmail = authUser?.email || '';
+  const avatarBase = String(userName).trim();
+  const avatarLetters = avatarBase
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(s => s[0].toUpperCase())
+    .join('') || 'US';
+%>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="/static/logo.webp" alt="Marketing na Moral">
+    </div>
+
+    <div class="sidebar-section-title">DASHBOARD</div>
+    <button class="sidebar-nav-btn active" data-page="visao_geral" onclick="navigate('visao_geral', this)">📊  Visão Geral</button>
+    <button class="sidebar-nav-btn" data-page="campanhas" onclick="navigate('campanhas', this)">📢  Campanhas</button>
+    <button class="sidebar-nav-btn" data-page="placar" onclick="navigate('placar', this)">🏆  Placar Semanal</button>
+
+    <div class="sidebar-section-title">CRM</div>
+    <button class="sidebar-nav-btn" data-page="pipelines" onclick="navigate('pipelines', this)">🔄  Pipelines</button>
+    <button class="sidebar-nav-btn" data-page="leads" onclick="navigate('leads', this)">👥  Leads</button>
+    <button class="sidebar-nav-btn" data-page="recuperacao" onclick="navigate('recuperacao', this)">🔁  Recuperação</button>
+    <button class="sidebar-nav-btn" data-page="relatorio_sdr" onclick="navigate('relatorio_sdr', this)">📋  Relatório SDR</button>
+
+    <hr class="sidebar-divider">
+    <button class="sidebar-nav-btn" data-page="configuracoes" onclick="navigate('configuracoes', this)">⚙️  Configurações</button>
+    <button class="sidebar-nav-btn" data-page="docs_api" onclick="navigate('docs_api', this)">📄  Documentação API</button>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar"><%= avatarLetters %></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name"><%= userName %></div>
+        <div class="sidebar-user-email"><%= userEmail %></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-header">
+      <div class="header-left">
+        <div class="header-title">Visão Geral do Desempenho</div>
+        <div class="header-subtitle">Métricas consolidadas e análise de resultados.</div>
+      </div>
+      <div class="header-right">
+        <div class="header-icon">🔔</div>
+        <div class="header-avatar"><%= avatarLetters %></div>
+        <form method="POST" action="/auth/logout" style="margin-left: 8px;">
+          <button type="submit" class="sidebar-nav-btn" style="padding:6px 10px;border-radius:8px;background:#ffffff1f;color:#fff;">Sair</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <span style="font-size:13px;font-weight:600;color:#4a4a6a;">Fonte</span>
+        <div class="filter-radio-group">
+          <input type="radio" name="fonte" id="fonte_todos" value="Todos" checked>
+          <label for="fonte_todos">Todos</label>
+          <input type="radio" name="fonte" id="fonte_hotmart" value="Hotmart">
+          <label for="fonte_hotmart">Hotmart</label>
+          <input type="radio" name="fonte" id="fonte_zouti" value="Zouti">
+          <label for="fonte_zouti">Zouti</label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="periodo">Período</label>
+        <select id="periodo" class="filter-select">
+          <option value="Últimos 7 dias" selected>Últimos 7 dias</option>
+          <option value="Últimos 15 dias">Últimos 15 dias</option>
+          <option value="Últimos 30 dias">Últimos 30 dias</option>
+          <option value="Este mês">Este mês</option>
+          <option value="Mês passado">Mês passado</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="conta">Conta</label>
+        <select id="conta" class="filter-select">
+          <option value="Todas as contas" selected>Todas as contas</option>
+          <option value="Conta Principal">Conta Principal</option>
+          <option value="Conta Secundária">Conta Secundária</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="page-content" id="page-content">
+      <div class="loading-spinner">Carregando dados...</div>
+    </div>
+  </main>
+
+  <script src="/public/js/app.js"></script>
+</body>
+</html>
