@@ -1,28 +1,24 @@
 # Dashboard MktNaMoral
 
-Dashboard CRM em Node.js para visualizacao de vendas, leads e metricas da Hotmart.
+Dashboard CRM em Next.js para visualizacao de vendas, leads e metricas da Hotmart.
 
 ## Stack
 
 - Node.js 20+
-- Express 5
-- EJS
+- Next.js 15
 - Axios
 - Chart.js via CDN
 - Vercel
 
 ## Estrutura
 
-- `app.js`: configura a aplicacao Express e exporta a app
-- `server.js`: bootstrap local para `npm start` e `yarn start`
-- `api/index.js`: entrada serverless para deploy na Vercel
-- `routes/auth.js`: login/logout e sessao do usuario
-- `routes/api.js`: endpoint `GET /api/data`
+- `pages/index.js`: dashboard protegido por cookie/JWT
+- `pages/login.js`: tela de login
+- `pages/api/auth/*`: login/logout/sessao autenticada
+- `pages/api/data.js`: endpoint principal `GET /api/data`
 - `services/hotmart.js`: autenticacao, cache e consolidacao de dados
 - `services/auth.js`: validacao de usuario/senha e emissao de token
-- `views/layout.ejs`: template principal
-- `views/login.ejs`: tela de login
-- `public/js/app.js`: frontend SPA
+- `public/js/app.js`: frontend do dashboard
 - `public/css/style.css`: estilos
 
 ## Variaveis de ambiente
@@ -50,7 +46,10 @@ Para integracoes server-side com Supabase, use `SUPABASE_SERVICE_ROLE_KEY`. A `S
 
 Rotas protegidas:
 - `/` (dashboard)
-- `/api/*`
+- `/api/data`
+- `/api/supabase/test`
+- `/api/zouti/debug`
+- `/api/auth/me`
 
 ## Rodando localmente
 
@@ -61,9 +60,9 @@ npm install
 npm run dev
 ```
 
-Para execucao sem watch:
-
+Build de producao:
 ```bash
+npm run build
 npm start
 ```
 
@@ -74,9 +73,9 @@ yarn
 yarn dev
 ```
 
-Para execucao sem watch:
-
+Build de producao:
 ```bash
+yarn build
 yarn start
 ```
 
@@ -86,9 +85,8 @@ A aplicacao sobe em `http://localhost:3000` por padrao. Se `PORT` estiver defini
 
 1. Importe o repositorio na Vercel.
 2. Configure as variaveis `HOTMART_CLIENT_ID`, `HOTMART_CLIENT_SECRET`, `HOTMART_BASIC`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `AUTH_JWT_SECRET`.
-3. O deploy usa `vercel.json` e `api/index.js`.
-
-Nao e necessario comando customizado de build.
+3. A Vercel detecta Next.js automaticamente (`framework: nextjs` em `vercel.json`).
+4. Build command: `npm run build`.
 
 ## Endpoint interno
 

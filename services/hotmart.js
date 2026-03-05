@@ -84,34 +84,25 @@ function getPeriodTimestamps(periodo) {
 
   let start;
   let end = today;
+  const periodLabel = String(periodo || '').toLowerCase();
 
-  switch (periodo) {
-    case 'Últimos 7 dias':
-      start = new Date(now);
-      start.setDate(start.getDate() - 7);
-      break;
-    case 'Últimos 15 dias':
-      start = new Date(now);
-      start.setDate(start.getDate() - 15);
-      break;
-    case 'Últimos 30 dias':
-      start = new Date(now);
-      start.setDate(start.getDate() - 30);
-      break;
-    case 'Este mês':
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
-    case 'Mês passado': {
-      const firstThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(firstThisMonth.getTime() - 1);
-      start = new Date(end.getFullYear(), end.getMonth(), 1);
-      break;
-    }
-    default:
-      start = new Date(now);
-      start.setDate(start.getDate() - 7);
+  if (periodLabel.includes('15')) {
+    start = new Date(now);
+    start.setDate(start.getDate() - 15);
+  } else if (periodLabel.includes('30')) {
+    start = new Date(now);
+    start.setDate(start.getDate() - 30);
+  } else if (periodLabel.includes('passado')) {
+    const firstThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    end = new Date(firstThisMonth.getTime() - 1);
+    start = new Date(end.getFullYear(), end.getMonth(), 1);
+  } else if (periodLabel.includes('este') && periodLabel.includes('mes')) {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else {
+    // Default para "Ultimos 7 dias" e variantes com acento/codificacao divergente.
+    start = new Date(now);
+    start.setDate(start.getDate() - 7);
   }
-
   start.setHours(0, 0, 0, 0);
   return { startMs: start.getTime(), endMs: end.getTime() };
 }
@@ -309,3 +300,4 @@ module.exports = {
   checkCredentials,
   getPeriodTimestamps
 };
+
