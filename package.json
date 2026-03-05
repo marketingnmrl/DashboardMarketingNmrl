@@ -1,32 +1,28 @@
 {
-  "name": "unified-app",
-  "version": "0.1.0",
-  "private": true,
+  "name": "workspace",
+  "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Dashboard CRM Marketing na Moral com Express, EJS e integracao Hotmart",
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.89.0",
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
-    "motion": "^12.23.26",
-    "next": "16.1.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "recharts": "^3.6.0",
-    "tailwind-merge": "^3.4.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@supabase/supabase-js": "^2.57.4",
+    "axios": "^1.13.6",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.6.1",
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^15.2.2"
   }
 }
